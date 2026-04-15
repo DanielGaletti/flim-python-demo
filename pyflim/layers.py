@@ -606,7 +606,7 @@ class FLIMAdaptiveDecoderLayer(torch.nn.Module):
         if(self.filter_by_size):
             util.filter_component_by_area(y)
 
-        return torch.from_numpy(y*255)
+        return y*255
 
     def view_as_windows_pytorch(self, image, shape, stride=None):
         windows = image.unfold(1, shape[0], stride[0])

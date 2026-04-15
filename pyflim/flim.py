@@ -125,10 +125,12 @@ class FLIMModel(nn.Module):
 
                         if(selected_points is None):
                             for f in indices:
-                                kernel_labels.append(label_patches[f, patchsize[0]//2, patchsize[1]//2])
+                                label = label_patches[f, patchsize[0]//2, patchsize[1]//2]
+                                kernel_labels.append(int(np.asarray(label).reshape(-1)[0]))
                         else:
                             for f in selected_points_real:
-                                kernel_labels.append(label_patches[f, patchsize[0]//2, patchsize[1]//2])
+                                label = label_patches[f, patchsize[0]//2, patchsize[1]//2]
+                                kernel_labels.append(int(np.asarray(label).reshape(-1)[0]))
                                 
                         for k in kernel_candidates_:
                             kernel_candidates.append(k)
@@ -162,10 +164,11 @@ class FLIMModel(nn.Module):
 
             if(selected_points is None):
                 for f in kernel_labels:
-                    selected_kernels_labels.append(f)
+                    selected_kernels_labels.append(int(np.asarray(f).reshape(-1)[0]))
             else:
                 for f in selected_points:
-                    selected_kernels_labels.append(int(kernel_labels[f]))
+                    idx = int(np.asarray(f).reshape(-1)[0])
+                    selected_kernels_labels.append(int(np.asarray(kernel_labels[idx]).reshape(-1)[0]))
                 
             if(not self.network_type == "dseparable_mw"):
                 FLIMModel.unit_norm_kernels(kernels)
@@ -228,10 +231,12 @@ class FLIMModel(nn.Module):
 
                     if(selected_points is None):
                         for f in indices:
-                            kernel_labels.append(label_patches[f, patchsize[0]//2, patchsize[1]//2])
+                            label = label_patches[f, patchsize[0]//2, patchsize[1]//2]
+                            kernel_labels.append(int(np.asarray(label).reshape(-1)[0]))
                     else:
                         for f in selected_points_real:
-                            kernel_labels.append(label_patches[f, patchsize[0]//2, patchsize[1]//2])
+                            label = label_patches[f, patchsize[0]//2, patchsize[1]//2]
+                            kernel_labels.append(int(np.asarray(label).reshape(-1)[0]))
                             
                     for k in kernel_candidates_:
                         kernel_candidates.append(k)
@@ -266,10 +271,11 @@ class FLIMModel(nn.Module):
 
         if(selected_points is None):
             for f in kernel_labels:
-                selected_kernels_labels.append(f)
+                selected_kernels_labels.append(int(np.asarray(f).reshape(-1)[0]))
         else:
             for f in selected_points:
-                selected_kernels_labels.append(int(kernel_labels[f]))
+                idx = int(np.asarray(f).reshape(-1)[0])
+                selected_kernels_labels.append(int(np.asarray(kernel_labels[idx]).reshape(-1)[0]))
                 
         if(not self.network_type == "dseparable_sw" or self.network_type == "separable"):
             FLIMModel.unit_norm_kernels(kernels)
@@ -425,7 +431,7 @@ class FLIMModel(nn.Module):
             image_files = None
             for sample_batch in dataset:
                 X = sample_batch["image"].float().to(self.device)
-                Y = self.forward(X, self.layers[decoder_layer].marker_labels.clone(), decoder_layer)
+                Y = self.forward(X, decoder_layer)
                 del X
                 original_sizes = sample_batch['original_size']
                 image_paths = sample_batch["image_path"]
@@ -443,7 +449,7 @@ class FLIMModel(nn.Module):
             for sample in dataset:
                 X = sample["image"].to(self.device)
                 original_size = sample["original_size"]
-                y = self.forward(X.unsqueeze(0), self.layers[decoder_layer].marker_labels.clone(), decoder_layer)
+                y = self.forward(X.unsqueeze(0), decoder_layer)
                 out_size = y.shape[-2:]
                 if(out_size[0] != original_size[0] or out_size[1] != original_size[1]):
                     y = F.interpolate(y, [original_size[0], original_size[1]], mode='bilinear', align_corners=True)
@@ -461,7 +467,8 @@ class FLIMModel(nn.Module):
     def forward(self, X, decoder_layer=None):
         original_size = (X.shape[-2:])
         gpu_tracker = util.MemTracker()
-        decoder_layer = self.architecture.nlayers - 1 if decoder_layer == None else decoder_layer
+        if decoder_layer is None or decoder_layer == -1:
+            decoder_layer = self.architecture.nlayers - 1
         y = None
         for l in range(self.architecture.nlayers):
             if(not self.use_bias):
@@ -633,4 +640,5 @@ class FLIMModel(nn.Module):
         mask=marker_p[rx:X-rx,ry:Y-ry]
         mask=mask.flatten()
         
-        return patches[mask>0], np.argwhere(mask>0)
+        # Use flat integer indices to avoid propagating shape-(1,) arrays.
+        return patches[mask>0], np.flatnonzero(mask>0)
