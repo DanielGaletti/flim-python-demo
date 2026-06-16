@@ -1,0 +1,25 @@
+=== FLIM-AD | Parasites (Schistosoma) ===
+Reprodução vs Paper | média splits 1/2/3
+
+Modelo    User  MAE(p) MAE(r)  Fb(p)  Fb(r)   DFb
+-------------------------------------------------------
+FLIMts     A    0.010  0.010   0.747  0.691  -0.056
+FLIMts     B    0.013  0.010   0.687  0.681  -0.006
+FLIMat     A    0.011  0.014   0.740  0.576  -0.164
+FLIMat     B    0.014  0.018   0.660  0.461  -0.199
+FLIMpb     A    0.006  0.010   0.857  0.694  -0.163
+FLIMpb     B    0.006  0.011   0.847  0.671  -0.176
+
+(p)=paper  (r)=reprodução  D=delta
+
+--- Todos decoders | user_A ---
+Modelo      MAE    Fb
+-----------------------
+FLIMts     0.010  0.691
+FLIMad3    0.010  0.699
+FLIMad2    0.011  0.685
+FLIMpb     0.010  0.694
+FLIMhyb    0.011  0.635
+FLIMat     0.014  0.576
+FLIMatt    0.016  0.529
+FLIMat_wt  0.019  0.473

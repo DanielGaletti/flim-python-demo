@@ -160,3 +160,10 @@ cython_debug/
 #.idea/
 
 out/
+
+# AL / experiment artifacts
+.pip_cache/
+flim_venv/
+flim_ad/out/
+out/
+*.log
