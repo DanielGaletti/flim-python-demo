@@ -1,0 +1,248 @@
+=== [1/4] Limpando resultados antigos (markers bugados) ===
+Limpo.
+
+=== [2/4] Instalando dependências ===
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Dependências OK.
+
+=== [3/4] Rodando AL com K=3,5,10 (split1, entropy, 1 seed) ===
+/opt/conda/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: libtorch_cuda_cu.so: cannot open shared object file: No such file or directory
+  warn(f"Failed to load image Python extension: {e}")
+Device: cpu | Acquisition: entropy
+
+============================================================
+Split 1
+============================================================
+  Pool: 610 imagens | top-3: ['000002.png', '000003.png', '000004.png']
+  Val: 848 imagens
+
+  [baseline] Encoder original (3 imagens)...
+  [eval] labeled_marker layer=3... Fβ=0.362
+  [eval] vanilla_adaptive_decoder layer=3... Fβ=0.372
+  [eval] vanilla_adaptive_decoder_wt layer=3... Fβ=0.340
+  [eval] decoder_2 layer=3... Fβ=0.391
+  [eval] decoder_3 layer=3... Fβ=0.399
+  [eval] decoder_attention layer=3... Fβ=0.352
+  [eval] hybrid_decoder layer=3... Fβ=0.398
+
+  Budget = 3
+    AL  selecionadas: ['000002.png', '000003.png', '000004.png']...
+  [markers] 3 originais + 3 sintéticos = 6 total em /tmp/flim_al_split1_K3_egkigo_4/al_markers
+  [encoder] Treinando com 6 imagens: ['000675', '000917', '000003', '000002', '000004']...
+Learning layer 0...
+Learning layer 1...
+Learning layer 2...
+Learning layer 3...
+  [encoder] Salvo em out/al_encoder_results/schisto/user_A/split1/entropy/budget3/encoder.pth
+  [eval] labeled_marker layer=3... Fβ=0.280
+  [eval] vanilla_adaptive_decoder layer=3... Fβ=0.280
+  [eval] vanilla_adaptive_decoder_wt layer=3... Fβ=0.122
+  [eval] decoder_2 layer=3... Fβ=0.327
+  [eval] decoder_3 layer=3... Fβ=0.248
+  [eval] decoder_attention layer=3... Fβ=0.137
+  [eval] hybrid_decoder layer=3... Fβ=0.319
+    AL  labeled_marker        Fβ=0.280
+    AL  vanilla_adaptive_dec  Fβ=0.280
+    AL  vanilla_adaptive_dec  Fβ=0.122
+    AL  decoder_2             Fβ=0.327
+    AL  decoder_3             Fβ=0.248
+    AL  decoder_attention     Fβ=0.137
+    AL  hybrid_decoder        Fβ=0.319
+  [markers] 3 originais + 3 sintéticos = 6 total em /tmp/flim_al_split1_K3_egkigo_4/rand0_markers
+  [encoder] Treinando com 6 imagens: ['000675', '000917', '000840', '000774', '000071']...
+Learning layer 0...
+Learning layer 1...
+Learning layer 2...
+Learning layer 3...
+  [encoder] Salvo em out/al_encoder_results/schisto/user_A/split1/entropy/budget3/rand0/encoder.pth
+  [eval] labeled_marker layer=3... Fβ=0.000
+  [eval] vanilla_adaptive_decoder layer=3... Fβ=0.022
+  [eval] vanilla_adaptive_decoder_wt layer=3... Fβ=0.071
+  [eval] decoder_2 layer=3... Fβ=0.000
+  [eval] decoder_3 layer=3... Fβ=0.065
+  [eval] decoder_attention layer=3... Fβ=0.042
+  [eval] hybrid_decoder layer=3... Fβ=0.010
+    Rand labeled_marker        Fβ=0.000  (avg 1 seeds)
+    Rand vanilla_adaptive_dec  Fβ=0.022  (avg 1 seeds)
+    Rand vanilla_adaptive_dec  Fβ=0.071  (avg 1 seeds)
+    Rand decoder_2             Fβ=0.000  (avg 1 seeds)
+    Rand decoder_3             Fβ=0.065  (avg 1 seeds)
+    Rand decoder_attention     Fβ=0.042  (avg 1 seeds)
+    Rand hybrid_decoder        Fβ=0.010  (avg 1 seeds)
+
+  Budget = 5
+    AL  selecionadas: ['000002.png', '000003.png', '000004.png']...
+  [markers] 3 originais + 5 sintéticos = 8 total em /tmp/flim_al_split1_K5_0e_z6b1d/al_markers
+  [encoder] Treinando com 8 imagens: ['000008', '000675', '000917', '000003', '000002']...
+Learning layer 0...
+Learning layer 1...
+Learning layer 2...
+Learning layer 3...
+  [encoder] Salvo em out/al_encoder_results/schisto/user_A/split1/entropy/budget5/encoder.pth
+  [eval] labeled_marker layer=3... Fβ=0.311
+  [eval] vanilla_adaptive_decoder layer=3... Fβ=0.248
+  [eval] vanilla_adaptive_decoder_wt layer=3... Fβ=0.162
+  [eval] decoder_2 layer=3... Fβ=0.282
+  [eval] decoder_3 layer=3... Fβ=0.191
+  [eval] decoder_attention layer=3... Fβ=0.157
+  [eval] hybrid_decoder layer=3... Fβ=0.315
+    AL  labeled_marker        Fβ=0.311
+    AL  vanilla_adaptive_dec  Fβ=0.248
+    AL  vanilla_adaptive_dec  Fβ=0.162
+    AL  decoder_2             Fβ=0.282
+    AL  decoder_3             Fβ=0.191
+    AL  decoder_attention     Fβ=0.157
+    AL  hybrid_decoder        Fβ=0.315
+  [markers] 3 originais + 5 sintéticos = 8 total em /tmp/flim_al_split1_K5_0e_z6b1d/rand0_markers
+  [encoder] Treinando com 8 imagens: ['000675', '000917', '000508', '000840', '000774']...
+Learning layer 0...
+Learning layer 1...
+Learning layer 2...
+Learning layer 3...
+  [encoder] Salvo em out/al_encoder_results/schisto/user_A/split1/entropy/budget5/rand0/encoder.pth
+  [eval] labeled_marker layer=3... Fβ=0.000
+  [eval] vanilla_adaptive_decoder layer=3... Fβ=0.054
+  [eval] vanilla_adaptive_decoder_wt layer=3... Fβ=0.086
+  [eval] decoder_2 layer=3... Fβ=0.001
+  [eval] decoder_3 layer=3... Fβ=0.091
+  [eval] decoder_attention layer=3... Fβ=0.052
+  [eval] hybrid_decoder layer=3... Fβ=0.061
+    Rand labeled_marker        Fβ=0.000  (avg 1 seeds)
+    Rand vanilla_adaptive_dec  Fβ=0.054  (avg 1 seeds)
+    Rand vanilla_adaptive_dec  Fβ=0.086  (avg 1 seeds)
+    Rand decoder_2             Fβ=0.001  (avg 1 seeds)
+    Rand decoder_3             Fβ=0.091  (avg 1 seeds)
+    Rand decoder_attention     Fβ=0.052  (avg 1 seeds)
+    Rand hybrid_decoder        Fβ=0.061  (avg 1 seeds)
+
+  Budget = 10
+    AL  selecionadas: ['000002.png', '000003.png', '000004.png']...
+  [markers] 3 originais + 10 sintéticos = 13 total em /tmp/flim_al_split1_K10_hipuapn9/al_markers
+  [encoder] Treinando com 13 imagens: ['000008', '000675', '000917', '000014', '000003']...
+Learning layer 0...
+Learning layer 1...
+Learning layer 2...
+Learning layer 3...
+  [encoder] Salvo em out/al_encoder_results/schisto/user_A/split1/entropy/budget10/encoder.pth
+  [eval] labeled_marker layer=3... Fβ=0.326
+  [eval] vanilla_adaptive_decoder layer=3... Fβ=0.218
+  [eval] vanilla_adaptive_decoder_wt layer=3... Fβ=0.152
+  [eval] decoder_2 layer=3... Fβ=0.277
+  [eval] decoder_3 layer=3... Fβ=0.167
+  [eval] decoder_attention layer=3... Fβ=0.168
+  [eval] hybrid_decoder layer=3... Fβ=0.288
+    AL  labeled_marker        Fβ=0.326
+    AL  vanilla_adaptive_dec  Fβ=0.218
+    AL  vanilla_adaptive_dec  Fβ=0.152
+    AL  decoder_2             Fβ=0.277
+    AL  decoder_3             Fβ=0.167
+    AL  decoder_attention     Fβ=0.168
+    AL  hybrid_decoder        Fβ=0.288
+  [markers] 3 originais + 10 sintéticos = 13 total em /tmp/flim_al_split1_K10_hipuapn9/rand0_markers
+  [encoder] Treinando com 13 imagens: ['000811', '000675', '000917', '000508', '000614']...
+Learning layer 0...
+Learning layer 1...
+Learning layer 2...
+Learning layer 3...
+  [encoder] Salvo em out/al_encoder_results/schisto/user_A/split1/entropy/budget10/rand0/encoder.pth
+  [eval] labeled_marker layer=3... Fβ=0.000
+  [eval] vanilla_adaptive_decoder layer=3... Fβ=0.072
+  [eval] vanilla_adaptive_decoder_wt layer=3... Fβ=0.119
+  [eval] decoder_2 layer=3... Fβ=0.110
+  [eval] decoder_3 layer=3... Fβ=0.119
+  [eval] decoder_attention layer=3... Fβ=0.096
+  [eval] hybrid_decoder layer=3... Fβ=0.110
+    Rand labeled_marker        Fβ=0.000  (avg 1 seeds)
+    Rand vanilla_adaptive_dec  Fβ=0.072  (avg 1 seeds)
+    Rand vanilla_adaptive_dec  Fβ=0.119  (avg 1 seeds)
+    Rand decoder_2             Fβ=0.110  (avg 1 seeds)
+    Rand decoder_3             Fβ=0.119  (avg 1 seeds)
+    Rand decoder_attention     Fβ=0.096  (avg 1 seeds)
+    Rand hybrid_decoder        Fβ=0.110  (avg 1 seeds)
+
+CSV salvo: out/al_encoder_results/schisto-user_A_entropy_encoder_al.csv  (70 linhas)
+
+======================================================================
+Fβ médio (splits) por decoder e método
+Decoder                          Original         AL     Random   Δ(AL-Rand)
+----------------------------------------------------------------------
+labeled_marker                      0.362      0.305      0.000       +0.305 ✓
+vanilla_adaptive_decoder            0.372      0.249      0.049       +0.199 ✓
+vanilla_adaptive_decoder_wt         0.340      0.145      0.092       +0.053 ✓
+decoder_2                           0.391      0.295      0.037       +0.258 ✓
+decoder_3                           0.399      0.202      0.091       +0.111 ✓
+decoder_attention                   0.352      0.154      0.063       +0.091 ✓
+hybrid_decoder                      0.398      0.307      0.060       +0.247 ✓
+
+=== [4/4] Resultados ===
+split,budget,method,acquisition,decoder,fb,dice,mae
+1,3,original_3imgs,none,labeled_marker,0.3624,0.3018,0.0102
+1,3,original_3imgs,none,vanilla_adaptive_decoder,0.3724,0.32,0.0117
+1,3,original_3imgs,none,vanilla_adaptive_decoder_wt,0.3402,0.3105,0.0187
+1,3,original_3imgs,none,decoder_2,0.3909,0.3389,0.0111
+1,3,original_3imgs,none,decoder_3,0.3988,0.3544,0.0108
+1,3,original_3imgs,none,decoder_attention,0.352,0.3177,0.0162
+1,3,original_3imgs,none,hybrid_decoder,0.3982,0.3514,0.0113
+1,3,al_entropy,entropy,labeled_marker,0.2798,0.244,0.0145
+1,3,al_entropy,entropy,vanilla_adaptive_decoder,0.2796,0.2629,0.0202
+1,3,al_entropy,entropy,vanilla_adaptive_decoder_wt,0.1221,0.143,0.0832
+1,3,al_entropy,entropy,decoder_2,0.3266,0.3213,0.0275
+1,3,al_entropy,entropy,decoder_3,0.2476,0.266,0.0451
+1,3,al_entropy,entropy,decoder_attention,0.137,0.1563,0.077
+1,3,al_entropy,entropy,hybrid_decoder,0.319,0.3157,0.0204
+1,3,random_seed0,random,labeled_marker,0.0,0.0,0.0136
+1,3,random_seed0,random,vanilla_adaptive_decoder,0.0219,0.0231,0.0198
+1,3,random_seed0,random,vanilla_adaptive_decoder_wt,0.0712,0.0855,0.0835
+1,3,random_seed0,random,decoder_2,0.0,0.0,0.0136
+1,3,random_seed0,random,decoder_3,0.0647,0.0831,0.0933
+1,3,random_seed0,random,decoder_attention,0.0417,0.0512,0.0868
+1,3,random_seed0,random,hybrid_decoder,0.01,0.0117,0.0167
+1,3,random,random,labeled_marker,0.0,0.0,0.0136
+1,3,random,random,vanilla_adaptive_decoder,0.0219,0.0231,0.0198
+1,3,random,random,vanilla_adaptive_decoder_wt,0.0712,0.0855,0.0835
+1,3,random,random,decoder_2,0.0,0.0,0.0136
+1,3,random,random,decoder_3,0.0647,0.0831,0.0933
+1,3,random,random,decoder_attention,0.0417,0.0512,0.0868
+1,3,random,random,hybrid_decoder,0.01,0.0117,0.0167
+1,5,al_entropy,entropy,labeled_marker,0.311,0.2656,0.012
+1,5,al_entropy,entropy,vanilla_adaptive_decoder,0.2477,0.2349,0.021
+1,5,al_entropy,entropy,vanilla_adaptive_decoder_wt,0.1621,0.1752,0.0718
+1,5,al_entropy,entropy,decoder_2,0.2818,0.292,0.0364
+1,5,al_entropy,entropy,decoder_3,0.1909,0.2155,0.0556
+1,5,al_entropy,entropy,decoder_attention,0.1573,0.1702,0.0722
+1,5,al_entropy,entropy,hybrid_decoder,0.3153,0.3061,0.0195
+1,5,random_seed0,random,labeled_marker,0.0,0.0,0.0136
+1,5,random_seed0,random,vanilla_adaptive_decoder,0.0544,0.0539,0.0211
+1,5,random_seed0,random,vanilla_adaptive_decoder_wt,0.0861,0.0977,0.0823
+1,5,random_seed0,random,decoder_2,0.0009,0.0007,0.0166
+1,5,random_seed0,random,decoder_3,0.0905,0.1133,0.0849
+1,5,random_seed0,random,decoder_attention,0.0522,0.0554,0.0743
+1,5,random_seed0,random,hybrid_decoder,0.0612,0.071,0.0262
+1,5,random,random,labeled_marker,0.0,0.0,0.0136
+1,5,random,random,vanilla_adaptive_decoder,0.0544,0.0539,0.0211
+1,5,random,random,vanilla_adaptive_decoder_wt,0.0861,0.0977,0.0823
+1,5,random,random,decoder_2,0.0009,0.0007,0.0166
+1,5,random,random,decoder_3,0.0905,0.1133,0.0849
+1,5,random,random,decoder_attention,0.0522,0.0554,0.0743
+1,5,random,random,hybrid_decoder,0.0612,0.071,0.0262
+1,10,al_entropy,entropy,labeled_marker,0.3257,0.2748,0.0115
+1,10,al_entropy,entropy,vanilla_adaptive_decoder,0.2184,0.2111,0.0242
+1,10,al_entropy,entropy,vanilla_adaptive_decoder_wt,0.1522,0.1665,0.0737
+1,10,al_entropy,entropy,decoder_2,0.277,0.2879,0.0384
+1,10,al_entropy,entropy,decoder_3,0.1673,0.1931,0.0626
+1,10,al_entropy,entropy,decoder_attention,0.1683,0.1786,0.0703
+1,10,al_entropy,entropy,hybrid_decoder,0.2881,0.2856,0.0241
+1,10,random_seed0,random,labeled_marker,0.0,0.0,0.0136
+1,10,random_seed0,random,vanilla_adaptive_decoder,0.0721,0.0724,0.0206
+1,10,random_seed0,random,vanilla_adaptive_decoder_wt,0.1195,0.1197,0.0677
+1,10,random_seed0,random,decoder_2,0.1096,0.0905,0.0161
+1,10,random_seed0,random,decoder_3,0.1185,0.143,0.0773
+1,10,random_seed0,random,decoder_attention,0.0958,0.0937,0.0734
+1,10,random_seed0,random,hybrid_decoder,0.1099,0.117,0.0246
+1,10,random,random,labeled_marker,0.0,0.0,0.0136
+1,10,random,random,vanilla_adaptive_decoder,0.0721,0.0724,0.0206
+1,10,random,random,vanilla_adaptive_decoder_wt,0.1195,0.1197,0.0677
+1,10,random,random,decoder_2,0.1096,0.0905,0.0161
+1,10,random,random,decoder_3,0.1185,0.143,0.0773
+1,10,random,random,decoder_attention,0.0958,0.0937,0.0734
+1,10,random,random,hybrid_decoder,0.1099,0.117,0.0246

@@ -9,30 +9,39 @@ Pergunta científica:
    dado que o usuário só pode anotar K imagens?"
 
 Pipeline:
-  1. Encoder atual (3 imagens) gera saliency maps do pool (610 imgs)
+  1. Encoder atual (3 imagens) gera saliency maps do pool
   2. AL ranqueia pool por incerteza (entropy/coreset/badge)
   3. Para cada budget K:
        AL:     seleciona K imagens mais informativas
        Random: seleciona K imagens aleatoriamente (N seeds, média)
        → Gera markers sintéticos (simula usuário desenhando seeds)
        → Re-treina encoder FLIM com 3 originais + K selecionadas
-       → Roda TODOS os decoders no val set (sem treino extra)
-       → Computa Fβ para cada decoder
+       → Roda decoder(s) no val set
+       → Se --use_dt: roda iftSMansoniDelineation → Fβ pixel dos masks DT
+       → Se não:      Fβ pixel dos saliency com Otsu+AF
   4. Tabela: original(3 imgs) | AL-K | Random-K por decoder
 
-Resultado esperado:
-  Com K bem escolhido por AL, encoder aprende features melhores →
-  todos os decoders (labeled_marker, adaptive, hybrid...) melhoram.
-
-Uso:
+Modo com DT (reprodução do paper):
   cd flim_ad
   python3 ../flim_al/al_encoder_experiment.py \\
       --markers schisto/user_A \\
       --splits 1 \\
       --budgets 3 5 10 \\
       --acquisition entropy \\
-      --n_seeds 3 \\
-      --device cuda:0 \\
+      --n_seeds 1 \\
+      --device cpu \\
+      --save_dir out/al_encoder_results \\
+      --use_dt \\
+      --dt_bin libs/ift/bin/iftSMansoniDelineation
+
+Modo sem DT (rápido, pixel Fβ):
+  python3 ../flim_al/al_encoder_experiment.py \\
+      --markers schisto/user_A \\
+      --splits 1 \\
+      --budgets 3 5 10 \\
+      --acquisition entropy \\
+      --n_seeds 1 \\
+      --device cpu \\
       --save_dir out/al_encoder_results
 
 Referências:
@@ -181,6 +190,85 @@ def retrain_encoder(
 
 # ── Avaliação de um decoder sobre o val set ──────────────────────────────────
 
+# ── Dynamic Trees — helpers ──────────────────────────────────────────────────
+
+def _ensure_dt_symlinks(dataset_folder: str) -> None:
+    """
+    iftSMansoniDelineation espera dataset_folder/images/ e /truelabels/.
+    O dataset tem orig/ e label/ — cria symlinks se necessário.
+    """
+    imgs_link = os.path.join(dataset_folder, "images")
+    lbl_link  = os.path.join(dataset_folder, "truelabels")
+    if not os.path.exists(imgs_link):
+        os.symlink(os.path.join(dataset_folder, "orig"), imgs_link)
+    if not os.path.exists(lbl_link):
+        os.symlink(os.path.join(dataset_folder, "label"), lbl_link)
+
+
+def _run_dt(dt_bin: str, dataset_folder: str, sal_dir: str, out_dir: str,
+            area_range: tuple[int, int] = (1000, 9000),
+            border_dist: int = 8, seed_dil: int = 8, seed_ero: int = 8,
+            thr: int = 128) -> str:
+    """
+    Chama iftSMansoniDelineation e retorna o diretório com as máscaras.
+    O binário cria subdiretório masks/ dentro de out_dir.
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    cmd = (
+        f"{dt_bin} {dataset_folder} {sal_dir} 2 {out_dir} "
+        f"{border_dist} {seed_dil} {seed_ero} "
+        f"{area_range[0]} {area_range[1]} {thr}"
+    )
+    ret = os.system(cmd)
+    if ret != 0:
+        print(f"  [DT] aviso: binário retornou código {ret}")
+    # binário cria masks/ dentro de out_dir
+    masks_sub = os.path.join(out_dir, "masks")
+    return masks_sub if os.path.isdir(masks_sub) else out_dir
+
+
+def _fb_from_masks(masks_dir: str, val_fnames: list[str],
+                   label_folder: str, beta2: float = 0.3) -> dict[str, float]:
+    """
+    Computa Fβ pixel-level (β²=0.3) e DICE a partir de masks binárias.
+    Replica FLIMMetrics.fmeasure + dice_score de metrics.py.
+    Imagens sem mask → predição vazia.
+    """
+    eps = 1e-8
+    fbs, dices = [], []
+    for fname in val_fnames:
+        gt_path   = os.path.join(label_folder, fname)
+        mask_path = os.path.join(masks_dir, fname)
+        if not os.path.exists(gt_path):
+            continue
+        gt_bin = (np.array(Image.open(gt_path).convert("L")) > 0).astype(np.uint8)
+        if os.path.exists(mask_path):
+            pred_bin = (np.array(Image.open(mask_path)) > 0).astype(np.uint8)
+        else:
+            pred_bin = np.zeros_like(gt_bin)
+        # Fβ pixel
+        if gt_bin.sum() == 0 and pred_bin.sum() == 0:
+            fbs.append(1.0)
+        else:
+            tp = float(np.sum((pred_bin == 1) & (gt_bin == 1)))
+            fp = float(np.sum((pred_bin == 1) & (gt_bin == 0)))
+            fn = float(np.sum((pred_bin == 0) & (gt_bin == 1)))
+            pr = tp / (tp + fp + eps); rc = tp / (tp + fn + eps)
+            fbs.append((1 + beta2) * pr * rc / (beta2 * pr + rc + eps))
+        # DICE
+        gs, ps = gt_bin.sum(), pred_bin.sum()
+        if gs == 0 and ps == 0:       dices.append(1.0)
+        elif gs == 0 or ps == 0:      dices.append(0.0)
+        else: dices.append(2.0 * float((gt_bin * pred_bin).sum()) / (gs + ps))
+    return {
+        "fb":   float(np.mean(fbs))   if fbs   else 0.0,
+        "dice": float(np.mean(dices)) if dices else 0.0,
+        "mae":  0.0,
+    }
+
+
+# ── Pipeline sem DT — helpers ─────────────────────────────────────────────────
+
 def _official_filter_and_binarize(sal_uint8: np.ndarray,
                                    area_range: tuple[int, int] = (1000, 9000)) -> np.ndarray:
     """
@@ -240,16 +328,22 @@ def evaluate_decoder(
     label_folder: str,
     device: str,
     area_range: tuple[int, int] = (1000, 9000),
+    use_dt: bool = False,
+    dt_bin: str | None = None,
+    dataset_folder: str | None = None,
 ) -> dict[str, float]:
     """
-    Avalia um decoder replicando EXATAMENTE o pipeline oficial do paper FLIM-AD:
-      1. Forward pass do encoder → saliency uint8 (igual a model.run())
-      2. Otsu (skimage) → binariza
-      3. filter_component_by_area: mantém componentes com pixels em [area_range]
-      4. Computa DICE com semântica oficial (1.0 para imagens corretamente vazias)
-         — reproduz FLIMMetrics.dice_score de src/metrics/metrics.py
+    Avalia um decoder.
 
-    Carrega em CPU para evitar device mismatch nos decoders adaptativos do pyflim.
+    Sem DT (use_dt=False):
+      forward pass → saliency uint8 → Otsu+AF[area_range] → Fβ pixel (β²=0.3)
+
+    Com DT (use_dt=True):
+      forward pass → saliency uint8 → salva em temp dir →
+      iftSMansoniDelineation → masks/ → Fβ pixel (β²=0.3) dos masks DT
+      (reproduz pipeline paper: OT → DT → Fβ)
+
+    Sempre carrega em CPU para evitar device mismatch no pyflim.
     """
     eval_device = "cpu"
 
@@ -272,66 +366,82 @@ def evaluate_decoder(
     )
 
     layer_idx = target_layer - 1
-    dices, fbs, maes = [], [], []
 
-    for fname in val_fnames:
-        orig_path  = os.path.join(orig_folder, fname)
-        label_path = os.path.join(label_folder, fname)
-        if not (os.path.exists(orig_path) and os.path.exists(label_path)):
-            continue
+    # ── Fase 1: gera saliency maps para todas as imagens ──────────────────
+    sal_tmp = tempfile.mkdtemp(prefix="flim_sal_")
+    try:
+        for fname in val_fnames:
+            orig_path = os.path.join(orig_folder, fname)
+            if not os.path.exists(orig_path):
+                continue
 
-        # ── Pré-processamento idêntico ao FLIMData.__getitem__ ──────────────
-        img     = Image.open(orig_path).convert("RGB")
-        orig_h, orig_w = img.size[1], img.size[0]
-        arr_lab = image_to_lab(np.array(img, dtype=np.uint8))  # LAB normalizado
-        arr     = arr_lab.transpose(2, 0, 1)                   # (3,H,W)
-        x       = torch.tensor(arr).unsqueeze(0)
+            img     = Image.open(orig_path).convert("RGB")
+            orig_h, orig_w = img.size[1], img.size[0]
+            arr_lab = image_to_lab(np.array(img, dtype=np.uint8))
+            x       = torch.tensor(arr_lab.transpose(2, 0, 1)).unsqueeze(0)
 
-        # ── Forward pass ────────────────────────────────────────────────────
-        y_hat, _ = model.forward(x, decoder_layer=[layer_idx])
-        pred = y_hat[0].float()
-        if pred.dim() == 3:
-            pred = pred.unsqueeze(0)
+            y_hat, _ = model.forward(x, decoder_layer=[layer_idx])
+            pred = y_hat[0].float()
+            if pred.dim() == 3:
+                pred = pred.unsqueeze(0)
 
-        # ── Cast para uint8 igual a model.run() ─────────────────────────────
-        pred_np = pred.squeeze().numpy()
-        pred_uint8 = pred_np.astype(np.uint8)   # igual: saliency = y[...].astype(np.uint8)
+            sal_uint8 = pred.squeeze().numpy().astype(np.uint8)
 
-        # ── Redimensiona para tamanho original ──────────────────────────────
-        if pred_uint8.shape[0] != orig_h or pred_uint8.shape[1] != orig_w:
-            from PIL import Image as PILImage
-            pred_uint8 = np.array(
-                PILImage.fromarray(pred_uint8).resize((orig_w, orig_h), PILImage.BILINEAR),
-                dtype=np.uint8
-            )
+            if sal_uint8.shape[0] != orig_h or sal_uint8.shape[1] != orig_w:
+                sal_uint8 = np.array(
+                    Image.fromarray(sal_uint8).resize((orig_w, orig_h), Image.BILINEAR),
+                    dtype=np.uint8,
+                )
 
-        # ── Filtro oficial: Otsu + área 1000-9000 ───────────────────────────
-        pred_bin = _official_filter_and_binarize(pred_uint8, area_range)
+            Image.fromarray(sal_uint8).save(os.path.join(sal_tmp, fname))
 
-        # ── GT ──────────────────────────────────────────────────────────────
-        gt_raw = np.array(Image.open(label_path).convert("L"))
-        gt_bin = (gt_raw > 0).astype(np.uint8)
+        # ── Fase 2a: com DT ───────────────────────────────────────────────
+        if use_dt and dt_bin and dataset_folder and os.path.isfile(dt_bin):
+            _ensure_dt_symlinks(dataset_folder)
+            dt_out_tmp = tempfile.mkdtemp(prefix="flim_dt_")
+            try:
+                masks_dir = _run_dt(
+                    dt_bin, dataset_folder, sal_tmp, dt_out_tmp, area_range
+                )
+                n_masks = len([f for f in os.listdir(masks_dir)
+                               if f.endswith(".png")]) if os.path.isdir(masks_dir) else 0
+                print(f"      [DT] {n_masks} masks geradas")
+                return _fb_from_masks(masks_dir, val_fnames, label_folder)
+            finally:
+                shutil.rmtree(dt_out_tmp, ignore_errors=True)
 
-        # ── Métricas com semântica oficial ──────────────────────────────────
-        dice = _official_dice(gt_bin, pred_bin)
+        # ── Fase 2b: sem DT — Otsu + AF inline ───────────────────────────
+        dices, fbs, maes = [], [], []
+        eps = 1e-8; beta2 = 0.3
 
-        eps   = 1e-8
-        beta2 = 0.3
-        tp = float((pred_bin & gt_bin).sum())
-        fp = float((pred_bin & ~gt_bin.astype(bool)).sum())
-        fn = float((~pred_bin.astype(bool) & gt_bin).sum()  )
-        pr = tp / (tp + fp + eps)
-        rc = tp / (tp + fn + eps)
-        fb = (1 + beta2) * pr * rc / (beta2 * pr + rc + eps)
-        mae = float(np.abs(pred_bin.astype(float) - gt_bin.astype(float)).mean())
+        for fname in val_fnames:
+            sal_path   = os.path.join(sal_tmp, fname)
+            label_path = os.path.join(label_folder, fname)
+            if not (os.path.exists(sal_path) and os.path.exists(label_path)):
+                continue
 
-        fbs.append(fb); dices.append(dice); maes.append(mae)
+            sal_uint8 = np.array(Image.open(sal_path))
+            pred_bin  = _official_filter_and_binarize(sal_uint8, area_range)
+            gt_bin    = (np.array(Image.open(label_path).convert("L")) > 0).astype(np.uint8)
 
-    return {
-        "fb":   float(np.mean(fbs))   if fbs   else 0.0,
-        "dice": float(np.mean(dices)) if dices else 0.0,
-        "mae":  float(np.mean(maes))  if maes  else 1.0,
-    }
+            dice = _official_dice(gt_bin, pred_bin)
+            tp = float((pred_bin & gt_bin).sum())
+            fp = float((pred_bin & ~gt_bin.astype(bool)).sum())
+            fn = float((~pred_bin.astype(bool) & gt_bin).sum())
+            pr = tp / (tp + fp + eps); rc = tp / (tp + fn + eps)
+            fb = (1 + beta2) * pr * rc / (beta2 * pr + rc + eps)
+            mae = float(np.abs(pred_bin.astype(float) - gt_bin.astype(float)).mean())
+
+            fbs.append(fb); dices.append(dice); maes.append(mae)
+
+        return {
+            "fb":   float(np.mean(fbs))   if fbs   else 0.0,
+            "dice": float(np.mean(dices)) if dices else 0.0,
+            "mae":  float(np.mean(maes))  if maes  else 1.0,
+        }
+
+    finally:
+        shutil.rmtree(sal_tmp, ignore_errors=True)
 
 
 # ── Avaliação de todos os decoders ───────────────────────────────────────────
@@ -342,21 +452,32 @@ def evaluate_all_decoders(
     orig_folder: str,
     label_folder: str,
     device: str,
+    use_dt: bool = False,
+    dt_bin: str | None = None,
+    dataset_folder: str | None = None,
 ) -> dict[str, dict[str, float]]:
     """
     Avalia todos os decoders da lista EVAL_DECODERS sobre o val set.
+
+    Com use_dt=True: avalia apenas labeled_marker (DT exige ~2 min/decoder;
+    avaliamos o decoder principal do paper para manter tempo razoável).
     Retorna dict: {decoder_type: {fb, dice, mae}}
     """
+    decoders_to_eval = (
+        [("labeled_marker", 3)] if use_dt else EVAL_DECODERS
+    )
     results = {}
-    for decoder_type, layer in EVAL_DECODERS:
-        print(f"  [eval] {decoder_type} layer={layer}...", end=" ")
+    for decoder_type, layer in decoders_to_eval:
+        label = "DT" if use_dt else "Otsu+AF"
+        print(f"  [eval/{label}] {decoder_type} layer={layer}...", end=" ")
         try:
             m = evaluate_decoder(
                 encoder_path, decoder_type, layer,
-                val_fnames, orig_folder, label_folder, device
+                val_fnames, orig_folder, label_folder, device,
+                use_dt=use_dt, dt_bin=dt_bin, dataset_folder=dataset_folder,
             )
             results[decoder_type] = m
-            print(f"Fβ={m['fb']:.3f}")
+            print(f"Fβ={m['fb']:.3f}  DICE={m['dice']:.3f}")
         except Exception as e:
             print(f"ERRO: {e}")
             traceback.print_exc()
@@ -431,6 +552,11 @@ def parse_args():
                    choices=["entropy", "coreset", "badge"])
     p.add_argument("--device",       default="cuda:0")
     p.add_argument("--save_dir",     default="out/al_encoder_results")
+    # Dynamic Trees
+    p.add_argument("--use_dt",  action="store_true",
+                   help="Usa iftSMansoniDelineation após saliency (reproduz paper)")
+    p.add_argument("--dt_bin",  default="libs/ift/bin/iftSMansoniDelineation",
+                   help="Caminho para o binário iftSMansoniDelineation")
     return p.parse_args()
 
 
@@ -464,11 +590,20 @@ def _append_csv(csv_path: str, new_rows: list[dict]) -> None:
 def main():
     args   = parse_args()
     device = args.device if torch.cuda.is_available() else "cpu"
-    print(f"Device: {device} | Acquisition: {args.acquisition}")
+    mode   = "DT" if args.use_dt else "Otsu+AF"
+    print(f"Device: {device} | Acquisition: {args.acquisition} | Eval: {mode}")
 
-    orig_folder  = os.path.join(args.dataset_home, "schistossoma-eggs", "orig")
-    label_folder = os.path.join(args.dataset_home, "schistossoma-eggs", "label")
+    dataset_folder = os.path.join(args.dataset_home, "schistossoma-eggs")
+    orig_folder    = os.path.join(dataset_folder, "orig")
+    label_folder   = os.path.join(dataset_folder, "label")
     os.makedirs(args.save_dir, exist_ok=True)
+
+    if args.use_dt:
+        _ensure_dt_symlinks(dataset_folder)
+        if not os.path.isfile(args.dt_bin):
+            print(f"ERRO: DT binário não encontrado: {args.dt_bin}")
+            sys.exit(1)
+        print(f"DT binário: {args.dt_bin}")
 
     # CSV incremental — definido no início para suportar resume
     tag      = args.markers.replace("/", "-")
@@ -515,11 +650,13 @@ def main():
         print(f"  Val: {len(val_fnames)} imagens")
 
         # ── Baseline: encoder original ──────────────────────────────────────
-        first_dec = EVAL_DECODERS[0][0]
+        first_dec = "labeled_marker" if args.use_dt else EVAL_DECODERS[0][0]
         if not _done(split, 3, "original_3imgs", first_dec):
             print("\n  [baseline] Encoder original (3 imagens)...")
             base_results = evaluate_all_decoders(
-                enc_path, val_fnames, orig_folder, label_folder, device
+                enc_path, val_fnames, orig_folder, label_folder, device,
+                use_dt=args.use_dt, dt_bin=args.dt_bin,
+                dataset_folder=dataset_folder,
             )
             _save([{
                 "split": split, "budget": 3, "method": "original_3imgs",
@@ -567,7 +704,9 @@ def main():
                         print(f"    [resume] encoder AL já existe — reutilizando")
 
                     al_results = evaluate_all_decoders(
-                        al_enc_path, val_fnames, orig_folder, label_folder, device
+                        al_enc_path, val_fnames, orig_folder, label_folder, device,
+                        use_dt=args.use_dt, dt_bin=args.dt_bin,
+                        dataset_folder=dataset_folder,
                     )
                     al_rows = []
                     for dec, m in al_results.items():
@@ -612,7 +751,9 @@ def main():
                             print(f"    [resume] encoder rand{rs} já existe — reutilizando")
 
                         r = evaluate_all_decoders(
-                            rand_enc_path, val_fnames, orig_folder, label_folder, device
+                            rand_enc_path, val_fnames, orig_folder, label_folder, device,
+                            use_dt=args.use_dt, dt_bin=args.dt_bin,
+                            dataset_folder=dataset_folder,
                         )
                         # Salva resultado individual de cada seed (para resume granular)
                         seed_rows = [{
@@ -667,7 +808,7 @@ def main():
     from collections import defaultdict
     grouped = defaultdict(lambda: defaultdict(list))
     for row in all_rows:
-        grouped[row["decoder"]][row["method"]].append(row["fb"])
+        grouped[row["decoder"]][row["method"]].append(float(row["fb"]))
 
     for dec in decoders:
         orig = np.mean(grouped[dec].get("original_3imgs", [0]))

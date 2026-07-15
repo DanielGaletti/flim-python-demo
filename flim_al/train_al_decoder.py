@@ -151,12 +151,11 @@ def main():
         print(f"\n{'='*60}\nSplit {split}\n{'='*60}")
 
         saliency_dir = (
-            f"out/saliencies_delination/{args.markers}/test/split{split}"
-            f"/{args.decoder}/layer_{args.layer}/filtered_saliencies/1000-9000"
+            f"out/saliencies/{args.markers}/test/split{split}"
+            f"/{args.decoder}/layer_{args.layer}"
         )
         mask_dir = os.path.join(
-            args.dataset_home, args.dataset,
-            args.markers.split("/")[-1], "test", f"split{split}", "masks"
+            args.dataset_home, "schistossoma-eggs", "label"
         )
 
         if not os.path.exists(saliency_dir):

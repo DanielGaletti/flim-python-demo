@@ -114,12 +114,11 @@ def main():
         model.load_state_dict(torch.load(model_path, map_location=device))
 
         saliency_dir = (
-            f"out/saliencies_delination/{args.markers}/test/split{split}"
-            f"/{args.decoder}/layer_{args.layer}/filtered_saliencies/1000-9000"
+            f"out/saliencies/{args.markers}/test/split{split}"
+            f"/{args.decoder}/layer_{args.layer}"
         )
         mask_dir = os.path.join(
-            args.dataset_home, "schisto",
-            args.markers.split("/")[-1], "test", f"split{split}", "masks"
+            args.dataset_home, "schistossoma-eggs", "label"
         )
 
         if not os.path.exists(saliency_dir):
