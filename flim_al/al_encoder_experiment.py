@@ -114,7 +114,7 @@ sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(FLIMPY))
 
 from pyflim import layers, flim as flimlib, data as flimdata, arch as flimarch
-from flim_al.acquisition import entropy_score
+from flim_al.acquisition import entropy_score, least_confidence, margin_score
 from flim_al.marker_generator import create_combined_marker_dir
 from flim_al.coreset_badge import (
     extract_encoder_features, extract_encoder_features_and_preds,
@@ -487,7 +487,17 @@ def evaluate_all_decoders(
 
 # ── Seleção por método de aquisição ──────────────────────────────────────────
 
-def score_saliencies(sal_dir: str, device: str):
+def score_saliencies(sal_dir: str, device: str, acquisition: str = "entropy"):
+    """Score saliency maps using the specified acquisition function.
+
+    Supported: 'entropy', 'least_confidence', 'margin'
+    """
+    _score_fn = {
+        "entropy":          entropy_score,
+        "least_confidence": least_confidence,
+        "margin":           margin_score,
+    }.get(acquisition, entropy_score)
+
     paths  = sorted(glob.glob(os.path.join(sal_dir, "*.png")))
     fnames = [os.path.basename(p) for p in paths]
     scores = []
@@ -497,7 +507,7 @@ def score_saliencies(sal_dir: str, device: str):
             arr = np.array(Image.open(p).convert("L"), dtype=np.float32) / 255.0
             tensors.append(torch.tensor(arr).unsqueeze(0).unsqueeze(0))
         batch = torch.cat(tensors, dim=0).to(device)
-        scores.extend(entropy_score(batch).cpu().tolist())
+        scores.extend(_score_fn(batch).cpu().tolist())
     return fnames, scores
 
 
@@ -511,7 +521,7 @@ def select_images(
     proxy_layer: int,
     device: str,
 ) -> list[str]:
-    if acquisition == "entropy":
+    if acquisition in ("entropy", "least_confidence", "margin"):
         return [fnames[i] for i in al_ranking[:budget]]
 
     encoder = torch.load(enc_path, map_location=device, weights_only=False)
@@ -549,7 +559,7 @@ def parse_args():
     p.add_argument("--n_bg_markers", type=int, default=300,
                    help="Seeds de background por imagem sintética")
     p.add_argument("--acquisition",  default="entropy",
-                   choices=["entropy", "coreset", "badge"])
+                   choices=["entropy", "least_confidence", "margin", "coreset", "badge"])
     p.add_argument("--device",       default="cuda:0")
     p.add_argument("--save_dir",     default="out/al_encoder_results")
     # Dynamic Trees
@@ -636,7 +646,7 @@ def main():
                     print(f"  Não encontrado: {n} ({p}) — skip split {split}")
             continue
 
-        fnames, scores = score_saliencies(sal_dir, device)
+        fnames, scores = score_saliencies(sal_dir, device, args.acquisition)
         N = len(fnames)
         al_ranking = sorted(range(N), key=lambda i: scores[i], reverse=True)
         print(f"  Pool: {N} imagens | top-3: {[fnames[i] for i in al_ranking[:3]]}")

@@ -50,6 +50,17 @@ def least_confidence(pred: torch.Tensor) -> torch.Tensor:
     return (1 - (pred - 0.5).abs() * 2).mean(dim=[1, 2, 3])
 
 
+def margin_score(pred: torch.Tensor) -> torch.Tensor:
+    """
+    Margin sampling for binary segmentation.
+    Margin = 1 - |p - (1-p)| = 1 - |2p - 1|.
+    Highest when p≈0.5 (margin between classes is smallest).
+    Equivalent to least_confidence for binary case but conceptually cleaner.
+    Shape: [B]
+    """
+    return (1 - (2 * pred - 1).abs()).mean(dim=[1, 2, 3])
+
+
 def bald_score(
     preds: Sequence[torch.Tensor],
     eps: float = 1e-8,
