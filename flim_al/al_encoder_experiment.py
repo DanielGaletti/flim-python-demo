@@ -116,6 +116,11 @@ sys.path.insert(0, str(FLIMPY))
 from pyflim import layers, flim as flimlib, data as flimdata, arch as flimarch
 from flim_al.acquisition import entropy_score, least_confidence, margin_score
 from flim_al.marker_generator import create_combined_marker_dir
+from flim_al.region_al import (
+    create_combined_region_marker_dir,
+    create_combined_region_marker_dir_bald,
+    iou_score,
+)
 from flim_al.coreset_badge import (
     extract_encoder_features, extract_encoder_features_and_preds,
     coreset_select, badge_select,
@@ -230,12 +235,12 @@ def _run_dt(dt_bin: str, dataset_folder: str, sal_dir: str, out_dir: str,
 def _fb_from_masks(masks_dir: str, val_fnames: list[str],
                    label_folder: str, beta2: float = 0.3) -> dict[str, float]:
     """
-    Computa Fβ pixel-level (β²=0.3) e DICE a partir de masks binárias.
+    Computa Fβ pixel-level (β²=0.3), DICE e IoU a partir de masks binárias.
     Replica FLIMMetrics.fmeasure + dice_score de metrics.py.
     Imagens sem mask → predição vazia.
     """
     eps = 1e-8
-    fbs, dices = [], []
+    fbs, dices, ious = [], [], []
     for fname in val_fnames:
         gt_path   = os.path.join(label_folder, fname)
         mask_path = os.path.join(masks_dir, fname)
@@ -260,10 +265,13 @@ def _fb_from_masks(masks_dir: str, val_fnames: list[str],
         if gs == 0 and ps == 0:       dices.append(1.0)
         elif gs == 0 or ps == 0:      dices.append(0.0)
         else: dices.append(2.0 * float((gt_bin * pred_bin).sum()) / (gs + ps))
+        # IoU
+        ious.append(iou_score(pred_bin, gt_bin))
     return {
         "fb":   float(np.mean(fbs))   if fbs   else 0.0,
         "dice": float(np.mean(dices)) if dices else 0.0,
         "mae":  0.0,
+        "iou":  float(np.mean(ious))  if ious  else 0.0,
     }
 
 
@@ -411,7 +419,7 @@ def evaluate_decoder(
                 shutil.rmtree(dt_out_tmp, ignore_errors=True)
 
         # ── Fase 2b: sem DT — Otsu + AF inline ───────────────────────────
-        dices, fbs, maes = [], [], []
+        dices, fbs, maes, ious = [], [], [], []
         eps = 1e-8; beta2 = 0.3
 
         for fname in val_fnames:
@@ -431,13 +439,15 @@ def evaluate_decoder(
             pr = tp / (tp + fp + eps); rc = tp / (tp + fn + eps)
             fb = (1 + beta2) * pr * rc / (beta2 * pr + rc + eps)
             mae = float(np.abs(pred_bin.astype(float) - gt_bin.astype(float)).mean())
+            iou = iou_score(pred_bin, gt_bin)
 
-            fbs.append(fb); dices.append(dice); maes.append(mae)
+            fbs.append(fb); dices.append(dice); maes.append(mae); ious.append(iou)
 
         return {
             "fb":   float(np.mean(fbs))   if fbs   else 0.0,
             "dice": float(np.mean(dices)) if dices else 0.0,
             "mae":  float(np.mean(maes))  if maes  else 1.0,
+            "iou":  float(np.mean(ious))  if ious  else 0.0,
         }
 
     finally:
@@ -477,7 +487,8 @@ def evaluate_all_decoders(
                 use_dt=use_dt, dt_bin=dt_bin, dataset_folder=dataset_folder,
             )
             results[decoder_type] = m
-            print(f"Fβ={m['fb']:.3f}  DICE={m['dice']:.3f}")
+            iou_str = f"  IoU={m['iou']:.3f}" if "iou" in m else ""
+            print(f"Fb={m['fb']:.3f}  DICE={m['dice']:.3f}{iou_str}")
         except Exception as e:
             print(f"ERRO: {e}")
             traceback.print_exc()
@@ -485,17 +496,166 @@ def evaluate_all_decoders(
     return results
 
 
+# ── Geração de saliency maps para pool ───────────────────────────────────────
+
+@torch.no_grad()
+def generate_pool_saliencies(
+    encoder_path: str,
+    pool_fnames: list,
+    orig_folder: str,
+    device: str,
+    out_dir: str,
+    decoder_type: str = "labeled_marker",
+    proxy_layer: int = 3,
+) -> str:
+    """
+    Gera saliency maps para todas as imagens do pool usando um encoder salvo.
+    Usado pelo comite BALD para produzir N conjuntos de saliencies.
+
+    Returns out_dir path.
+    """
+    eval_device = "cpu"
+    model = torch.load(encoder_path, map_location=eval_device, weights_only=False)
+    model.device = eval_device
+
+    for l in range(model.architecture.nlayers):
+        ml = getattr(model.layers[l], "marker_labels", None)
+        if ml is not None and hasattr(ml, "to"):
+            model.layers[l].marker_labels = ml.to(eval_device)
+
+    model.decoder = layers.FLIMAdaptiveDecoderLayer(
+        1, adaptation_function="robust_weights", filter_by_size=False,
+        device=eval_device, adj_radius=1.5,
+        decoder_type=decoder_type, multi_layer=False,
+    )
+    layer_idx = proxy_layer - 1
+    os.makedirs(out_dir, exist_ok=True)
+
+    for fname in pool_fnames:
+        out_path = os.path.join(out_dir, fname)
+        if os.path.exists(out_path):
+            continue
+        orig_path = os.path.join(orig_folder, fname)
+        if not os.path.exists(orig_path):
+            continue
+        img     = Image.open(orig_path).convert("RGB")
+        orig_h, orig_w = img.size[1], img.size[0]
+        arr_lab = image_to_lab(np.array(img, dtype=np.uint8))
+        x       = torch.tensor(arr_lab.transpose(2, 0, 1)).unsqueeze(0)
+        y_hat, _ = model.forward(x, decoder_layer=[layer_idx])
+        pred = y_hat[0].float()
+        if pred.dim() == 3:
+            pred = pred.unsqueeze(0)
+        sal_uint8 = pred.squeeze().numpy().astype(np.uint8)
+        if sal_uint8.shape[0] != orig_h or sal_uint8.shape[1] != orig_w:
+            sal_uint8 = np.array(
+                Image.fromarray(sal_uint8).resize((orig_w, orig_h), Image.BILINEAR),
+                dtype=np.uint8,
+            )
+        Image.fromarray(sal_uint8).save(out_path)
+
+    return out_dir
+
+
+def build_committee_saliencies(
+    arch_file: str,
+    orig_marker_dir: str,
+    orig_folder: str,
+    label_folder: str,
+    device: str,
+    n_committee: int,
+    save_dir: str,
+    split: int,
+    pool_fnames: list,
+    proxy_layer: int = 3,
+) -> list:
+    """
+    Treina N encoders com diferentes seeds k-means nos markers originais.
+    Cada encoder ve os mesmos dados mas inicializa k-means de forma diferente
+    (np.random.seed diferente antes do fit) — gera saliency maps ligeiramente
+    distintos. Onde eles discordam = BALD alto = regiao mais informativa.
+
+    Returns lista de N saliency dirs (um por encoder do comite).
+    """
+    sal_dirs = []
+    base = os.path.join(save_dir, "committee", f"split{split}")
+    os.makedirs(base, exist_ok=True)
+
+    for i in range(n_committee):
+        enc_path  = os.path.join(base, f"encoder_{i}.pth")
+        sal_dir_i = os.path.join(base, f"sal_{i}")
+
+        if not os.path.exists(enc_path):
+            print(f"  [committee {i+1}/{n_committee}] seed={i*7} treinando...")
+            np.random.seed(i * 7)            # seed diferente = k-means diferente
+            retrain_encoder(arch_file, orig_marker_dir,
+                            orig_folder, label_folder, device, enc_path)
+            np.random.seed(None)             # restaura estado aleatório global
+        else:
+            print(f"  [committee {i+1}/{n_committee}] encoder já existe — skip")
+
+        n_sal = len([f for f in os.listdir(sal_dir_i)
+                     if f.endswith(".png")]) if os.path.isdir(sal_dir_i) else 0
+        if n_sal < len(pool_fnames):
+            print(f"  [committee {i+1}/{n_committee}] gerando {len(pool_fnames)} saliencies...")
+            generate_pool_saliencies(enc_path, pool_fnames, orig_folder,
+                                     device, sal_dir_i, proxy_layer=proxy_layer)
+        else:
+            print(f"  [committee {i+1}/{n_committee}] saliencies já existem — skip")
+
+        sal_dirs.append(sal_dir_i)
+
+    return sal_dirs
+
+
+def score_saliencies_bald(sal_dirs: list, pool_fnames: list) -> tuple:
+    """
+    BALD image-level: media do BALD por pixel em cada imagem.
+    BALD(img) = media_pixel[ H(E[p]) - E[H(p)] ]
+
+    Mais alto = comite mais incerto sobre essa imagem = prioridade de selecao.
+    """
+    eps = 1e-6
+    scores = []
+    for fname in pool_fnames:
+        pixel_sals = []
+        for sal_dir in sal_dirs:
+            sal_path = os.path.join(sal_dir, fname)
+            if os.path.exists(sal_path):
+                sal = np.array(Image.open(sal_path).convert("L"),
+                               dtype=np.float64) / 255.0
+                sal = np.clip(sal, eps, 1 - eps)
+                pixel_sals.append(sal)
+
+        if not pixel_sals:
+            scores.append(0.0)
+            continue
+
+        mean_p = np.mean(pixel_sals, axis=0)
+        h_mean = -(mean_p * np.log(mean_p) + (1 - mean_p) * np.log(1 - mean_p))
+        hs     = [-(s * np.log(s) + (1 - s) * np.log(1 - s)) for s in pixel_sals]
+        mean_h = np.mean(hs, axis=0)
+        scores.append(float(np.clip(h_mean - mean_h, 0, None).mean()))
+
+    return pool_fnames, scores
+
+
 # ── Seleção por método de aquisição ──────────────────────────────────────────
 
 def score_saliencies(sal_dir: str, device: str, acquisition: str = "entropy"):
     """Score saliency maps using the specified acquisition function.
 
-    Supported: 'entropy', 'least_confidence', 'margin'
+    Supported: 'entropy', 'least_confidence', 'margin', 'region_entropy', 'region_margin'
+    region_* usa a mesma funcao de imagem-level (entropia/margin), mas a geracao
+    de markers depois e feita por regioes (em select_images / main loop).
     """
     _score_fn = {
         "entropy":          entropy_score,
         "least_confidence": least_confidence,
         "margin":           margin_score,
+        "region_entropy":   entropy_score,   # mesma selecao de imagem; markers por regiao
+        "region_margin":    margin_score,
+        # region_bald nao usa este caminho — tratado separadamente em main()
     }.get(acquisition, entropy_score)
 
     paths  = sorted(glob.glob(os.path.join(sal_dir, "*.png")))
@@ -521,7 +681,8 @@ def select_images(
     proxy_layer: int,
     device: str,
 ) -> list[str]:
-    if acquisition in ("entropy", "least_confidence", "margin"):
+    if acquisition in ("entropy", "least_confidence", "margin",
+                       "region_entropy", "region_margin", "region_bald"):
         return [fnames[i] for i in al_ranking[:budget]]
 
     encoder = torch.load(enc_path, map_location=device, weights_only=False)
@@ -559,7 +720,10 @@ def parse_args():
     p.add_argument("--n_bg_markers", type=int, default=300,
                    help="Seeds de background por imagem sintética")
     p.add_argument("--acquisition",  default="entropy",
-                   choices=["entropy", "least_confidence", "margin", "coreset", "badge"])
+                   choices=["entropy", "least_confidence", "margin", "coreset", "badge",
+                            "region_entropy", "region_margin", "region_bald"])
+    p.add_argument("--n_committee",  type=int, default=3,
+                   help="Numero de encoders no comite para region_bald")
     p.add_argument("--device",       default="cuda:0")
     p.add_argument("--save_dir",     default="out/al_encoder_results")
     # Dynamic Trees
@@ -570,7 +734,7 @@ def parse_args():
     return p.parse_args()
 
 
-FIELDNAMES = ["split", "budget", "method", "acquisition", "decoder", "fb", "dice", "mae"]
+FIELDNAMES = ["split", "budget", "method", "acquisition", "decoder", "fb", "dice", "mae", "iou"]
 
 
 def _load_csv(csv_path: str) -> tuple[list[dict], set]:
@@ -646,7 +810,25 @@ def main():
                     print(f"  Não encontrado: {n} ({p}) — skip split {split}")
             continue
 
-        fnames, scores = score_saliencies(sal_dir, device, args.acquisition)
+        # Para region_bald: treinar comite e calcular BALD antes de rankear
+        committee_sal_dirs = None
+        if args.acquisition == "region_bald":
+            # Usa pool do sal_dir existente para obter lista de fnames
+            _pool_fnames = sorted([os.path.basename(p)
+                                   for p in glob.glob(os.path.join(sal_dir, "*.png"))])
+            if not _pool_fnames:
+                print(f"  Saliency dir vazio: {sal_dir} — skip split {split}")
+                continue
+            print(f"  [committee] Construindo comite com {args.n_committee} encoders...")
+            committee_sal_dirs = build_committee_saliencies(
+                arch_file, orig_marker_dir, orig_folder, label_folder, device,
+                args.n_committee, args.save_dir, split,
+                _pool_fnames, args.proxy_layer,
+            )
+            fnames, scores = score_saliencies_bald(committee_sal_dirs, _pool_fnames)
+        else:
+            fnames, scores = score_saliencies(sal_dir, device, args.acquisition)
+
         N = len(fnames)
         al_ranking = sorted(range(N), key=lambda i: scores[i], reverse=True)
         print(f"  Pool: {N} imagens | top-3: {[fnames[i] for i in al_ranking[:3]]}")
@@ -701,10 +883,33 @@ def main():
                     print(f"    AL  selecionadas: {al_fnames[:3]}...")
 
                     al_marker_dir = os.path.join(work_dir, "al_markers")
-                    create_combined_marker_dir(
-                        orig_marker_dir, al_fnames, label_folder, al_marker_dir,
-                        n_fg=args.n_fg_markers, n_bg=args.n_bg_markers,
-                    )
+                    if args.acquisition == "region_bald":
+                        # BALD: seeds de regioes com maior desacordo entre encoders
+                        create_combined_region_marker_dir_bald(
+                            orig_marker_dir, al_fnames, label_folder,
+                            orig_folder, committee_sal_dirs, al_marker_dir,
+                            budget_per_image=20,
+                            n_superpixels=300,
+                            n_seeds_per_region=15,
+                            fg_threshold=0.15,
+                        )
+                    elif args.acquisition.startswith("region_"):
+                        # Region entropy/margin: seeds de regioes incertas (1 encoder)
+                        region_method = args.acquisition.replace("region_", "")
+                        create_combined_region_marker_dir(
+                            orig_marker_dir, al_fnames, label_folder,
+                            orig_folder, sal_dir, al_marker_dir,
+                            budget_per_image=20,
+                            n_superpixels=300,
+                            n_seeds_per_region=15,
+                            fg_threshold=0.15,
+                            method=region_method,
+                        )
+                    else:
+                        create_combined_marker_dir(
+                            orig_marker_dir, al_fnames, label_folder, al_marker_dir,
+                            n_fg=args.n_fg_markers, n_bg=args.n_bg_markers,
+                        )
 
                     # Reutiliza encoder salvo se já existir
                     if not os.path.exists(al_enc_path):
@@ -720,7 +925,8 @@ def main():
                     )
                     al_rows = []
                     for dec, m in al_results.items():
-                        print(f"    AL  {dec[:20]:20s}  Fβ={m['fb']:.3f}")
+                        iou_str = f"  IoU={m['iou']:.3f}" if "iou" in m else ""
+                        print(f"    AL  {dec[:20]:20s}  Fβ={m['fb']:.3f}{iou_str}")
                         al_rows.append({
                             "split": split, "budget": budget, "method": al_method,
                             "acquisition": args.acquisition, "decoder": dec,
@@ -731,7 +937,7 @@ def main():
                     print(f"    [resume] AL budget={budget} já avaliado — skip")
 
                 # ── Random ──────────────────────────────────────────────────
-                rand_results_acc = {dec: {"fb": [], "dice": [], "mae": []}
+                rand_results_acc = {dec: {"fb": [], "dice": [], "mae": [], "iou": []}
                                     for dec, _ in EVAL_DECODERS}
                 rand_method = "random"
 
