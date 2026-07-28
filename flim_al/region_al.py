@@ -602,6 +602,7 @@ def region_al_select_bald(
     n_seeds_per_region: int = 15,
     fg_threshold: float = 0.15,
     seed: int = 42,
+    region_method: str = "entropy",  # "bald" | "entropy" | "bald_weighted"
 ) -> dict:
     """
     Pipeline Region AL usando BALD com comite de N encoders.
@@ -611,6 +612,11 @@ def region_al_select_bald(
     image         : [H, W, 3] uint8 RGB
     saliency_maps : list de N arrays [H, W] float32 — saliency de cada encoder
     gt_mask       : [H, W] uint8 — GT para simulacao do especialista
+    region_method : como selecionar regioes dentro de cada imagem:
+        "bald"         — BALD puro (desacordo entre encoders; pode pegar so bg)
+        "entropy"      — entropia da saliency media (hibrido: BALD p/ imagem,
+                         entropy p/ seed placement — mais fg seeds)
+        "bald_weighted"— BALD * saliency_media (prefere fg incerto)
 
     Returns
     -------
@@ -621,8 +627,27 @@ def region_al_select_bald(
     gt_bin = (gt_mask > 0)
 
     superpixels = compute_superpixels(image, n_segments=n_superpixels)
-    scores      = score_regions_by_bald(superpixels, saliency_maps)
-    selected    = select_top_regions(scores, budget)
+
+    # Saliency media do comite (usada para entropy e bald_weighted)
+    eps = 1e-6
+    mean_sal = np.mean(
+        [np.clip(s.astype(np.float64), eps, 1 - eps) for s in saliency_maps], axis=0
+    ).astype(np.float32)
+
+    if region_method == "bald":
+        scores = score_regions_by_bald(superpixels, saliency_maps)
+    elif region_method == "bald_weighted":
+        # BALD * saliency_media: prefere regioes incertas E potencialmente fg
+        bald_scores = score_regions_by_bald(superpixels, saliency_maps)
+        sal_scores  = {}
+        for region_id in np.unique(superpixels):
+            mask = superpixels == region_id
+            sal_scores[int(region_id)] = float(mean_sal[mask].mean())
+        scores = {r: bald_scores[r] * (sal_scores[r] + eps) for r in bald_scores}
+    else:  # "entropy" (padrao — hibrido robusto)
+        scores = score_regions_by_entropy(superpixels, mean_sal)
+
+    selected = select_top_regions(scores, budget)
 
     labels = {}
     for region_id in selected:
@@ -660,6 +685,7 @@ def create_combined_region_marker_dir_bald(
     n_superpixels: int = 300,
     n_seeds_per_region: int = 15,
     fg_threshold: float = 0.15,
+    region_method: str = "entropy",  # "bald" | "entropy" | "bald_weighted"
 ) -> str:
     """
     Combina markers originais + markers Region BALD (comite) para imagens selecionadas.
@@ -716,12 +742,23 @@ def create_combined_region_marker_dir_bald(
             n_superpixels=n_superpixels,
             n_seeds_per_region=n_seeds_per_region,
             fg_threshold=fg_threshold,
+            region_method=region_method,
         )
+
+        if result["n_fg_regions"] == 0:
+            # Sem regioes fg: adicionar seeds so bg pode prejudicar o encoder
+            # se a imagem tiver ovos no GT. Pular para nao contaminar o treino.
+            print(
+                f"  [region_bald] {img_id}: "
+                f"0fg + {result['n_bg_regions']}bg regioes (BALD/{region_method}) — skip (sem fg)"
+            )
+            continue
+
         save_region_seeds(result["flim_seeds"], dst)
         added += 1
         print(
             f"  [region_bald] {img_id}: "
-            f"{result['n_fg_regions']}fg + {result['n_bg_regions']}bg regioes (BALD)"
+            f"{result['n_fg_regions']}fg + {result['n_bg_regions']}bg regioes (BALD/{region_method})"
         )
 
     print(f"  [region_bald] {added} imagens com seeds BALD adicionados")

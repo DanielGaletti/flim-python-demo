@@ -568,12 +568,20 @@ def build_committee_saliencies(
     split: int,
     pool_fnames: list,
     proxy_layer: int = 3,
+    bootstrap: bool = True,
 ) -> list:
     """
-    Treina N encoders com diferentes seeds k-means nos markers originais.
-    Cada encoder ve os mesmos dados mas inicializa k-means de forma diferente
-    (np.random.seed diferente antes do fit) — gera saliency maps ligeiramente
-    distintos. Onde eles discordam = BALD alto = regiao mais informativa.
+    Treina N encoders formando um comitê diverso para calcular BALD.
+
+    Estratégia de diversidade (bootstrap=True, padrão):
+      - Cada encoder treina com um subconjunto aleatório (bootstrap) dos markers.
+      - Bootstrap: amostra com reposição → encoders veem subconjuntos diferentes
+        das imagens iniciais → filtros k-means genuinamente diferentes.
+      - Muito mais eficaz que apenas mudar seed k-means com os mesmos dados.
+
+    Estratégia legada (bootstrap=False):
+      - Mesmos dados, apenas np.random.seed diferente antes do fit.
+      - Produce BALD ≈ 0 quando há poucas imagens iniciais (encoders muito similares).
 
     Returns lista de N saliency dirs (um por encoder do comite).
     """
@@ -581,16 +589,41 @@ def build_committee_saliencies(
     base = os.path.join(save_dir, "committee", f"split{split}")
     os.makedirs(base, exist_ok=True)
 
+    # Lista de arquivos de markers originais (seeds.txt)
+    all_marker_files = sorted(
+        f for f in os.listdir(orig_marker_dir) if f.endswith("-seeds.txt")
+    )
+    n_orig = len(all_marker_files)
+
     for i in range(n_committee):
         enc_path  = os.path.join(base, f"encoder_{i}.pth")
         sal_dir_i = os.path.join(base, f"sal_{i}")
 
         if not os.path.exists(enc_path):
-            print(f"  [committee {i+1}/{n_committee}] seed={i*7} treinando...")
-            np.random.seed(i * 7)            # seed diferente = k-means diferente
-            retrain_encoder(arch_file, orig_marker_dir,
+            if bootstrap and n_orig > 1:
+                # ── Bootstrap: subconjunto aleatório com reposição ──────────
+                rng_b = np.random.default_rng(seed=i * 13 + 7)
+                sampled = rng_b.choice(all_marker_files, size=n_orig, replace=True).tolist()
+                bootstrap_marker_dir = os.path.join(base, f"markers_bootstrap_{i}")
+                os.makedirs(bootstrap_marker_dir, exist_ok=True)
+                for fname in set(sampled):  # copia os únicos (sem duplicatas no disco)
+                    src = os.path.join(orig_marker_dir, fname)
+                    dst = os.path.join(bootstrap_marker_dir, fname)
+                    if not os.path.exists(dst):
+                        shutil.copy2(src, dst)
+                train_marker_dir = bootstrap_marker_dir
+                unique_n = len(set(sampled))
+                print(f"  [committee {i+1}/{n_committee}] bootstrap seed={i*13+7} "
+                      f"({unique_n}/{n_orig} imgs únicas) treinando...")
+            else:
+                # ── Legado: mesmo dados, seed k-means diferente ─────────────
+                train_marker_dir = orig_marker_dir
+                print(f"  [committee {i+1}/{n_committee}] seed={i*7} treinando...")
+
+            np.random.seed(i * 7)
+            retrain_encoder(arch_file, train_marker_dir,
                             orig_folder, label_folder, device, enc_path)
-            np.random.seed(None)             # restaura estado aleatório global
+            np.random.seed(None)
         else:
             print(f"  [committee {i+1}/{n_committee}] encoder já existe — skip")
 
@@ -884,14 +917,16 @@ def main():
 
                     al_marker_dir = os.path.join(work_dir, "al_markers")
                     if args.acquisition == "region_bald":
-                        # BALD: seeds de regioes com maior desacordo entre encoders
+                        # Hibrido: BALD para selecao de imagens, entropy do encoder
+                        # original para posicionamento de seeds (mais preciso que committee)
                         create_combined_region_marker_dir_bald(
                             orig_marker_dir, al_fnames, label_folder,
-                            orig_folder, committee_sal_dirs, al_marker_dir,
+                            orig_folder, [sal_dir], al_marker_dir,
                             budget_per_image=20,
                             n_superpixels=300,
                             n_seeds_per_region=15,
                             fg_threshold=0.15,
+                            region_method="entropy",
                         )
                     elif args.acquisition.startswith("region_"):
                         # Region entropy/margin: seeds de regioes incertas (1 encoder)
