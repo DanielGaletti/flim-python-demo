@@ -465,6 +465,7 @@ def evaluate_all_decoders(
     use_dt: bool = False,
     dt_bin: str | None = None,
     dataset_folder: str | None = None,
+    area_range: tuple[int, int] = (1000, 9000),
 ) -> dict[str, dict[str, float]]:
     """
     Avalia todos os decoders da lista EVAL_DECODERS sobre o val set.
@@ -485,6 +486,7 @@ def evaluate_all_decoders(
                 encoder_path, decoder_type, layer,
                 val_fnames, orig_folder, label_folder, device,
                 use_dt=use_dt, dt_bin=dt_bin, dataset_folder=dataset_folder,
+                area_range=area_range,
             )
             results[decoder_type] = m
             iou_str = f"  IoU={m['iou']:.3f}" if "iou" in m else ""
@@ -694,13 +696,10 @@ def score_saliencies(sal_dir: str, device: str, acquisition: str = "entropy"):
     paths  = sorted(glob.glob(os.path.join(sal_dir, "*.png")))
     fnames = [os.path.basename(p) for p in paths]
     scores = []
-    for i in range(0, len(paths), 32):
-        tensors = []
-        for p in paths[i:i+32]:
-            arr = np.array(Image.open(p).convert("L"), dtype=np.float32) / 255.0
-            tensors.append(torch.tensor(arr).unsqueeze(0).unsqueeze(0))
-        batch = torch.cat(tensors, dim=0).to(device)
-        scores.extend(_score_fn(batch).cpu().tolist())
+    for p in paths:
+        arr = np.array(Image.open(p).convert("L"), dtype=np.float32) / 255.0
+        tensor = torch.tensor(arr).unsqueeze(0).unsqueeze(0).to(device)  # (1,1,H,W)
+        scores.extend(_score_fn(tensor).cpu().tolist())
     return fnames, scores
 
 

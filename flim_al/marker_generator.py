@@ -120,7 +120,7 @@ def save_markers(
     n_total = len(fg) + len(bg)
 
     with open(out_path, "w") as f:
-        f.write(f"{n_total} {H} {W}\n")
+        f.write(f"{n_total} {W} {H}\n")  # data.py espera: n W H → image_size=(H,W)
         for col, row in fg:
             f.write(f"{col} {row} -1 1 0\n")   # classe 1 → foreground
         for col, row in bg:

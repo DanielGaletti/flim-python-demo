@@ -265,7 +265,7 @@ def save_region_seeds(seeds_dict: dict, out_path: str) -> int:
     n_total = len(fg) + len(bg)
 
     with open(out_path, "w") as f:
-        f.write(f"{n_total} {H} {W}\n")
+        f.write(f"{n_total} {W} {H}\n")
         for col, row in fg:
             f.write(f"{col} {row} -1 1 0\n")
         for col, row in bg:
@@ -493,12 +493,34 @@ def create_combined_region_marker_dir(
             fg_threshold=fg_threshold,
         )
 
+        # Fallback: se 0 bg regioes selecionadas, amostrar bg aleatorio do GT
+        if result["n_bg_regions"] == 0:
+            seeds = result["flim_seeds"]
+            bg_rows, bg_cols = np.where(gt_mask == 0)
+            if len(bg_rows) > 0:
+                rng = np.random.default_rng(42)
+                n_bg_fallback = min(300, len(bg_rows))
+                idx = rng.choice(len(bg_rows), size=n_bg_fallback, replace=False)
+                bg_pts = np.stack([bg_cols[idx], bg_rows[idx]], axis=1).astype(int)
+                seeds["bg_seeds"] = bg_pts
+                print(
+                    f"  [region_al] {img_id}: "
+                    f"{result['n_fg_regions']}fg + 0bg regioes "
+                    f"-> fallback {n_bg_fallback} bg seeds do GT"
+                )
+            else:
+                print(
+                    f"  [region_al] {img_id}: "
+                    f"{result['n_fg_regions']}fg + 0bg regioes (sem bg no GT)"
+                )
+        else:
+            print(
+                f"  [region_al] {img_id}: "
+                f"{result['n_fg_regions']}fg + {result['n_bg_regions']}bg regioes"
+            )
+
         save_region_seeds(result["flim_seeds"], dst)
         added += 1
-        print(
-            f"  [region_al] {img_id}: "
-            f"{result['n_fg_regions']}fg + {result['n_bg_regions']}bg regioes"
-        )
 
     print(f"  [region_al] {added} imagens com seeds de regiao adicionados")
     return output_dir
@@ -746,20 +768,41 @@ def create_combined_region_marker_dir_bald(
         )
 
         if result["n_fg_regions"] == 0:
-            # Sem regioes fg: adicionar seeds so bg pode prejudicar o encoder
-            # se a imagem tiver ovos no GT. Pular para nao contaminar o treino.
+            # Sem regioes fg: pular para nao contaminar o encoder com so bg
             print(
                 f"  [region_bald] {img_id}: "
                 f"0fg + {result['n_bg_regions']}bg regioes (BALD/{region_method}) — skip (sem fg)"
             )
             continue
 
+        # Fallback: se 0 bg regioes selecionadas, amostrar bg aleatorio do GT
+        if result["n_bg_regions"] == 0:
+            seeds = result["flim_seeds"]
+            bg_rows, bg_cols = np.where(gt_mask == 0)
+            if len(bg_rows) > 0:
+                rng = np.random.default_rng(42)
+                n_bg_fallback = min(300, len(bg_rows))
+                idx = rng.choice(len(bg_rows), size=n_bg_fallback, replace=False)
+                bg_pts = np.stack([bg_cols[idx], bg_rows[idx]], axis=1).astype(int)
+                seeds["bg_seeds"] = bg_pts
+                print(
+                    f"  [region_bald] {img_id}: "
+                    f"{result['n_fg_regions']}fg + 0bg regioes (BALD/{region_method}) "
+                    f"-> fallback {n_bg_fallback} bg seeds do GT"
+                )
+            else:
+                print(
+                    f"  [region_bald] {img_id}: "
+                    f"{result['n_fg_regions']}fg + 0bg regioes (sem bg no GT)"
+                )
+        else:
+            print(
+                f"  [region_bald] {img_id}: "
+                f"{result['n_fg_regions']}fg + {result['n_bg_regions']}bg regioes (BALD/{region_method})"
+            )
+
         save_region_seeds(result["flim_seeds"], dst)
         added += 1
-        print(
-            f"  [region_bald] {img_id}: "
-            f"{result['n_fg_regions']}fg + {result['n_bg_regions']}bg regioes (BALD/{region_method})"
-        )
 
     print(f"  [region_bald] {added} imagens com seeds BALD adicionados")
     return output_dir

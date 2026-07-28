@@ -552,6 +552,7 @@ def run_benchmark(args: argparse.Namespace) -> str:
                         base_enc_path, val, orig_dir, label_dir, device,
                         use_dt=use_dt, dt_bin=args.dt_bin,
                         dataset_folder=args.dataset_path if use_dt else None,
+                        area_range=tuple(args.area_range),
                     )
                     _save(_make_rows(split, args.n_init, "baseline", "none", res, eval_mode))
                 except Exception as e:
@@ -671,6 +672,7 @@ def run_benchmark(args: argparse.Namespace) -> str:
                                 enc_path, val, orig_dir, label_dir, device,
                                 use_dt=use_dt, dt_bin=args.dt_bin,
                                 dataset_folder=args.dataset_path if use_dt else None,
+                                area_range=tuple(args.area_range),
                             )
                             _save(_make_rows(split, budget, method, method, res, eval_mode))
                         except Exception as e:
@@ -766,6 +768,7 @@ def _run_no_al(
                     enc_path, val, orig_dir, label_dir, device,
                     use_dt=use_dt, dt_bin=args.dt_bin,
                     dataset_folder=args.dataset_path if use_dt else None,
+                    area_range=tuple(args.area_range),
                 )
                 save_fn(make_rows_fn(split, budget, seed_method, "random", res, eval_mode))
                 for dec, m in res.items():
@@ -854,6 +857,9 @@ def parse_args() -> argparse.Namespace:
                    help="Ignora DT mesmo com --dt_bin")
     g.add_argument("--dt_only",  action="store_true",
                    help="Só avalia com DT (omite Otsu+AF)")
+    g.add_argument("--area_range", nargs=2, type=int, default=[1000, 9000],
+                   metavar=("MIN_AREA", "MAX_AREA"),
+                   help="Faixa de área para filtro de componentes (default: 1000 9000)")
 
     return p.parse_args()
 
