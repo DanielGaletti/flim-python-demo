@@ -159,11 +159,47 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-out/
-
-# AL / experiment artifacts
+# ── artefatos de execucao ────────────────────────────────────────────────────
+# "out/" casava em qualquer profundidade; agora cada caminho e explicito.
+/out/
+/out_*/
+flim_ad/out/
 .pip_cache/
 flim_venv/
-flim_ad/out/
-out/
 *.log
+
+# ── datasets (14 GB) ─────────────────────────────────────────────────────────
+# Os arquivos ja rastreados continuam rastreados; isto so impede que os
+# ~2.400 restantes entrem. Os datasets vem de fora do repositorio.
+data/orig/
+data/label/
+data/brats/
+data/conjunctiva/
+flim_al/datasets/
+schistossoma-eggs/
+
+# ── saidas de predicao (2 GB de PNG) ─────────────────────────────────────────
+results/Parasites_*/
+results/BraTS_*/
+results/conjunctiva/
+results/baselines/*/
+
+# ── aplicacao ────────────────────────────────────────────────────────────────
+flim_app/uploads/
+
+# ── decks: derivados de build_deck*.py + deck_data.py ────────────────────────
+# Ficam no disco; so nao entram no historico, porque sao reproduziveis.
+*.pptx
+*.docx
+
+# ── flim_ad: workspace do FLIM-AD ────────────────────────────────────────────
+# datasets (2,1 GB) e saidas ficam de fora; libs/ ENTRA porque o pyflim
+# vendorizado ali e o que roda de verdade, e ele tem patches nossos
+# (o shim de numpy 2.x em flim.py, entre outros).
+flim_ad/datasets/
+flim_ad/data/
+model
+
+# ── caches ───────────────────────────────────────────────────────────────────
+__pycache__/
+.ipynb_checkpoints/

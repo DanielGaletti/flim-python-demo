@@ -365,7 +365,7 @@ def print_summary(
     print(f"{'='*80}")
 
     col_w = 9
-    header = f"{'Método':25s}" + "".join(f"{'K='+b:>{col_w}}" for b in budget_strs)
+    header = f"{'Método':25s}" + "".join(f"{'K='+str(b):>{col_w}}" for b in budget_strs)
     print(header)
     print("─" * len(header))
 
