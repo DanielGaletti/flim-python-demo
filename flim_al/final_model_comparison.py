@@ -224,6 +224,18 @@ def run_arm(split: int, arm: str, img_ids: list[str], marker_dir: str,
 
 
 def append_csv(path: str, rows: list[dict]) -> None:
+    """
+    Grava o CSV de sempre E registra a execução no formato canônico.
+
+    A escrita original fica intacta: os arquivos que os scripts de análise e
+    as tabelas já leem continuam onde estavam, no mesmo formato. O registro
+    canônico é ADIÇÃO — é ele que carrega o commit do código, que o CSV
+    histórico nunca teve, e é dele que a agregação da Fase C parte.
+
+    Se o registro falhar, o experimento não pode cair junto: o número já foi
+    medido, e perder horas de GPU por um problema de contabilidade seria o
+    erro maior. A falha é relatada e a execução segue.
+    """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     novo = not os.path.exists(path)
     with open(path, "a", newline="", encoding="utf-8") as fh:
@@ -231,6 +243,49 @@ def append_csv(path: str, rows: list[dict]) -> None:
         if novo:
             w.writeheader()
         w.writerows(rows)
+
+    try:
+        registrar_execucoes(path, rows)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"  [evidencia] nao registrado: {type(e).__name__}: {e}",
+              flush=True)
+
+
+def registrar_execucoes(path: str, rows: list[dict]) -> None:
+    """Traduz as linhas deste script para o registro canônico de evidência."""
+    from flim_al import evidencia as ev
+
+    import re as _re
+    recs = []
+    for r in rows:
+        arm = str(r.get("arm", ev.UNKNOWN))
+        m = _re.search(r"seed(\d+)", arm)
+        recs.append(ev.execucao(
+            experimento="final_model_comparison",
+            dataset="schisto",
+            usuario=r.get("user", ev.UNKNOWN),
+            split=r.get("split", ev.UNKNOWN),
+            braco=_re.sub(r"_?seed\d+", "", arm) or "al",
+            variante=arm,
+            seed=int(m.group(1)) if m else ev.UNKNOWN,
+            decoder=r.get("decoder", ev.UNKNOWN),
+            decoder_paper=r.get("paper_name", ev.UNKNOWN),
+            bloco=r.get("block", ev.UNKNOWN),
+            orcamento=r.get("n_train", ev.UNKNOWN),
+            imagens=r.get("train_ids", ev.UNKNOWN),
+            fb=r.get("fb"), dice=r.get("dice"),
+            iou=r.get("iou"), mae=r.get("mae"), fb_val=r.get("fb_val"),
+            # `git_commit` é preenchido por ev.execucao() a partir do git
+            # NESTE instante — que é o do experimento, não o do arquivamento.
+            # É essa a diferença entre os registros novos e os migrados.
+            fonte=os.path.relpath(path, os.path.dirname(
+                os.path.dirname(os.path.abspath(__file__)))).replace(
+                    os.sep, "/"),
+        ))
+    res = ev.registrar(recs)
+    if res["divergentes"]:
+        print(f"  [evidencia] ATENCAO: {len(res['divergentes'])} execucao(oes) "
+              "com a mesma configuracao e metricas diferentes", flush=True)
 
 
 def main() -> int:
