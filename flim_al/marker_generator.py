@@ -23,9 +23,19 @@ Uso:
 
 from __future__ import annotations
 
+import hashlib
 import os
 import numpy as np
 from PIL import Image
+
+
+def _stable_seed(name: str) -> int:
+    """
+    Seed determinístico a partir do nome do arquivo.
+    FIX: hash() do Python varia entre processos (PYTHONHASHSEED).
+    hashlib.md5 é estável entre execuções.
+    """
+    return int(hashlib.md5(name.encode()).hexdigest(), 16) % (2 ** 31)
 
 
 def generate_markers_from_gt(
@@ -158,9 +168,18 @@ def create_combined_marker_dir(
     output_dir: str,
     n_fg: int = 100,
     n_bg: int = 300,
+    style: str = "points",
 ) -> str:
     """
     Cria diretório com markers originais + markers sintéticos das imagens AL.
+
+    `style`:
+        "points"     100 fg + 300 bg sorteados uniformemente (comportamento
+                     histórico; mantido como padrão para não alterar resultados
+                     já obtidos)
+        "realistic"  pinceladas contíguas calibradas nos markers reais
+                     (flim_al/realistic_markers.py). Os pontos soltos fazem o
+                     saliency map colapsar — ver tests/test_marker_style_gate.py
 
     Retorna o path do diretório combinado.
     """
@@ -189,10 +208,15 @@ def create_combined_marker_dir(
         if not os.path.exists(gt_path):
             continue
 
-        seeds = generate_markers_from_gt(gt_path, n_fg=n_fg, n_bg=n_bg, seed=hash(name) % 2**31)
+        if style == "realistic":
+            from flim_al.realistic_markers import generate_realistic_markers
+            seeds = generate_realistic_markers(gt_path, seed=_stable_seed(name))
+        else:
+            seeds = generate_markers_from_gt(gt_path, n_fg=n_fg, n_bg=n_bg,
+                                             seed=_stable_seed(name))
         save_markers(seeds, out_path)
         added += 1
 
-    print(f"  [markers] {original_count} originais + {added} sintéticos = "
+    print(f"  [markers/{style}] {original_count} originais + {added} sintéticos = "
           f"{original_count + added} total em {output_dir}")
     return output_dir

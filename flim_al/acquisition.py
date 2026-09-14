@@ -20,7 +20,7 @@ import numpy as np
 from typing import Sequence
 
 
-def entropy_map(pred: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
+def entropy_map(pred: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     """
     Pixel-wise binary entropy of a segmentation probability map.
 
@@ -31,8 +31,11 @@ def entropy_map(pred: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
     Returns
     -------
     ent : Tensor [B, 1, H, W]
+
+    Note: eps=1e-6 (não 1e-8) — em float32, 1 - 1e-8 == 1.0 por underflow,
+    causando log(0)=-inf e 0*-inf=NaN. Com eps=1e-6, 1-eps < 1.0 é garantido.
     """
-    p = pred.clamp(eps, 1 - eps)
+    p = pred.float().clamp(eps, 1.0 - eps)
     return -(p * p.log() + (1 - p) * (1 - p).log())
 
 

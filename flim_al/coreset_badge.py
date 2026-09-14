@@ -20,6 +20,30 @@ import torch.nn.functional as F
 import numpy as np
 
 
+def _rgb_uint8_to_lab01(img_rgb: np.ndarray) -> np.ndarray:
+    """
+    Converte (H,W,3) uint8 RGB → (H,W,3) float32 LAB normalizado para [0,1].
+
+    O encoder FLIM é treinado com imagens em espaço LAB (via FLIMData).
+    Features extraídas com RGB produziriam vetores em espaço errado.
+
+    Normalização:
+        L  ∈ [0, 100]   → divide por 100
+        AB ∈ [-128,127] → soma 128, divide por 255
+    """
+    try:
+        from skimage.color import rgb2lab
+        lab = rgb2lab(img_rgb).astype(np.float32)
+        lab[:, :, 0] /= 100.0
+        lab[:, :, 1:] = (lab[:, :, 1:] + 128.0) / 255.0
+    except ImportError:
+        import cv2
+        # cv2 LAB em uint8: L∈[0,255], AB offset em [0,255]
+        lab_cv = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2LAB).astype(np.float32)
+        lab = lab_cv / 255.0  # normaliza direto para [0,1]
+    return lab.clip(0.0, 1.0)
+
+
 # ── Feature extraction ────────────────────────────────────────────────────────
 
 @torch.no_grad()
@@ -50,8 +74,10 @@ def extract_encoder_features(
     features = []
 
     for path in image_paths:
-        img = np.array(Image.open(path).convert("RGB"), dtype=np.float32)
-        x = torch.tensor(img.transpose(2, 0, 1) / 255.0).unsqueeze(0).to(device)
+        img_rgb = np.array(Image.open(path).convert("RGB"), dtype=np.uint8)
+        # FIX: encoder FLIM treinado com LAB — converter antes de extrair features
+        img_lab = _rgb_uint8_to_lab01(img_rgb)
+        x = torch.tensor(img_lab.transpose(2, 0, 1)).unsqueeze(0).to(device)
 
         for l in range(encoder.architecture.nlayers):
             if not encoder.use_bias:
@@ -88,8 +114,10 @@ def extract_encoder_features_and_preds(
     features, preds = [], []
 
     for path in image_paths:
-        img = np.array(Image.open(path).convert("RGB"), dtype=np.float32)
-        x = torch.tensor(img.transpose(2, 0, 1) / 255.0).unsqueeze(0).to(device)
+        img_rgb = np.array(Image.open(path).convert("RGB"), dtype=np.uint8)
+        # FIX: LAB (mesmo espaço do treino do encoder FLIM)
+        img_lab = _rgb_uint8_to_lab01(img_rgb)
+        x = torch.tensor(img_lab.transpose(2, 0, 1)).unsqueeze(0).to(device)
 
         for l in range(encoder.architecture.nlayers):
             if not encoder.use_bias:
@@ -142,8 +170,15 @@ def coreset_select(
 
     if labeled_indices and len(labeled_indices) > 0:
         selected = list(labeled_indices)
+        n_skip = len(labeled_indices)
     else:
+        # FIX-SEEDPOINT: sem labeled set, o ponto semente do greedy k-center É
+        # uma das K imagens selecionadas — o padrão do CoreSet (Sener & Savarese).
+        # Antes ele era descartado (n_init=1 + `return selected[1:]`), o que
+        # pedia budget+1 pontos de um pool de N e, com budget>=N, devolvia
+        # DUPLICATAS (a mesma imagem entrava 2x no treino).
         selected = [int(np.random.randint(N))]
+        n_skip = 0
 
     # Distância mínima de cada ponto ao labeled set atual
     min_dists = np.full(N, np.inf, dtype=np.float32)
@@ -153,7 +188,9 @@ def coreset_select(
         d = np.sum((features - features[idx]) ** 2, axis=1)
         min_dists = np.minimum(min_dists, d)
 
-    while len(selected) < budget:
+    # FIX-OVERFLOW: nunca pedir mais pontos do que existem no pool
+    target = min(n_skip + budget, N)
+    while len(selected) < target:
         min_dists[selected] = -1.0   # já selecionados: excluir
         next_idx = int(np.argmax(min_dists))
         selected.append(next_idx)
@@ -161,9 +198,9 @@ def coreset_select(
         d = np.sum((features - features[next_idx]) ** 2, axis=1)
         min_dists = np.minimum(min_dists, d)
 
-    # Retorna apenas os K recém-selecionados (excluindo labeled_indices iniciais)
-    n_init = len(labeled_indices) if labeled_indices else 1
-    return selected[n_init:]
+    out = selected[n_skip:]
+    assert len(out) == len(set(out)), "coreset_select devolveu duplicatas"
+    return out
 
 
 # ── BADGE ─────────────────────────────────────────────────────────────────────
@@ -197,6 +234,7 @@ def badge_select(
     """
     np.random.seed(seed)
     N = len(features)
+    budget = min(budget, N)   # FIX-OVERFLOW: pool não tem mais que N pontos
 
     # Gradient embedding: escala o vetor de features pela incerteza
     uncertainty = (pred_scores - 0.5).reshape(-1, 1)   # (N, 1), |valor| é incerteza

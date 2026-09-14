@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>FLIM — Local Training Tool</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>🔬 FLIM Local Training</h1>
+    <nav>
+      <a href="/" class="active">Upload</a>
+      <a href="/label" id="nav-label">Labeling</a>
+      <a href="/train" id="nav-train">Treinar</a>
+      <a href="/results" id="nav-results">Resultados</a>
+      <a href="/predict" id="nav-predict">Inferência</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ── Upload ──────────────────────────────────────────────── -->
+    <section id="upload-section">
+      <h2>1. Carregar Dataset</h2>
+      <p>Suba a pasta <code>images/</code> com seus PNGs.<br>
+         Opcionalmente suba a pasta <code>label/</code> (se já tiver as máscaras).</p>
+
+      <div class="upload-area" id="drop-zone">
+        <p>📂 Arraste a pasta <strong>images/</strong> aqui<br>
+           <small>ou clique para selecionar os arquivos</small></p>
+        <input type="file" id="images-input" multiple accept=".png" webkitdirectory>
+      </div>
+
+      <div class="upload-area optional" id="drop-zone-label">
+        <p>🏷️ Pasta <strong>label/</strong> (opcional)<br>
+           <small>Se já tiver as máscaras, suba aqui</small></p>
+        <input type="file" id="labels-input" multiple accept=".png" webkitdirectory>
+      </div>
+
+      <button id="btn-upload" class="btn-primary" disabled>
+        Carregar →
+      </button>
+
+      <div id="upload-status" class="status hidden"></div>
+    </section>
+
+    <!-- ── Sessões existentes ───────────────────────────────────── -->
+    <section id="sessions-section">
+      <h2>Sessões existentes</h2>
+      <div id="sessions-list">
+        <p class="loading">Carregando...</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/index.js"></script>
+</body>
+</html>

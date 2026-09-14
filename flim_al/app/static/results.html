@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>FLIM — Resultados</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>🔬 FLIM — Resultados</h1>
+    <nav>
+      <a href="/">Upload</a>
+      <a href="/label">Labeling</a>
+      <a href="/train">Treinar</a>
+      <a href="/results" class="active">Resultados</a>
+      <a href="/predict">Inferência</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="results-section">
+      <h2>Comparação de Métodos</h2>
+
+      <!-- ── Destaque: melhor modelo ──────────────────────────── -->
+      <div id="best-model-card" class="card best-card hidden">
+        <h3>🏆 Melhor Modelo</h3>
+        <div id="best-model-info"></div>
+        <a href="/predict" class="btn-primary">Usar para Inferência →</a>
+      </div>
+
+      <!-- ── Tabela comparativa ───────────────────────────────── -->
+      <div class="table-wrapper">
+        <table id="results-table">
+          <thead>
+            <tr>
+              <th>Método</th>
+              <th>Budget K</th>
+              <th>Fβ ↑</th>
+              <th>IoU ↑</th>
+              <th>DICE ↑</th>
+              <th>Tempo</th>
+            </tr>
+          </thead>
+          <tbody id="results-rows">
+            <!-- Populado via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── Gráfico Fβ por método × budget ──────────────────── -->
+      <div id="chart-section">
+        <h3>Fβ por método e budget</h3>
+        <canvas id="fb-chart"></canvas>
+        <!-- TODO: usar Chart.js ou SVG simples para renderizar -->
+      </div>
+
+      <!-- ── Download ─────────────────────────────────────────── -->
+      <div class="download-actions">
+        <a id="btn-download-csv" class="btn-secondary">⬇ Baixar CSV</a>
+      </div>
+
+      <div id="no-results" class="empty-state hidden">
+        <p>Nenhum resultado ainda. <a href="/train">Treinar →</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/results.js"></script>
+</body>
+</html>

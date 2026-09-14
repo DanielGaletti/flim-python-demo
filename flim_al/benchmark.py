@@ -40,6 +40,7 @@ from __future__ import annotations
 import argparse
 import csv
 import glob
+import hashlib
 import json
 import os
 import random
@@ -219,8 +220,10 @@ def setup_initial_markers(
         if not os.path.exists(gt_path):
             print(f"  [aviso] GT não encontrado para {fname}")
             continue
+        # FIX: hash() varia entre processos; hashlib.md5 é estável
+        _seed = int(hashlib.md5(name.encode()).hexdigest(), 16) % (2 ** 31)
         seeds = generate_markers_from_gt(
-            gt_path, n_fg=n_fg, n_bg=n_bg, seed=hash(name) % 2**31
+            gt_path, n_fg=n_fg, n_bg=n_bg, seed=_seed
         )
         save_markers(seeds, out_path)
 

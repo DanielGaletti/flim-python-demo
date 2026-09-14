@@ -808,6 +808,249 @@ def create_combined_region_marker_dir_bald(
     return output_dir
 
 
+# --- Region AL para o backprop_decoder (Experimento B) -----------------------
+# Restauradas de 74d9615: removidas por engano em b6b3af8, mas
+# al_flim_backprop.py ainda importa run_region_al (ImportError na Fase 2).
+
+def compute_entropy_mask(
+    saliency_path: str,
+    patch_size: int = 64,
+    top_k_patches: int = 5,
+    threshold_percentile: float | None = None,
+) -> np.ndarray:
+    """
+    Gera mascara binaria (H, W) marcando regioes de alta incerteza.
+
+    Dois modos:
+    - top_k_patches: seleciona exatamente os K patches com maior entropia media
+    - threshold_percentile: seleciona todos os pixels com entropia > p-esimo percentil
+
+    Returns
+    -------
+    mask : np.ndarray (H, W) float32, valores 0 ou 1
+    """
+    arr = np.array(Image.open(saliency_path).convert("L"), dtype=np.float32) / 255.0
+    p = np.clip(arr, 1e-6, 1 - 1e-6)
+    entropy = -(p * np.log(p) + (1 - p) * np.log(1 - p))
+
+    H, W = entropy.shape
+
+    if threshold_percentile is not None:
+        thresh = np.percentile(entropy, threshold_percentile)
+        return (entropy >= thresh).astype(np.float32)
+
+    patches = []
+    for y in range(0, H - patch_size + 1, patch_size):
+        for x in range(0, W - patch_size + 1, patch_size):
+            mean_ent = float(entropy[y : y + patch_size, x : x + patch_size].mean())
+            patches.append((mean_ent, y, x))
+
+    if not patches:
+        # Imagem menor que patch_size: mascara cheia
+        return np.ones((H, W), dtype=np.float32)
+
+    patches.sort(reverse=True)
+    mask = np.zeros((H, W), dtype=np.float32)
+    for _, y, x in patches[:top_k_patches]:
+        mask[y : y + patch_size, x : x + patch_size] = 1.0
+
+    return mask
+
+
+def coverage_ratio(mask: np.ndarray) -> float:
+    """Fracao de pixels anotados vs total (metrica de custo de anotacao)."""
+    return float(mask.mean())
+
+
+def train_backprop_region(
+    encoder,
+    features_list: list,
+    labels_list: list,
+    masks_list: list,
+    target_layer: int,
+    weights_path: str,
+    n_epochs: int,
+    device: str,
+    lr: float = 1e-2,
+    wd: float = 1e-2,
+    init_seed: int = 0,
+) -> tuple:
+    """
+    Treina o backprop_decoder com loss mascarada pelas regioes incertas.
+
+    O loss e computado APENAS nos pixels dentro da mascara (regioes anotadas):
+    o especialista nao precisa anotar o resto da imagem.
+
+    FIX-MASK: a versao anterior mascarava com `pred*mask` e `gt*mask`, o que
+    zera os LOGITS fora da regiao — e sigmoid(0)=0.5 faz o DiceLoss enxergar
+    meio-foreground em ~87% da imagem, travando o termo Dice em ~1.0. Agora a
+    mascara entra como peso por pixel (flim_al/losses.py).
+
+    Returns (decoder_weights, best_loss).
+    """
+    import torch
+    from flim_al.losses import masked_dice_ce
+    import torch.nn.functional as F
+
+    out_channels = encoder.layers[target_layer].conv.out_channels
+    decoder_weights = torch.empty(
+        (1, out_channels, 1, 1), device=device
+    ).requires_grad_(True)
+    # FIX-SEED: init pareada entre bracos AL/Random (ver al_flim_backprop.py)
+    torch.manual_seed(init_seed)
+    torch.cuda.manual_seed_all(init_seed)
+    torch.nn.init.xavier_uniform_(decoder_weights)
+
+    optimizer = torch.optim.Adam([decoder_weights], lr=lr, weight_decay=wd)
+
+    mask_tensors = [
+        torch.tensor(mask).unsqueeze(0).unsqueeze(0).float().to(device)
+        for mask in masks_list
+    ]
+
+    best_loss = float("inf")
+    os.makedirs(os.path.dirname(weights_path), exist_ok=True)
+
+    for epoch in range(n_epochs):
+        # zero_grad por epoch = batch gradient (idem train_backprop_on_subset)
+        optimizer.zero_grad()
+        epoch_losses = []
+
+        for x, y, mask_t in zip(features_list, labels_list, mask_tensors):
+            res = F.conv2d(x, decoder_weights, padding=0, stride=1)
+            res = F.interpolate(
+                res, [y.shape[-2], y.shape[-1]], mode="bilinear", align_corners=True
+            )
+            mask_resized = F.interpolate(
+                mask_t, [y.shape[-2], y.shape[-1]], mode="nearest"
+            )
+            # Mascara como PESO por pixel — fora da regiao nao entra nem no
+            # Dice nem na media da BCE (nao vira "0.5 de foreground").
+            loss = masked_dice_ce(res, y.unsqueeze(0), mask=mask_resized)
+            epoch_losses.append(loss.item())
+            loss.backward()
+
+        optimizer.step()
+        mean_ep = float(np.mean(epoch_losses))
+
+        if epoch % 50 == 0:
+            print(f"  [region] epoch:{epoch:4d}  loss:{mean_ep:.4f}", end="\r")
+
+        if mean_ep < best_loss:
+            best_loss = mean_ep
+            torch.save(decoder_weights.detach(), weights_path)
+
+    print(f"  [region] Final loss: {best_loss:.4f} (saved at best)")
+    return decoder_weights.detach(), best_loss
+
+
+def run_region_al(
+    encoder_path: str,
+    selected_fnames: list,
+    orig_folder: str,
+    label_folder: str,
+    saliency_folder: str,
+    target_layer: int,
+    output_path: str,
+    n_epochs: int,
+    device: str,
+    patch_size: int = 64,
+    top_k_patches: int = 5,
+    lr: float = 1e-2,
+    wd: float = 1e-2,
+    init_seed: int = 0,
+) -> tuple:
+    """
+    Pipeline Region AL para o Experimento B (encoder FIXO):
+      1. Carrega encoder e pre-computa features (frozen)
+      2. Computa mascara de entropia (top-K patches) por imagem
+      3. Treina decoder 1x1 com loss mascarada
+      4. Retorna (weights_path, cobertura media, n_imagens_treinadas)
+
+    FIX-LAB: entrada convertida para LAB explicitamente, igual a
+    train_backprop_on_subset. A versao antiga usava FLIMData, que entrega
+    RGB — espaco errado para o encoder FLIM (mesmo bug do fix A2).
+    """
+    import torch
+    from flim_al.coreset_badge import _rgb_uint8_to_lab01
+
+    model = torch.load(encoder_path, map_location=device, weights_only=False)
+    model.device = device
+
+    os.makedirs(output_path, exist_ok=True)
+    weights_path = os.path.join(output_path, f"layer{target_layer}_weight.pth")
+
+    # Pre-computa features com encoder frozen, em LAB
+    features_list, labels_list, kept_fnames = [], [], []
+    with torch.no_grad():
+        for fname in selected_fnames:
+            orig_path = os.path.join(orig_folder, fname)
+            label_path = os.path.join(label_folder, fname)
+            if not (os.path.exists(orig_path) and os.path.exists(label_path)):
+                continue
+
+            img_rgb = np.array(Image.open(orig_path).convert("RGB"), dtype=np.uint8)
+            img_lab = _rgb_uint8_to_lab01(img_rgb)
+            X = torch.tensor(
+                img_lab.transpose(2, 0, 1), dtype=torch.float32
+            ).unsqueeze(0).to(device)
+
+            mask_arr = np.array(Image.open(label_path).convert("L"), dtype=np.float32)
+            Y = torch.tensor((mask_arr > 127).astype(np.float32)).unsqueeze(0).to(device)
+
+            for l in range(model.architecture.nlayers):
+                if not model.use_bias:
+                    X = model.normalization(X, model.layers[l].normalization_parameters)
+                X = model.layers[l].conv(X)
+                X = model.layers[l].activation(X)
+                X = model.layers[l].pool(X)
+                if l == target_layer:
+                    features_list.append(X.detach().clone())
+                    break
+            labels_list.append(Y)
+            kept_fnames.append(fname)
+
+    if not features_list:
+        raise RuntimeError(
+            f"run_region_al: nenhuma imagem valida em {selected_fnames[:3]}..."
+        )
+
+    # Mascaras de entropia — so para as imagens efetivamente carregadas
+    masks_list, coverages = [], []
+    for fname in kept_fnames:
+        sal_path = os.path.join(saliency_folder, fname)
+        if os.path.exists(sal_path):
+            mask = compute_entropy_mask(
+                sal_path, patch_size=patch_size, top_k_patches=top_k_patches
+            )
+        else:
+            # Fallback: mascara cheia (equivale ao treino normal)
+            img = Image.open(os.path.join(orig_folder, fname))
+            mask = np.ones((img.height, img.width), dtype=np.float32)
+        masks_list.append(mask)
+        coverages.append(coverage_ratio(mask))
+
+    mean_coverage = float(np.mean(coverages))
+    print(f"  [region] Cobertura media de anotacao: {mean_coverage:.1%} dos pixels "
+          f"({len(features_list)} imagens)")
+
+    train_backprop_region(
+        model,
+        features_list,
+        labels_list,
+        masks_list,
+        target_layer=target_layer,
+        weights_path=weights_path,
+        n_epochs=n_epochs,
+        device=device,
+        lr=lr,
+        wd=wd,
+        init_seed=init_seed,
+    )
+
+    return weights_path, mean_coverage, len(features_list)
+
+
 # --- CLI standalone ----------------------------------------------------------
 
 def _cli():

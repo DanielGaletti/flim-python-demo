@@ -88,6 +88,27 @@ def image_to_lab(image: np.ndarray) -> np.ndarray:
     return new_image
 
 
+def load_input(orig_path: str) -> tuple[torch.Tensor, int, int]:
+    """
+    Carrega uma imagem exatamente como o FLIMData faz no treino.
+
+    Isso não é detalhe: para imagens em tons de cinza o FLIMData cai no ramo
+    `else` do __getitem__ e devolve **um canal cru** (0–255, sem LAB e sem
+    normalizar), enquanto uma conversão ingênua para RGB produziria três canais
+    LAB normalizados. Treinar com um canal e avaliar com três não dá erro
+    óbvio — dá um encoder avaliado fora da distribuição em que foi estimado.
+
+    Retorna (tensor 1×C×H×W, altura, largura).
+    """
+    arr = np.array(Image.open(orig_path))
+    if arr.ndim == 2:                      # tons de cinza: 1 canal, cru
+        x = np.expand_dims(arr, 2).astype(np.float32)
+    else:                                  # colorida: LAB normalizado
+        x = image_to_lab(arr[:, :, :3].astype(np.uint8))
+    h, w = arr.shape[0], arr.shape[1]
+    return torch.tensor(x.transpose(2, 0, 1)).unsqueeze(0), h, w
+
+
 def threshold_otsu(img: np.ndarray) -> float:
     """Otsu's threshold sem skimage."""
     hist, _ = np.histogram(img.flatten(), bins=256, range=(0, 256))
@@ -240,7 +261,7 @@ def _fb_from_masks(masks_dir: str, val_fnames: list[str],
     Imagens sem mask → predição vazia.
     """
     eps = 1e-8
-    fbs, dices, ious = [], [], []
+    fbs, dices, ious, maes = [], [], [], []
     for fname in val_fnames:
         gt_path   = os.path.join(label_folder, fname)
         mask_path = os.path.join(masks_dir, fname)
@@ -251,7 +272,7 @@ def _fb_from_masks(masks_dir: str, val_fnames: list[str],
             pred_bin = (np.array(Image.open(mask_path)) > 0).astype(np.uint8)
         else:
             pred_bin = np.zeros_like(gt_bin)
-        # Fβ pixel
+        # Fβ pixel — FIX: empty-empty → Fβ=1.0 (consistente com path não-DT)
         if gt_bin.sum() == 0 and pred_bin.sum() == 0:
             fbs.append(1.0)
         else:
@@ -267,10 +288,12 @@ def _fb_from_masks(masks_dir: str, val_fnames: list[str],
         else: dices.append(2.0 * float((gt_bin * pred_bin).sum()) / (gs + ps))
         # IoU
         ious.append(iou_score(pred_bin, gt_bin))
+        # FIX: MAE real (não hardcoded 0.0)
+        maes.append(float(np.abs(pred_bin.astype(np.float32) - gt_bin.astype(np.float32)).mean()))
     return {
         "fb":   float(np.mean(fbs))   if fbs   else 0.0,
         "dice": float(np.mean(dices)) if dices else 0.0,
-        "mae":  0.0,
+        "mae":  float(np.mean(maes))  if maes  else 1.0,
         "iou":  float(np.mean(ious))  if ious  else 0.0,
     }
 
@@ -383,10 +406,7 @@ def evaluate_decoder(
             if not os.path.exists(orig_path):
                 continue
 
-            img     = Image.open(orig_path).convert("RGB")
-            orig_h, orig_w = img.size[1], img.size[0]
-            arr_lab = image_to_lab(np.array(img, dtype=np.uint8))
-            x       = torch.tensor(arr_lab.transpose(2, 0, 1)).unsqueeze(0)
+            x, orig_h, orig_w = load_input(orig_path)
 
             y_hat, _ = model.forward(x, decoder_layer=[layer_idx])
             pred = y_hat[0].float()
@@ -433,11 +453,15 @@ def evaluate_decoder(
             gt_bin    = (np.array(Image.open(label_path).convert("L")) > 0).astype(np.uint8)
 
             dice = _official_dice(gt_bin, pred_bin)
-            tp = float((pred_bin & gt_bin).sum())
-            fp = float((pred_bin & ~gt_bin.astype(bool)).sum())
-            fn = float((~pred_bin.astype(bool) & gt_bin).sum())
-            pr = tp / (tp + fp + eps); rc = tp / (tp + fn + eps)
-            fb = (1 + beta2) * pr * rc / (beta2 * pr + rc + eps)
+            # FIX: empty-empty → Fβ=1.0 (consistente com path DT e com semântica correta)
+            if gt_bin.sum() == 0 and pred_bin.sum() == 0:
+                fb = 1.0
+            else:
+                tp = float((pred_bin & gt_bin).sum())
+                fp = float((pred_bin & ~gt_bin.astype(bool)).sum())
+                fn = float((~pred_bin.astype(bool) & gt_bin).sum())
+                pr = tp / (tp + fp + eps); rc = tp / (tp + fn + eps)
+                fb = (1 + beta2) * pr * rc / (beta2 * pr + rc + eps)
             mae = float(np.abs(pred_bin.astype(float) - gt_bin.astype(float)).mean())
             iou = iou_score(pred_bin, gt_bin)
 
@@ -540,10 +564,7 @@ def generate_pool_saliencies(
         orig_path = os.path.join(orig_folder, fname)
         if not os.path.exists(orig_path):
             continue
-        img     = Image.open(orig_path).convert("RGB")
-        orig_h, orig_w = img.size[1], img.size[0]
-        arr_lab = image_to_lab(np.array(img, dtype=np.uint8))
-        x       = torch.tensor(arr_lab.transpose(2, 0, 1)).unsqueeze(0)
+        x, orig_h, orig_w = load_input(orig_path)
         y_hat, _ = model.forward(x, decoder_layer=[layer_idx])
         pred = y_hat[0].float()
         if pred.dim() == 3:
@@ -712,6 +733,7 @@ def select_images(
     orig_folder: str,
     proxy_layer: int,
     device: str,
+    sal_dir: str = "",  # necessário para BADGE: pred_scores via saliency means
 ) -> list[str]:
     if acquisition in ("entropy", "least_confidence", "margin",
                        "region_entropy", "region_margin", "region_bald"):
@@ -725,13 +747,21 @@ def select_images(
         feats   = extract_encoder_features(encoder, img_paths, proxy_layer, device)
         sel_idx = coreset_select(feats, budget)
     else:  # badge
-        dummy_w = torch.zeros(
-            (1, encoder.layers[proxy_layer].conv.out_channels, 1, 1), device=device
-        )
-        feats, preds = extract_encoder_features_and_preds(
-            encoder, img_paths, dummy_w, proxy_layer, device
-        )
-        sel_idx = badge_select(feats, preds, budget)
+        # FIX: usar saliency means como pred_scores em vez de dummy_w=zeros.
+        # dummy_w=zeros → sigmoid(0)=0.5 → uncertainty=0 → todos embeddings zero
+        # → BADGE seleciona arbitrariamente (zero-gradient bug).
+        # Saliency mean é um proxy de predição válido: imagens mais "claras" têm
+        # maior probabilidade média de foreground.
+        sal_means = []
+        for f in fnames:
+            sal_path = os.path.join(sal_dir, f) if sal_dir else ""
+            if sal_path and os.path.exists(sal_path):
+                arr = np.array(Image.open(sal_path).convert("L"), dtype=np.float32) / 255.0
+                sal_means.append(float(arr.mean()))
+            else:
+                sal_means.append(0.5)  # fallback neutro
+        feats   = extract_encoder_features(encoder, img_paths, proxy_layer, device)
+        sel_idx = badge_select(feats, np.array(sal_means, dtype=np.float32), budget)
 
     return [fnames[i] for i in sel_idx]
 
@@ -747,6 +777,10 @@ def parse_args():
     p.add_argument("--budgets",      nargs="+", type=int, default=[3, 5, 10, 20])
     p.add_argument("--n_seeds",      type=int, default=3,
                    help="Número de seeds aleatórias para o baseline Random")
+    p.add_argument("--marker_style", default="points",
+                   choices=["points", "realistic"],
+                   help="Estilo dos markers sintéticos. 'realistic' usa "
+                        "pinceladas calibradas nos markers reais.")
     p.add_argument("--n_fg_markers", type=int, default=100,
                    help="Seeds de foreground por imagem sintética")
     p.add_argument("--n_bg_markers", type=int, default=300,
@@ -766,7 +800,12 @@ def parse_args():
     return p.parse_args()
 
 
-FIELDNAMES = ["split", "budget", "method", "acquisition", "decoder", "fb", "dice", "mae", "iou"]
+# n_train_imgs: quantas imagens o encoder daquele braço realmente viu. Para os
+# métodos region_*, imagens sem região de foreground são descartadas, então o
+# braço AL pode treinar com menos imagens que o Random no mesmo budget. Sem
+# esta coluna esse desbalanceamento fica invisível na tabela final.
+FIELDNAMES = ["split", "budget", "method", "acquisition", "decoder",
+              "n_train_imgs", "fb", "dice", "mae", "iou"]
 
 
 def _load_csv(csv_path: str) -> tuple[list[dict], set]:
@@ -784,20 +823,119 @@ def _load_csv(csv_path: str) -> tuple[list[dict], set]:
 
 
 def _append_csv(csv_path: str, new_rows: list[dict]) -> None:
-    """Append incremental ao CSV (cria header se necessário)."""
+    """
+    Append incremental ao CSV.
+
+    FIX-HEADER: antes, o header só era escrito quando o arquivo não existia.
+    Ao acrescentar a coluna `n_train_imgs` ao FIELDNAMES, as linhas novas
+    passaram a ter 10 campos gravados sob um header antigo de 9 — todas as
+    colunas dessas linhas ficaram deslocadas em uma posição (o n_train_imgs
+    caía na coluna do fb). Agora o header existente é conferido e, se não
+    bater, o arquivo é reescrito por inteiro no formato novo, preenchendo as
+    colunas ausentes das linhas antigas.
+    """
+    existing: list[dict] = []
+    if os.path.exists(csv_path):
+        with open(csv_path, newline="") as f:
+            reader = csv.reader(f)
+            try:
+                header = next(reader)
+            except StopIteration:
+                header = []
+        if header and header != FIELDNAMES:
+            with open(csv_path, newline="") as f:
+                existing = list(csv.DictReader(f))
+            print(f"  [csv] header desatualizado ({len(header)} colunas) — "
+                  f"reescrevendo {len(existing)} linhas no formato atual")
+            os.remove(csv_path)
+
     write_header = not os.path.exists(csv_path)
     with open(csv_path, "a", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=FIELDNAMES)
+        w = csv.DictWriter(f, fieldnames=FIELDNAMES,
+                           restval="", extrasaction="ignore")
         if write_header:
             w.writeheader()
+        if existing:
+            w.writerows(existing)
         w.writerows(new_rows)
+
+
+def _build_marker_dir(
+    seed_mode: str,              # "point" | "region" | "region_bald"
+    acquisition: str,
+    orig_marker_dir: str,
+    selected_fnames: list,
+    label_folder: str,
+    orig_folder: str,
+    sal_dir: str,
+    committee_sal_dirs,
+    out_dir: str,
+    n_fg: int,
+    n_bg: int,
+    marker_style: str = "points",
+) -> tuple[str, int]:
+    """
+    Constrói o diretório de markers de um braço e devolve (dir, n_imagens).
+
+    `seed_mode` desacopla COMO os seeds são desenhados de QUAIS imagens foram
+    escolhidas — a distinção que faltava no protocolo anterior.
+
+      point       — seeds em pontos aleatórios do GT (n_fg + n_bg por imagem)
+      region      — seeds por superpixel incerto, comitê de 1 encoder
+      region_bald — seeds por superpixel, score BALD do comitê
+
+    Antes, o braço AL de `region_bald` usava seeds de região e o braço Random
+    SEMPRE usava seeds em pontos. Os dois braços diferiam em duas variáveis ao
+    mesmo tempo (quais imagens E como anotá-las), então o Δ não media seleção.
+    Com este parâmetro dá para rodar o braço de controle `random_region`
+    (imagens aleatórias + seeds de região) e decompor o efeito:
+
+        AL_region  vs  random_region   → efeito da SELEÇÃO
+        random_region vs random_point  → efeito da GEOMETRIA dos seeds
+    """
+    if seed_mode == "region_bald":
+        _sal_folders = committee_sal_dirs if committee_sal_dirs else [sal_dir]
+        create_combined_region_marker_dir_bald(
+            orig_marker_dir, selected_fnames, label_folder,
+            orig_folder, _sal_folders, out_dir,
+            budget_per_image=20, n_superpixels=300,
+            n_seeds_per_region=15, fg_threshold=0.15,
+            region_method="bald",
+        )
+    elif seed_mode == "region":
+        create_combined_region_marker_dir(
+            orig_marker_dir, selected_fnames, label_folder,
+            orig_folder, sal_dir, out_dir,
+            budget_per_image=20, n_superpixels=300,
+            n_seeds_per_region=15, fg_threshold=0.15,
+            method=acquisition.replace("region_", "") or "entropy",
+        )
+    else:
+        create_combined_marker_dir(
+            orig_marker_dir, selected_fnames, label_folder, out_dir,
+            n_fg=n_fg, n_bg=n_bg,
+        )
+
+    n_imgs = len([f for f in os.listdir(out_dir) if f.endswith("-seeds.txt")])
+    return out_dir, n_imgs
 
 
 def main():
     args   = parse_args()
     device = args.device if torch.cuda.is_available() else "cpu"
     mode   = "DT" if args.use_dt else "Otsu+AF"
-    print(f"Device: {device} | Acquisition: {args.acquisition} | Eval: {mode}")
+
+    # Como os seeds sintéticos são desenhados no braço AL. O braço de controle
+    # `random_region` usa exatamente este mesmo modo (ver _build_marker_dir).
+    if args.acquisition == "region_bald":
+        _seed_mode = "region_bald"
+    elif args.acquisition.startswith("region_"):
+        _seed_mode = "region"
+    else:
+        _seed_mode = "point"
+
+    print(f"Device: {device} | Acquisition: {args.acquisition} | Eval: {mode} | "
+          f"seeds: {_seed_mode}")
 
     dataset_folder = os.path.join(args.dataset_home, "schistossoma-eggs")
     orig_folder    = os.path.join(dataset_folder, "orig")
@@ -871,7 +1009,38 @@ def main():
                 val_fnames = [l.strip() for l in f if l.strip()]
         else:
             val_fnames = fnames[:200]
+
+        # FIX-B2: remover imagens de treino (com markers reais) do val set
+        # 000479.png tem markers em todos os splits e aparece em split{1,2,3}-val.txt
+        orig_marker_dir = os.path.join("data", args.markers, f"split{split}", "markers")
+        if os.path.isdir(orig_marker_dir):
+            _train_fnames = set(
+                f.replace("-seeds.txt", ".png")
+                for f in os.listdir(orig_marker_dir)
+                if f.endswith("-seeds.txt")
+            )
+            if _train_fnames:
+                _before_val = len(val_fnames)
+                val_fnames = [f for f in val_fnames if f not in _train_fnames]
+                if len(val_fnames) < _before_val:
+                    print(f"  [fix-B2] Removidas {_before_val - len(val_fnames)} imgs de treino do val set")
+
+        # FIX: garantir pool ∩ val = ∅ (data leakage)
+        # Pool vem de out/saliencies/.../test/ e val de Splits-5train-70_30,
+        # definições independentes que se sobrepõem (~245 imgs em split1).
+        # Imagens do val não podem ser selecionadas pelo AL nem ter markers gerados.
+        _val_set  = set(val_fnames)
+        _n_before = len(fnames)
+        _pairs    = [(f, s) for f, s in zip(fnames, scores) if f not in _val_set]
+        if _pairs:
+            fnames, scores = zip(*_pairs)
+            fnames, scores = list(fnames), list(scores)
+        else:
+            fnames, scores = [], []
+        N = len(fnames)
+        al_ranking = sorted(range(N), key=lambda i: scores[i], reverse=True)
         print(f"  Val: {len(val_fnames)} imagens")
+        print(f"  Pool: {_n_before} → {N} após remover overlap com val")
 
         # ── Baseline: encoder original ──────────────────────────────────────
         first_dec = "labeled_marker" if args.use_dt else EVAL_DECODERS[0][0]
@@ -882,9 +1051,12 @@ def main():
                 use_dt=args.use_dt, dt_bin=args.dt_bin,
                 dataset_folder=dataset_folder,
             )
+            _n_orig = len([f for f in os.listdir(orig_marker_dir)
+                           if f.endswith("-seeds.txt")])
             _save([{
                 "split": split, "budget": 3, "method": "original_3imgs",
                 "acquisition": "none", "decoder": dec,
+                "n_train_imgs": _n_orig,
                 **{k: round(v, 4) for k, v in m.items()}
             } for dec, m in base_results.items()])
         else:
@@ -910,40 +1082,18 @@ def main():
                 if not _done(split, budget, al_method, first_dec):
                     al_fnames = select_images(
                         args.acquisition, fnames, al_ranking, budget,
-                        enc_path, orig_folder, args.proxy_layer, device
+                        enc_path, orig_folder, args.proxy_layer, device,
+                        sal_dir=sal_dir,  # necessário para BADGE
                     )
                     print(f"    AL  selecionadas: {al_fnames[:3]}...")
 
-                    al_marker_dir = os.path.join(work_dir, "al_markers")
-                    if args.acquisition == "region_bald":
-                        # Hibrido: BALD para selecao de imagens, entropy do encoder
-                        # original para posicionamento de seeds (mais preciso que committee)
-                        create_combined_region_marker_dir_bald(
-                            orig_marker_dir, al_fnames, label_folder,
-                            orig_folder, [sal_dir], al_marker_dir,
-                            budget_per_image=20,
-                            n_superpixels=300,
-                            n_seeds_per_region=15,
-                            fg_threshold=0.15,
-                            region_method="entropy",
-                        )
-                    elif args.acquisition.startswith("region_"):
-                        # Region entropy/margin: seeds de regioes incertas (1 encoder)
-                        region_method = args.acquisition.replace("region_", "")
-                        create_combined_region_marker_dir(
-                            orig_marker_dir, al_fnames, label_folder,
-                            orig_folder, sal_dir, al_marker_dir,
-                            budget_per_image=20,
-                            n_superpixels=300,
-                            n_seeds_per_region=15,
-                            fg_threshold=0.15,
-                            method=region_method,
-                        )
-                    else:
-                        create_combined_marker_dir(
-                            orig_marker_dir, al_fnames, label_folder, al_marker_dir,
-                            n_fg=args.n_fg_markers, n_bg=args.n_bg_markers,
-                        )
+                    al_marker_dir, al_n_imgs = _build_marker_dir(
+                        _seed_mode, args.acquisition, orig_marker_dir, al_fnames,
+                        label_folder, orig_folder, sal_dir, committee_sal_dirs,
+                        os.path.join(work_dir, "al_markers"),
+                        args.n_fg_markers, args.n_bg_markers,
+                        args.marker_style,
+                    )
 
                     # Reutiliza encoder salvo se já existir
                     if not os.path.exists(al_enc_path):
@@ -964,84 +1114,105 @@ def main():
                         al_rows.append({
                             "split": split, "budget": budget, "method": al_method,
                             "acquisition": args.acquisition, "decoder": dec,
+                            "n_train_imgs": al_n_imgs,
                             **{k: round(v, 4) for k, v in m.items()}
                         })
                     _save(al_rows)
                 else:
                     print(f"    [resume] AL budget={budget} já avaliado — skip")
 
-                # ── Random ──────────────────────────────────────────────────
-                rand_results_acc = {dec: {"fb": [], "dice": [], "mae": [], "iou": []}
-                                    for dec, _ in EVAL_DECODERS}
-                rand_method = "random"
+                # ── Braços aleatórios ───────────────────────────────────────
+                # "random"        — imagens aleatórias + seeds em PONTOS
+                # "random_region" — imagens aleatórias + MESMOS seeds do AL
+                #
+                # O segundo é o controle que faltava. Sem ele, para os métodos
+                # region_*, o Δ(AL − random) soma dois efeitos: qual imagem foi
+                # escolhida e como ela foi anotada. Com os dois braços:
+                #     AL − random_region  → efeito da SELEÇÃO
+                #     random_region − random → efeito da GEOMETRIA dos seeds
+                rand_arms = [("random", "point")]
+                if _seed_mode != "point":
+                    rand_arms.append(("random_region", _seed_mode))
 
-                for rs in range(args.n_seeds):
-                    rand_enc_path = os.path.join(
-                        args.save_dir, args.markers, f"split{split}",
-                        args.acquisition, f"budget{budget}", f"rand{rs}", "encoder.pth"
-                    )
-                    os.makedirs(os.path.dirname(rand_enc_path), exist_ok=True)
+                for rand_method, rand_seed_mode in rand_arms:
+                    rand_results_acc = {dec: {"fb": [], "dice": [], "mae": [], "iou": []}
+                                        for dec, _ in EVAL_DECODERS}
 
-                    # Chave de resume para random: usamos method=f"random_seed{rs}"
-                    rand_seed_method = f"random_seed{rs}"
-                    if not _done(split, budget, rand_seed_method, first_dec):
-                        random.seed(rs)
-                        rand_fnames = random.sample(fnames, min(budget, N))
-
-                        rand_marker_dir = os.path.join(work_dir, f"rand{rs}_markers")
-                        create_combined_marker_dir(
-                            orig_marker_dir, rand_fnames, label_folder, rand_marker_dir,
-                            n_fg=args.n_fg_markers, n_bg=args.n_bg_markers,
+                    for rs in range(args.n_seeds):
+                        rand_enc_path = os.path.join(
+                            args.save_dir, args.markers, f"split{split}",
+                            args.acquisition, f"budget{budget}",
+                            f"{rand_method}{rs}", "encoder.pth"
                         )
+                        os.makedirs(os.path.dirname(rand_enc_path), exist_ok=True)
 
-                        if not os.path.exists(rand_enc_path):
-                            retrain_encoder(arch_file, rand_marker_dir,
-                                            orig_folder, label_folder, device, rand_enc_path)
-                        else:
-                            print(f"    [resume] encoder rand{rs} já existe — reutilizando")
+                        rand_seed_method = f"{rand_method}_seed{rs}"
+                        if not _done(split, budget, rand_seed_method, first_dec):
+                            # MESMA semente → os dois braços aleatórios sorteiam
+                            # exatamente as mesmas imagens; só muda a anotação.
+                            random.seed(rs)
+                            rand_fnames = random.sample(fnames, min(budget, N))
 
-                        r = evaluate_all_decoders(
-                            rand_enc_path, val_fnames, orig_folder, label_folder, device,
-                            use_dt=args.use_dt, dt_bin=args.dt_bin,
-                            dataset_folder=dataset_folder,
-                        )
-                        # Salva resultado individual de cada seed (para resume granular)
-                        seed_rows = [{
-                            "split": split, "budget": budget,
-                            "method": rand_seed_method,
-                            "acquisition": "random", "decoder": dec,
-                            **{k: round(v, 4) for k, v in m.items()}
-                        } for dec, m in r.items()]
-                        _save(seed_rows)
-                    else:
-                        print(f"    [resume] rand{rs} budget={budget} já avaliado — skip")
-                        # Carrega do CSV para acumular média
-                        r = {row["decoder"]: {"fb": float(row["fb"]),
-                                              "dice": float(row["dice"]),
-                                              "mae": float(row["mae"])}
-                             for row in all_rows
-                             if (str(row["split"]) == str(split) and
-                                 str(row["budget"]) == str(budget) and
-                                 row["method"] == rand_seed_method)}
+                            rand_marker_dir, rand_n_imgs = _build_marker_dir(
+                                rand_seed_mode, args.acquisition, orig_marker_dir,
+                                rand_fnames, label_folder, orig_folder, sal_dir,
+                                committee_sal_dirs,
+                                os.path.join(work_dir, f"{rand_method}{rs}_markers"),
+                                args.n_fg_markers, args.n_bg_markers,
+                                args.marker_style,
+                            )
 
-                    for dec, m in r.items():
-                        for k, v in m.items():
-                            rand_results_acc[dec][k].append(v)
+                            if not os.path.exists(rand_enc_path):
+                                retrain_encoder(arch_file, rand_marker_dir,
+                                                orig_folder, label_folder, device, rand_enc_path)
+                            else:
+                                print(f"    [resume] encoder {rand_method}{rs} já existe — reutilizando")
 
-                # Salva média das seeds (se ainda não foi salvo)
-                if not _done(split, budget, rand_method, first_dec):
-                    rand_avg_rows = []
-                    for dec, acc in rand_results_acc.items():
-                        if acc["fb"]:
-                            m = {k: float(np.mean(v)) for k, v in acc.items()}
-                            print(f"    Rand {dec[:20]:20s}  Fβ={m['fb']:.3f}  (avg {args.n_seeds} seeds)")
-                            rand_avg_rows.append({
+                            r = evaluate_all_decoders(
+                                rand_enc_path, val_fnames, orig_folder, label_folder, device,
+                                use_dt=args.use_dt, dt_bin=args.dt_bin,
+                                dataset_folder=dataset_folder,
+                            )
+                            seed_rows = [{
                                 "split": split, "budget": budget,
-                                "method": rand_method,
-                                "acquisition": "random", "decoder": dec,
+                                "method": rand_seed_method,
+                                "acquisition": rand_method, "decoder": dec,
+                                "n_train_imgs": rand_n_imgs,
                                 **{k: round(v, 4) for k, v in m.items()}
-                            })
-                    _save(rand_avg_rows)
+                            } for dec, m in r.items()]
+                            _save(seed_rows)
+                        else:
+                            print(f"    [resume] {rand_method}{rs} budget={budget} já avaliado — skip")
+                            r = {row["decoder"]: {"fb":   float(row["fb"]),
+                                                  "dice": float(row["dice"]),
+                                                  "mae":  float(row["mae"]),
+                                                  "iou":  float(row["iou"]) if row.get("iou") else 0.0}
+                                 for row in all_rows
+                                 if (str(row["split"]) == str(split) and
+                                     str(row["budget"]) == str(budget) and
+                                     row["method"] == rand_seed_method)}
+
+                        for dec, m in r.items():
+                            for k, v in m.items():
+                                rand_results_acc[dec][k].append(v)
+
+                    # Média das seeds
+                    if not _done(split, budget, rand_method, first_dec):
+                        rand_avg_rows = []
+                        for dec, acc in rand_results_acc.items():
+                            if acc["fb"]:
+                                m = {k: float(np.mean(v)) for k, v in acc.items()}
+                                sd = float(np.std(acc["fb"]))
+                                print(f"    {rand_method[:14]:14s} {dec[:20]:20s}  "
+                                      f"Fβ={m['fb']:.3f}±{sd:.3f}  ({args.n_seeds} seeds)")
+                                rand_avg_rows.append({
+                                    "split": split, "budget": budget,
+                                    "method": rand_method,
+                                    "acquisition": rand_method, "decoder": dec,
+                                    "n_train_imgs": "",
+                                    **{k: round(v, 4) for k, v in m.items()}
+                                })
+                        _save(rand_avg_rows)
 
             finally:
                 shutil.rmtree(work_dir, ignore_errors=True)

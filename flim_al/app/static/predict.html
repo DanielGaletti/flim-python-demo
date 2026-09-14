@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>FLIM — Inferência</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>🔬 FLIM — Inferência</h1>
+    <nav>
+      <a href="/">Upload</a>
+      <a href="/label">Labeling</a>
+      <a href="/train">Treinar</a>
+      <a href="/results">Resultados</a>
+      <a href="/predict" class="active">Inferência</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="predict-config">
+      <h2>3. Inferência em Novas Imagens</h2>
+
+      <!-- ── Seleção de modelo ────────────────────────────────── -->
+      <div class="form-row">
+        <label>Modelo:
+          <select id="model-select">
+            <!-- Populado via JS: melhor método + todos os treinados -->
+            <!-- ex: "🏆 region_entropy K=10 (Fβ=0.763)" -->
+          </select>
+        </label>
+      </div>
+
+      <!-- ── Upload de imagem nova ────────────────────────────── -->
+      <div class="upload-area" id="predict-drop-zone">
+        <p>📷 Arraste uma imagem PNG aqui<br>
+           <small>ou clique para selecionar</small></p>
+        <input type="file" id="predict-image-input" accept=".png,.jpg,.jpeg">
+      </div>
+
+      <button id="btn-predict" class="btn-primary" disabled>
+        🔍 Segmentar
+      </button>
+    </section>
+
+    <!-- ── Resultado ─────────────────────────────────────────── -->
+    <section id="predict-result" class="hidden">
+      <h2>Resultado</h2>
+
+      <!-- Imagem original + overlay lado a lado -->
+      <div class="result-images">
+        <div class="result-img-card">
+          <h4>Original</h4>
+          <img id="original-img" src="" alt="Imagem original">
+        </div>
+        <div class="result-img-card">
+          <h4>Segmentação</h4>
+          <img id="overlay-img" src="" alt="Segmentação">
+        </div>
+        <div class="result-img-card">
+          <h4>Máscara binária</h4>
+          <img id="mask-img" src="" alt="Máscara">
+        </div>
+      </div>
+
+      <!-- Métricas (se GT disponível) -->
+      <div id="predict-metrics" class="metrics-row hidden">
+        <div class="metric-card">
+          <span class="metric-label">Fβ</span>
+          <span class="metric-value" id="metric-fb">—</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">IoU</span>
+          <span class="metric-value" id="metric-iou">—</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Modelo</span>
+          <span class="metric-value" id="metric-model">—</span>
+        </div>
+      </div>
+
+      <!-- Download -->
+      <div class="download-actions">
+        <a id="btn-download-overlay" class="btn-secondary" download="segmentacao.png">
+          ⬇ Baixar overlay
+        </a>
+        <a id="btn-download-mask" class="btn-secondary" download="mascara.png">
+          ⬇ Baixar máscara
+        </a>
+      </div>
+
+      <!-- Batch: processar múltiplas imagens -->
+      <details id="batch-section">
+        <summary>📂 Processar múltiplas imagens</summary>
+        <div class="upload-area">
+          <input type="file" id="batch-input" multiple accept=".png,.jpg,.jpeg">
+          <p>Selecione várias imagens para processar em lote</p>
+        </div>
+        <button id="btn-batch-predict" class="btn-secondary">
+          Processar lote
+        </button>
+        <div id="batch-results"></div>
+      </details>
+    </section>
+  </main>
+
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/predict.js"></script>
+</body>
+</html>

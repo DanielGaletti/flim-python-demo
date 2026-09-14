@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>FLIM — Labeling</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/label.css">
+</head>
+<body>
+  <header>
+    <h1>🔬 FLIM — Labeling</h1>
+    <nav>
+      <a href="/">Upload</a>
+      <a href="/label" class="active">Labeling</a>
+      <a href="/train">Treinar</a>
+      <a href="/results">Resultados</a>
+      <a href="/predict">Inferência</a>
+    </nav>
+  </header>
+
+  <main class="label-layout">
+
+    <!-- ── Sidebar: lista de imagens ──────────────────────────── -->
+    <aside id="image-list-panel">
+      <div class="progress-bar-wrap">
+        <div id="label-progress-bar" class="progress-bar" style="width:0%"></div>
+      </div>
+      <p id="label-count">0 / 0 imagens com label</p>
+
+      <ul id="image-list">
+        <!-- Populado via JS: items com .labeled ou .unlabeled -->
+      </ul>
+    </aside>
+
+    <!-- ── Canvas principal ────────────────────────────────────── -->
+    <section id="canvas-section">
+      <div id="canvas-toolbar">
+        <!-- Ferramentas de desenho -->
+        <div class="tool-group">
+          <button id="tool-brush"   class="tool-btn active" title="Pincel (B)">🖌️</button>
+          <button id="tool-eraser"  class="tool-btn"        title="Apagador (E)">🧹</button>
+          <button id="tool-polygon" class="tool-btn"        title="Polígono (P)">🔷</button>
+          <button id="tool-fill"    class="tool-btn"        title="Preencher (F)">🪣</button>
+        </div>
+
+        <!-- Tamanho do pincel -->
+        <div class="tool-group">
+          <label>Tamanho: <input type="range" id="brush-size" min="3" max="60" value="15"></label>
+          <span id="brush-size-label">15px</span>
+        </div>
+
+        <!-- Ações -->
+        <div class="tool-group">
+          <button id="btn-undo"       class="btn-secondary" title="Desfazer (Ctrl+Z)">↩ Desfazer</button>
+          <button id="btn-clear"      class="btn-danger"    title="Limpar tudo">🗑️ Limpar</button>
+          <button id="btn-save-label" class="btn-primary"   title="Salvar (Ctrl+S)">💾 Salvar</button>
+        </div>
+
+        <!-- Navegação entre imagens -->
+        <div class="tool-group nav-group">
+          <button id="btn-prev" class="btn-nav">← Anterior</button>
+          <span id="img-counter">1 / N</span>
+          <button id="btn-next" class="btn-nav">Próxima →</button>
+        </div>
+
+        <div class="tool-group">
+          <label>
+            <input type="checkbox" id="chk-show-label" checked>
+            Mostrar label
+          </label>
+        </div>
+      </div>
+
+      <!-- Canvas empilhado: imagem embaixo, máscara em cima -->
+      <div id="canvas-container">
+        <canvas id="canvas-image"  class="canvas-layer"></canvas>
+        <canvas id="canvas-label"  class="canvas-layer overlay-canvas"></canvas>
+        <canvas id="canvas-draw"   class="canvas-layer draw-canvas"></canvas>
+      </div>
+
+      <div id="label-status" class="status hidden"></div>
+    </section>
+  </main>
+
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/label.js"></script>
+</body>
+</html>
