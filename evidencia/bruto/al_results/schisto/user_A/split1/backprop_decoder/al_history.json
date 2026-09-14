@@ -1,0 +1,142 @@
+[
+  {
+    "round": 1,
+    "labeled_size": 8,
+    "train_loss": 0.20303,
+    "proxy_dice": 0.5058,
+    "selected_ids": [
+      460,
+      562,
+      310,
+      272,
+      548
+    ],
+    "elapsed_s": 28.3
+  },
+  {
+    "round": 2,
+    "labeled_size": 13,
+    "train_loss": -0.2166,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      494,
+      58,
+      112,
+      181,
+      319
+    ],
+    "elapsed_s": 28.2
+  },
+  {
+    "round": 3,
+    "labeled_size": 18,
+    "train_loss": -0.57489,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      267,
+      419,
+      311,
+      375,
+      224
+    ],
+    "elapsed_s": 33.1
+  },
+  {
+    "round": 4,
+    "labeled_size": 23,
+    "train_loss": -0.82227,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      485,
+      153,
+      75,
+      225,
+      127
+    ],
+    "elapsed_s": 37.6
+  },
+  {
+    "round": 5,
+    "labeled_size": 28,
+    "train_loss": -1.19732,
+    "proxy_dice": 0.2523,
+    "selected_ids": [
+      263,
+      556,
+      146,
+      539,
+      547
+    ],
+    "elapsed_s": 43.1
+  },
+  {
+    "round": 6,
+    "labeled_size": 33,
+    "train_loss": -1.32969,
+    "proxy_dice": 0.0067,
+    "selected_ids": [
+      316,
+      544,
+      244,
+      328,
+      92
+    ],
+    "elapsed_s": 48.1
+  },
+  {
+    "round": 7,
+    "labeled_size": 38,
+    "train_loss": -1.40712,
+    "proxy_dice": 0.1488,
+    "selected_ids": [
+      120,
+      322,
+      534,
+      256,
+      160
+    ],
+    "elapsed_s": 53.0
+  },
+  {
+    "round": 8,
+    "labeled_size": 43,
+    "train_loss": -1.45872,
+    "proxy_dice": 0.1486,
+    "selected_ids": [
+      521,
+      327,
+      542,
+      557,
+      380
+    ],
+    "elapsed_s": 57.2
+  },
+  {
+    "round": 9,
+    "labeled_size": 48,
+    "train_loss": -1.51874,
+    "proxy_dice": 0.2017,
+    "selected_ids": [
+      249,
+      514,
+      64,
+      266,
+      523
+    ],
+    "elapsed_s": 61.4
+  },
+  {
+    "round": 10,
+    "labeled_size": 53,
+    "train_loss": -1.60076,
+    "proxy_dice": 0.1619,
+    "selected_ids": [
+      397,
+      307,
+      293,
+      381,
+      601
+    ],
+    "elapsed_s": 63.6
+  }
+]

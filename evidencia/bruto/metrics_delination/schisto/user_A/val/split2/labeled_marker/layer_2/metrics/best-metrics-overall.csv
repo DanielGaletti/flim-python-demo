@@ -1,0 +1,4 @@
+Unfiltered
+Setup: Unchanged BBs
+Method       | uWF-M |   MAE |  E-M  | DICE | Fscore 
+Flim         | 0.856 | 0.005 | 0.947 | 0.850 | 0.850

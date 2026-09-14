@@ -1,0 +1,4 @@
+Filtered, Sal_range =1000-9000
+Setup: Unchanged BBs
+Method       | uWF-M |   MAE |  E-M  | DICE | Fscore 
+Flim         | 0.122 | 0.054 | 0.843 | 0.164 | 0.164

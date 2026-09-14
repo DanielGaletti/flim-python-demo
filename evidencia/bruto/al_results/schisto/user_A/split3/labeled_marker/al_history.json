@@ -1,0 +1,142 @@
+[
+  {
+    "round": 1,
+    "labeled_size": 8,
+    "train_loss": 0.04129,
+    "proxy_dice": 0.3974,
+    "selected_ids": [
+      585,
+      109,
+      319,
+      174,
+      560
+    ],
+    "elapsed_s": 20.8
+  },
+  {
+    "round": 2,
+    "labeled_size": 13,
+    "train_loss": -0.34377,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      535,
+      470,
+      261,
+      144,
+      84
+    ],
+    "elapsed_s": 24.8
+  },
+  {
+    "round": 3,
+    "labeled_size": 18,
+    "train_loss": -0.64314,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      311,
+      445,
+      241,
+      475,
+      540
+    ],
+    "elapsed_s": 29.4
+  },
+  {
+    "round": 4,
+    "labeled_size": 23,
+    "train_loss": -0.80229,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      150,
+      600,
+      548,
+      74,
+      532
+    ],
+    "elapsed_s": 34.4
+  },
+  {
+    "round": 5,
+    "labeled_size": 28,
+    "train_loss": -1.06473,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      225,
+      197,
+      320,
+      253,
+      99
+    ],
+    "elapsed_s": 38.2
+  },
+  {
+    "round": 6,
+    "labeled_size": 33,
+    "train_loss": -1.196,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      567,
+      534,
+      513,
+      317,
+      55
+    ],
+    "elapsed_s": 42.4
+  },
+  {
+    "round": 7,
+    "labeled_size": 38,
+    "train_loss": -1.23701,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      413,
+      424,
+      582,
+      572,
+      605
+    ],
+    "elapsed_s": 47.2
+  },
+  {
+    "round": 8,
+    "labeled_size": 43,
+    "train_loss": -1.29545,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      210,
+      528,
+      176,
+      570,
+      28
+    ],
+    "elapsed_s": 52.4
+  },
+  {
+    "round": 9,
+    "labeled_size": 48,
+    "train_loss": -1.34534,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      105,
+      188,
+      83,
+      51,
+      192
+    ],
+    "elapsed_s": 59.0
+  },
+  {
+    "round": 10,
+    "labeled_size": 53,
+    "train_loss": -1.37353,
+    "proxy_dice": 0.0,
+    "selected_ids": [
+      498,
+      260,
+      402,
+      390,
+      327
+    ],
+    "elapsed_s": 63.6
+  }
+]

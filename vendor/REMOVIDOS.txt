@@ -1,0 +1,15 @@
+model -> /workspace/pyflim   (symlink quebrado, removido em 2026-09-14; apontava para caminho do container, sem referencia em nenhum script; impedia a coleta do pytest no Windows com OSError WinError 1920)
+
+tests/arch_test.py, tests/data_test.py, tests/flim_test.py — NÃO removidos,
+apenas excluídos do run padrão do pytest (--ignore em pytest.ini). Vêm da
+biblioteca FLIM-Python upstream e já estavam quebrados no commit de origem
+(flim_test.py: IndentationError na linha 151). Nunca foram tocados por este
+projeto. Para rodá-los mesmo assim: pytest -p no:cacheprovider tests/flim_test.py
+
+.git/index.lock — removido em 2026-09-14. Órfão de 2026-07-29 15:57 (mesma
+data do último commit e dos 38 objetos .git/objects/**/tmp_obj_* órfãos:
+uma operação de git morreu no meio). Nenhum processo git em execução na hora
+da remoção.
+.git/HEAD.lock (órfão de 2026-07-28 13:35, exatamente o horário do último
+commit) e .git/objects/maintenance.lock (órfão de 2026-06-29). Zero processos
+git em execução. Eram eles que impediam qualquer commit novo desde julho.

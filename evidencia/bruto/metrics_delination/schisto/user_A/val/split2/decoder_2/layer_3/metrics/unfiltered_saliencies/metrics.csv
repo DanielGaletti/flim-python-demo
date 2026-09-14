@@ -1,0 +1,2 @@
+Method       | uWF-M |   MAE |  E-M  | DICE | Fscore 
+Flim         | 0.825 | 0.006 | 0.949 | 0.823 | 0.823

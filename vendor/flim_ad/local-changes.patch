@@ -1,0 +1,375 @@
+diff --git a/libs/flim-python/pyflim/flim.py b/libs/flim-python/pyflim/flim.py
+index da5e34f..0f8dc22 100644
+--- a/libs/flim-python/pyflim/flim.py
++++ b/libs/flim-python/pyflim/flim.py
+@@ -13,9 +13,11 @@ from sklearn.metrics import pairwise_distances_argmin_min
+ from torch.utils.data import DataLoader,RandomSampler
+ from skimage.util.shape import view_as_windows
+ from torch.nn import Conv2d,Sequential
++try:
+     import faiss
++except Exception:
++    faiss = None
+ import random
+-from torchvision.transforms import v2
+ import torch.nn as nn
+ import math
+ from PIL import Image
+@@ -180,7 +182,7 @@ class FLIMModel(nn.Module):
+                     selected_kernels_labels.append(f)
+             else:
+                 for f in selected_points:
+-                    selected_kernels_labels.append(int(kernel_labels[f]))
++                    selected_kernels_labels.append(_rotulo_escalar(kernel_labels[f]))
+                 
+             if(not self.network_type == "dseparable_mw"):
+                 FLIMModel.unit_norm_kernels(kernels)
+@@ -283,7 +285,7 @@ class FLIMModel(nn.Module):
+                 selected_kernels_labels.append(f)
+         else:
+             for f in selected_points:
+-                selected_kernels_labels.append(int(kernel_labels[f]))
++                selected_kernels_labels.append(_rotulo_escalar(kernel_labels[f]))
+                 
+         if(not self.network_type == "dseparable_sw" or self.network_type == "separable"):
+             FLIMModel.unit_norm_kernels(kernels)
+@@ -1055,11 +1057,19 @@ class FLIMModel(nn.Module):
+         if(n > n_clusters):
+             X = np.reshape(patches, (n,x*y*f))
+             d = X.shape[1]
++            if faiss is not None:
+                 kmeans = faiss.Kmeans(d, n_clusters, niter=niter, verbose=verbose,
+                                       min_points_per_centroid = 1, max_points_per_centroid = 10000000, seed=3425, nredo=1, update_index=True)
+                 kmeans.train(X)
+-            closest, _ = pairwise_distances_argmin_min(kmeans.centroids, X)
+-            return kmeans.centroids.reshape((n_clusters,x,y,f)), closest
++                centroids = kmeans.centroids
++            else:
++                # fallback: sklearn KMeans quando faiss não está disponível
++                km = KMeans(n_clusters=n_clusters, n_init=1, max_iter=niter, tol=1e-10,
++                            copy_x=True, random_state=3425, verbose=0)
++                km.fit(X)
++                centroids = km.cluster_centers_.astype(np.float32)
++            closest, _ = pairwise_distances_argmin_min(centroids, X)
++            return centroids.reshape((n_clusters,x,y,f)), closest
+             #return np.take(patches, closest, 0)
+         else:
+             return patches.reshape((n,x,y,f)), None
+@@ -1075,3 +1085,21 @@ class FLIMModel(nn.Module):
+         mask=mask.flatten()
+         
+         return patches[mask>0], np.argwhere(mask>0)
++
++
++def _rotulo_escalar(v):
++    """
++    O rotulo do kernel como int, venha ele como escalar, array 0-d ou (1,).
++
++    `label_patches[f, c, c]` devolve shape (1,) quando a imagem de markers tem
++    dimensao de canal, e (numpy >= 1.25) `int()` de um array 1-d levanta
++    TypeError: only 0-dimensional arrays can be converted to Python scalars.
++    Com numpy 1.x isso funcionava, entao o codigo original passava no container
++    e quebra rodando nativo com numpy 2.x.
++
++    Este atalho e estritamente compativel: onde `int()` funcionava havia
++    exatamente um elemento, e reshape(-1)[0] devolve o mesmo valor.
++    """
++    import numpy as _np
++    a = _np.asarray(v).reshape(-1)
++    return int(a[0])
+diff --git a/libs/flim-python/pyflim/metrics.py b/libs/flim-python/pyflim/metrics.py
+old mode 100755
+new mode 100644
+diff --git a/libs/flim-python/tests/data_test.py b/libs/flim-python/tests/data_test.py
+old mode 100755
+new mode 100644
+diff --git a/libs/flim-python/tests/example_marker_file.txt b/libs/flim-python/tests/example_marker_file.txt
+old mode 100755
+new mode 100644
+diff --git a/scripts/brats/test_flim_decoders.sh b/scripts/brats/test_flim_decoders.sh
+index 8217a4a..1abd8a0 100644
+--- a/scripts/brats/test_flim_decoders.sh
++++ b/scripts/brats/test_flim_decoders.sh
+@@ -1,11 +1,11 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+-python3 src/run_flim_decoders.py --dataset brats --dataset_home /home/gilson/Documents/datasets/ --markers brats/user_A \
++python3 src/run_flim_decoders.py --dataset brats --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers brats/user_A \
+         --splits 1 2 3 --device cuda:0 --tasks test \
+         backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
+         --num_processes 12 --best_layer
+ 
+-python3 src/run_flim_decoders.py --dataset brats --dataset_home /home/gilson/Documents/datasets/ --markers brats/user_B \
++python3 src/run_flim_decoders.py --dataset brats --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers brats/user_B \
+         --splits 1 2 3 --device cuda:0 --tasks test \
+         --decoders backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
+         --num_processes 12 --best_layer
+\ No newline at end of file
+diff --git a/scripts/brats/train_backprop_decoder.sh b/scripts/brats/train_backprop_decoder.sh
+index a80805f..bf6df77 100644
+--- a/scripts/brats/train_backprop_decoder.sh
++++ b/scripts/brats/train_backprop_decoder.sh
+@@ -1,4 +1,4 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+ python3 src/train_backprop_decoder.py --dataset brats --dataset_home datasets/ --markers brats/user_A \
+         --splits 1 2 3 --epochs 100 --device cuda:0
+diff --git a/scripts/brats/train_flim_unet.sh b/scripts/brats/train_flim_unet.sh
+index baf8878..ae77016 100644
+--- a/scripts/brats/train_flim_unet.sh
++++ b/scripts/brats/train_flim_unet.sh
+@@ -1,5 +1,5 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+-python3 src/train_flim_unet.py --dataset brats --dataset_home /home/gilson/Documents/datasets/ --markers brats/user_A \
+-        --splits 1 2 3 --gpu cpu --epochs 1 \
++python3 src/train_flim_unet.py --dataset brats --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers brats/user_A \
++        --splits 1 2 3 --gpu cuda:0:0:0:0 --epochs 100 \
+         --processes 1 --training_type freeze --nlayers 3
+\ No newline at end of file
+diff --git a/scripts/brats/val_get_best_layers.sh b/scripts/brats/val_get_best_layers.sh
+index c2d6c73..3c3de4a 100644
+--- a/scripts/brats/val_get_best_layers.sh
++++ b/scripts/brats/val_get_best_layers.sh
+@@ -1,4 +1,4 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+ python3 src/get_best_layers.py --dataset brats --markers brats/user_A \
+         --splits 1 2 3 --tasks val --layers 1 2 3
+\ No newline at end of file
+diff --git a/scripts/brats/val_run_flim_decoders.sh b/scripts/brats/val_run_flim_decoders.sh
+index ba4e807..3d46854 100644
+--- a/scripts/brats/val_run_flim_decoders.sh
++++ b/scripts/brats/val_run_flim_decoders.sh
+@@ -1,11 +1,11 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+-python3 src/run_flim_decoders.py --dataset brats --dataset_home /home/gilson/Documents/datasets/ --markers brats/user_A \
++python3 src/run_flim_decoders.py --dataset brats --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers brats/user_A \
+         --splits 1 2 3 --device cuda:0 --tasks val --layers 1 2 3 \
+         --decoders backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
+-        --num_processes 12
++        --num_processes 4
+ 
+-python3 src/run_flim_decoders.py --dataset brats --dataset_home /home/gilson/Documents/datasets/ --markers brats/user_B \
++python3 src/run_flim_decoders.py --dataset brats --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers brats/user_B \
+         --splits 1 2 3 --device cuda:0 --tasks val --layers 1 2 3 \
+         --decoders backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
+-        --num_processes 12
+\ No newline at end of file
++        --num_processes 4
+\ No newline at end of file
+diff --git a/scripts/schisto/test_flim_decoders.sh b/scripts/schisto/test_flim_decoders.sh
+index 0518dab..0f30437 100644
+--- a/scripts/schisto/test_flim_decoders.sh
++++ b/scripts/schisto/test_flim_decoders.sh
+@@ -1,11 +1,11 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+-python3 src/run_flim_decoders.py --dataset schisto --dataset_home /home/gilson/Documents/datasets/ --markers schisto/user_A \
++python3 src/run_flim_decoders.py --dataset schisto --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers schisto/user_A \
+         --splits 1 2 3 --device cuda:0 --tasks test \
+-        backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
+-        --num_processes 12 --best_layer
++        --decoders backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
++        --num_processes 4 --best_layer
+ 
+-python3 src/run_flim_decoders.py --dataset schisto --dataset_home /home/gilson/Documents/datasets/ --markers schisto/user_B \
++python3 src/run_flim_decoders.py --dataset schisto --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers schisto/user_B \
+         --splits 1 2 3 --device cuda:0 --tasks test \
+         --decoders backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
+-        --num_processes 12 --best_layer
+\ No newline at end of file
++        --num_processes 4 --best_layer
+\ No newline at end of file
+diff --git a/scripts/schisto/test_flim_unet.sh b/scripts/schisto/test_flim_unet.sh
+index d2a6a2a..d9db6f5 100644
+--- a/scripts/schisto/test_flim_unet.sh
++++ b/scripts/schisto/test_flim_unet.sh
+@@ -1,4 +1,4 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+-python3 src/test_flim_unet.py --dataset schisto --dataset_home /home/gilson/Documents/datasets/ --markers schisto/user_A \
+-        --splits 1 2 3 --gpu cpu --processes 1 --tasks val
+\ No newline at end of file
++python3 src/test_flim_unet.py --dataset schisto --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers schisto/user_A \
++        --splits 1 2 3 --gpu cuda:0 --processes 1 --tasks val
+\ No newline at end of file
+diff --git a/scripts/schisto/train_backprop_decoder.sh b/scripts/schisto/train_backprop_decoder.sh
+index 688993d..8406950 100644
+--- a/scripts/schisto/train_backprop_decoder.sh
++++ b/scripts/schisto/train_backprop_decoder.sh
+@@ -1,4 +1,4 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+ python3 src/train_backprop_decoder.py --dataset schisto --dataset_home datasets/ --markers schisto/user_A \
+         --splits 1 2 3 --epochs 100 --device cuda:0
+diff --git a/scripts/schisto/train_flim_unet.sh b/scripts/schisto/train_flim_unet.sh
+index 74e5b3c..a9a959e 100644
+--- a/scripts/schisto/train_flim_unet.sh
++++ b/scripts/schisto/train_flim_unet.sh
+@@ -1,5 +1,5 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+-python3 src/train_flim_unet.py --dataset schisto --dataset_home /home/gilson/Documents/datasets/ --markers schisto/user_A \
+-        --splits 1 2 3 --gpu cpu --epochs 1 \
++python3 src/train_flim_unet.py --dataset schisto --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers schisto/user_A \
++        --splits 1 2 3 --gpu cuda:0:0:0:0 --epochs 100 \
+         --processes 1 --training_type freeze --nlayers 4
+\ No newline at end of file
+diff --git a/scripts/schisto/val_compute_metrics.sh b/scripts/schisto/val_compute_metrics.sh
+index eaf9b2c..613a047 100644
+--- a/scripts/schisto/val_compute_metrics.sh
++++ b/scripts/schisto/val_compute_metrics.sh
+@@ -1,6 +1,6 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+-python3 src/run_compute_metrics.py --dataset schisto --dataset_home /home/gilson/Documents/datasets/ --markers schisto/user_A \
+-        --splits 1 2 3 --layers 1 2 3 4 --tasks val \
+-        --decoders backprop_decoder \
+-        --processes 12 --comp_range 1000 9000 --delineation
+\ No newline at end of file
++python3 src/run_compute_metrics.py --dataset schisto --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers schisto/user_A \
++        --splits 2 --layers 1 2 3 4 --tasks val \
++        --decoders backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
++        --processes 4 --comp_range 1000 9000 --delineation --delineation_name delination
+\ No newline at end of file
+diff --git a/scripts/schisto/val_get_best_layers.sh b/scripts/schisto/val_get_best_layers.sh
+index c2cca34..81d78eb 100644
+--- a/scripts/schisto/val_get_best_layers.sh
++++ b/scripts/schisto/val_get_best_layers.sh
+@@ -1,4 +1,5 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+ python3 src/get_best_layers.py --dataset schisto --markers schisto/user_A \
+-        --splits 1 2 3 --tasks val --layers 1 2 3 4 
+\ No newline at end of file
++        --splits 2 --tasks val --layers 1 2 3 4 \
++        --delineation delination --comp_range 1000 9000 --only_sm
+\ No newline at end of file
+diff --git a/scripts/schisto/val_run_delineation.sh b/scripts/schisto/val_run_delineation.sh
+index 6581da9..776b4eb 100644
+--- a/scripts/schisto/val_run_delineation.sh
++++ b/scripts/schisto/val_run_delineation.sh
+@@ -1,6 +1,6 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+-python3 src/run_smansoni_delineation.py --tasks val --dataset schisto --dataset_home /home/gilson/Documents/datasets \
++python3 src/run_smansoni_delineation.py --tasks val --dataset schisto --dataset_home /workspace/flim-python-demo/flim_ad/datasets \
+     --markers schisto/user_A --splits 2 --comp_range 1000 9000 \
+     --layers 1 2 3 4 --processes 8 \
+     --decoders backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
+diff --git a/scripts/schisto/val_run_flim_decoders.sh b/scripts/schisto/val_run_flim_decoders.sh
+index a49e96a..da1fd26 100644
+--- a/scripts/schisto/val_run_flim_decoders.sh
++++ b/scripts/schisto/val_run_flim_decoders.sh
+@@ -1,11 +1,11 @@
+-#!/bash/bin
++#!/bin/bash
+ 
+-python3 src/run_flim_decoders.py --dataset schisto --dataset_home /home/gilson/Documents/datasets/ --markers schisto/user_A \
++python3 src/run_flim_decoders.py --dataset schisto --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers schisto/user_A \
+         --splits 1 2 3 --device cuda:0 --tasks val --layers 1 2 3 4 \
+         --decoders backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
+-        --num_processes 12
++        --num_processes 4
+ 
+-python3 src/run_flim_decoders.py --dataset schisto --dataset_home /home/gilson/Documents/datasets/ --markers schisto/user_B \
++python3 src/run_flim_decoders.py --dataset schisto --dataset_home /workspace/flim-python-demo/flim_ad/datasets/ --markers schisto/user_B \
+         --splits 1 2 3 --device cuda:0 --tasks val --layers 1 2 3 4 \
+         --decoders backprop_decoder decoder_3 decoder_2 vanilla_adaptive_decoder vanilla_adaptive_decoder_wt hybrid_decoder decoder_attention labeled_marker \
+-        --num_processes 12
+\ No newline at end of file
++        --num_processes 4
+\ No newline at end of file
+diff --git a/src/get_best_layers.py b/src/get_best_layers.py
+index 4f16a56..68853cd 100644
+--- a/src/get_best_layers.py
++++ b/src/get_best_layers.py
+@@ -35,7 +35,7 @@ def main():
+                 for layer_ in args.layers:
+                     if args.dataset == 'schisto':
+                         if args.only_sm:
+-                            file_path = f'out/metrics_{args.delineation}/{marker}//val/split{split}/{decoder}/layer_{layer_}/filtered_saliencies/{args.comp_range[0]}-{args.comp_range[1]}/metrics.csv'
++                            file_path = f'out/metrics_{args.delineation}/{marker}/val/split{split}/{decoder}/layer_{layer_}/filtered_saliencies/{args.comp_range[0]}-{args.comp_range[1]}/metrics.csv'
+                         else:
+                             file_path = f'out/metrics/{marker}/val/split{split}/{decoder}/layer_{layer_}/filtered_saliencies/{args.comp_range[0]}-{args.comp_range[1]}/metrics.csv'
+                     elif args.dataset == 'brats':
+@@ -51,6 +51,10 @@ def main():
+                     except FileNotFoundError:
+                         print(f"File not found: {file_path}")
+ 
++                if len(best_layer_) == 0:
++                    print(f"  No metrics for {marker}/{decoder}/split{split} — defaulting to layer 1")
++                    best_layer[marker][decoder][split] = 1
++                    continue
+                 best_layer_ = np.array(best_layer_).mean(axis=1)
+                 best_layer[marker][decoder][split] = int(np.argmax(best_layer_) + 1)
+ 
+diff --git a/src/run_flim_decoders.py b/src/run_flim_decoders.py
+index 1e75e37..e510ea6 100644
+--- a/src/run_flim_decoders.py
++++ b/src/run_flim_decoders.py
+@@ -11,6 +11,10 @@ import json
+ 
+ def run_model(id, model, train_dataset_all, output_path, decoder, dataset, split, markers, task, decoder_layer, device):
+     print(f'[Process {id}] Running decoder: {decoder} | Task: {task} | Split: {split}')
++    # Move modelo para o device correto dentro do worker (evita CUDA handle inválido no spawn)
++    model.device = device
++    if hasattr(model, 'to'):
++        model.to(device)
+ 
+     if decoder == 'backprop_decoder':
+         path = f"out/trained_models/{markers}/backprop_decoder_weights/split{split}/"
+@@ -83,7 +87,9 @@ def main():
+             )
+ 
+             model_path = f"out/trained_models/{args.markers}/split{split}/flim_encoder_split{split}.pth"
+-            model = torch.load(model_path, map_location=args.device,weights_only=False)
++            # Carrega em CPU para ser serializável entre processos (spawn)
++            # O worker move para o device correto ao iniciar
++            model = torch.load(model_path, map_location='cpu', weights_only=False)
+             model.multi_layer = False
+             model.device = args.device
+ 
+@@ -91,6 +97,7 @@ def main():
+                 decoder_layer = [i-1 for i in args.layers]
+ 
+             for i, decoder in enumerate(args.decoders):
++                if args.best_layer:
+                     decoder_layer = [best_layer[args.markers][decoder][str(split)]]
+ 
+                 model_copy = copy.deepcopy(model)
+diff --git a/src/run_smansoni_delineation.py b/src/run_smansoni_delineation.py
+index fe19175..337de9f 100644
+--- a/src/run_smansoni_delineation.py
++++ b/src/run_smansoni_delineation.py
+@@ -43,11 +43,14 @@ def main():
+                 command = (
+                     f"$NEWIFT_DIR/bin/iftSMansoniDelineation "
+                     rf"{args.dataset_home}/{args.dataset} "
+-                    f"/home/gilson/Documents/flim_ad/out/saliencies/{args.markers}/{args.tasks}/split{split}/{decoder}/layer_{layer} "
++                    f"out/saliencies/{args.markers}/{args.tasks}/split{split}/{decoder}/layer_{layer} "
+                     f"2 "
+-                    f"/home/gilson/Documents/flim_ad/out/saliencies_delination/{args.markers}/{args.tasks}/split{split}/{decoder}/layer_{layer} "
++                    f"out/saliencies_delination/{args.markers}/{args.tasks}/split{split}/{decoder}/layer_{layer} "
+                     rf"{args.border_dist} {args.seed_dilation} {args.seed_erosion} {args.comp_range[0]} {args.comp_range[1]} {128}"
+                 )
++                # Pre-cria diretório de saída para evitar race condition no mkdir
++                out_dir = f"out/saliencies_delination/{args.markers}/{args.tasks}/split{split}/{decoder}/layer_{layer}/masks"
++                os.makedirs(out_dir, exist_ok=True)
+                 processes.append(command)
+     with multiprocessing.Pool(args.processes) as pool:
+         pool.map(run_process, processes)

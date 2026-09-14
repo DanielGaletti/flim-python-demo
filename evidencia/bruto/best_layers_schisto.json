@@ -1,0 +1,86 @@
+{
+  "schisto/user_A": {
+    "backprop_decoder": {
+      "1": 3,
+      "2": 3,
+      "3": 3
+    },
+    "decoder_3": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "decoder_2": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "vanilla_adaptive_decoder": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "vanilla_adaptive_decoder_wt": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "hybrid_decoder": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "decoder_attention": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "labeled_marker": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    }
+  },
+  "schisto/user_B": {
+    "backprop_decoder": {
+      "1": 3,
+      "2": 3,
+      "3": 3
+    },
+    "decoder_3": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "decoder_2": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "vanilla_adaptive_decoder": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "vanilla_adaptive_decoder_wt": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "hybrid_decoder": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "decoder_attention": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    },
+    "labeled_marker": {
+      "1": 2,
+      "2": 2,
+      "3": 2
+    }
+  }
+}

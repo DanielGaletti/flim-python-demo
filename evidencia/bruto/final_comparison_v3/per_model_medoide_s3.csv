@@ -1,0 +1,8 @@
+user,split,arm,decoder,paper_name,block,n_train,train_ids,fb,dice,mae,iou,fb_val
+A,3,al_seed0,labeled_marker,FLIM_lm,3,3,000541|000043|000625,0.7277,0.6745,0.0104,0.6053,0.7166
+A,3,al_seed0,decoder_2,FLIM_pb,2,3,000541|000043|000625,0.7018,0.6568,0.0106,0.5889,0.6565
+A,3,al_seed0,decoder_3,FLIM_mb,2,3,000541|000043|000625,0.6828,0.6399,0.0112,0.5718,0.6617
+A,3,al_seed0,decoder_attention,FLIM_at,2,3,000541|000043|000625,0.57,0.541,0.0147,0.4728,0.5347
+A,3,al_seed0,vanilla_adaptive_decoder,FLIM_ts,3,3,000541|000043|000625,0.4863,0.4639,0.0192,0.3964,0.4961
+A,3,al_seed0,hybrid_decoder,FLIM_lt,3,3,000541|000043|000625,0.5261,0.498,0.0175,0.4289,0.5106
+A,3,al_seed0,vanilla_adaptive_decoder_wt,FLIM_ts*,3,3,000541|000043|000625,0.4525,0.4345,0.0215,0.3669,0.4767
