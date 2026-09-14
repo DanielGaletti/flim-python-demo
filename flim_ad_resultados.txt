@@ -1,6 +1,7 @@
-=== FLIM-AD | Parasites (Schistosoma) ===
-Reprodução vs Paper | média splits 1/2/3
+=== FLIM-AD | Parasites (Schistosoma) — Resultados Completos ===
+Reproducao vs Paper | media splits 1/2/3 | test set
 
+--- Tabela 1: Reproducao vs Paper ---
 Modelo    User  MAE(p) MAE(r)  Fb(p)  Fb(r)   DFb
 -------------------------------------------------------
 FLIMts     A    0.010  0.010   0.747  0.691  -0.056
@@ -10,16 +11,28 @@ FLIMat     B    0.014  0.018   0.660  0.461  -0.199
 FLIMpb     A    0.006  0.010   0.857  0.694  -0.163
 FLIMpb     B    0.006  0.011   0.847  0.671  -0.176
 
-(p)=paper  (r)=reprodução  D=delta
-
---- Todos decoders | user_A ---
-Modelo      MAE    Fb
+--- Tabela 2: Todos decoders (user_A) ---
+Modelo       MAE    Fb
 -----------------------
-FLIMts     0.010  0.691
-FLIMad3    0.010  0.699
-FLIMad2    0.011  0.685
-FLIMpb     0.010  0.694
-FLIMhyb    0.011  0.635
-FLIMat     0.014  0.576
-FLIMatt    0.016  0.529
-FLIMat_wt  0.019  0.473
+FLIMts      0.010  0.691
+FLIMad3     0.010  0.699
+FLIMad2     0.011  0.685
+FLIMpb      0.010  0.694
+FLIMhyb     0.011  0.635
+FLIMat      0.014  0.576
+FLIMatt     0.016  0.529
+FLIMat_wt   0.019  0.473
+
+--- Tabela 3: Curva AL vs Random (media splits 1/2/3) ---
+Budget  %data  AL-A   Rand-A  D-A   AL-B   Rand-B  D-B
+----------------------------------------------------------
+     5   0.8%  0.248   0.220 +0.028  0.167   0.168 -0.001
+    10   1.6%  0.262   0.198 +0.064  0.333   0.287 +0.046
+    20   3.3%  0.354   0.320 +0.035  0.225   0.273 -0.048
+    30   4.9%  0.369   0.300 +0.070  0.358   0.322 +0.036
+ ** 50   8.2%  0.391   0.312 +0.079  0.377   0.275 +0.102  <- otimo
+   100  16.4%  0.389   0.342 +0.047  0.371   0.334 +0.037
+   610 100.0%  0.347   0.358 -0.011  0.343   0.351 -0.007
+
+Conclusao: com 50 imagens (8% do dataset), AL atinge ~113% do Fb
+do treino completo (user_A) usando 12x menos anotacoes.

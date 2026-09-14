@@ -33,6 +33,10 @@ echo ""
 python3 -c "import skimage" 2>/dev/null || pip3 install scikit-image -q
 
 echo "[$(date +%H:%M:%S)] Iniciando region_bald..."
+echo ""
+echo "NOTA: para re-treinar o comite com bootstrap (fix do BALD=0),"
+echo "      apague out/al_bald_results/committee/ antes de rodar."
+echo ""
 python3 ../flim_al/al_encoder_experiment.py \
     --markers "$MARKERS" \
     --splits $SPLITS \

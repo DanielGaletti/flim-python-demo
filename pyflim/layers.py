@@ -606,7 +606,7 @@ class FLIMAdaptiveDecoderLayer(torch.nn.Module):
         if(self.filter_by_size):
             util.filter_component_by_area(y)
 
-        return torch.from_numpy(y*255)
+        return y * 255
 
     def view_as_windows_pytorch(self, image, shape, stride=None):
         windows = image.unfold(1, shape[0], stride[0])
@@ -712,14 +712,14 @@ class FLIMAdaptiveDecoderLayer(torch.nn.Module):
         background_weights = int((marker_labels==0).sum())
         foreground_weights = int((marker_labels==1).sum())
 
-        if(foreground_weights != 0):   
+        if(foreground_weights != 0):
             window_0 = self.view_as_windows_pytorch(interp_feature_array[0,(marker_labels==1),:,:], (mask_shape,mask_shape), stride=[1,1]).permute((1,2,0,3,4))
-            
+
             #circular adjacency
             window_0 = window_0 * mask
             sum = torch.sum(window_0, dim=(2,3,4))
             mean_0 = sum/(foreground_weights*mask_size)
-                    
+
         if(background_weights != 0):
             window_1 = self.view_as_windows_pytorch(interp_feature_array[0,(marker_labels==0),:,:], (mask_shape,mask_shape), stride=[1,1]).permute((1,2,0,3,4))
             #circular adjacency
@@ -727,13 +727,14 @@ class FLIMAdaptiveDecoderLayer(torch.nn.Module):
             sum = torch.sum(window_1, dim=(2,3,4))
             mean_1 = sum/(background_weights*mask_size)
 
-        weights_ = weights[(marker_labels==1),:,:]
-        weights_[:,((mean_0) > mean_1)] = 1
-        weights[(marker_labels==1),:,:] = weights_
+        if(foreground_weights != 0 and background_weights != 0):
+            weights_ = weights[(marker_labels==1),:,:]
+            weights_[:,((mean_0) > mean_1)] = 1
+            weights[(marker_labels==1),:,:] = weights_
 
-        weights_ = weights[(marker_labels==0),:,:]
-        weights_[:,(mean_0 < (mean_1))] = -1
-        weights[(marker_labels==0),:,:] = weights_
+            weights_ = weights[(marker_labels==0),:,:]
+            weights_[:,(mean_0 < (mean_1))] = -1
+            weights[(marker_labels==0),:,:] = weights_
 
         if(r  > 0):
             interp_feature_array = interp_feature_array[:,:,r:-r,r:-r]

@@ -684,21 +684,25 @@ class FLIMMetrics():
             if(len(filename.split(".")) > 1):
                 filename=filename.split(".")[0]
 
-            if os.path.isfile(results_folder+filename+result_ext):
-                saliency = io.imread(results_folder+filename+result_ext)
+            if not os.path.isfile(results_folder+filename+result_ext):
+                print(f"[SKIP] Saliency not found: {results_folder+filename+result_ext}")
+                continue
+            saliency = io.imread(results_folder+filename+result_ext)
             if(len(saliency.shape) == 3):
                 saliency = saliency[:,:,0]
             bin_sal = util.binarize_saliency(saliency)
-            if os.path.isfile(label_folder+filename+label_ext):
-                label = (io.imread(label_folder+filename+label_ext)).astype(np.uint8)
-                label[label>0] = 1
+            if not os.path.isfile(label_folder+filename+label_ext):
+                print(f"[SKIP] Label not found: {label_folder+filename+label_ext}")
+                continue
+            label = (io.imread(label_folder+filename+label_ext)).astype(np.uint8)
+            label[label>0] = 1
 
             #if(label.ndim > 2):
             #    label = label[:,:,0]
             flatten_sal = bin_sal.flatten()
             flatten_label = label.flatten()
             #dices.append(1 - dice(flatten_sal, flatten_label))
-            self.mae.append(mean_absolute_error(flatten_sal, flatten_label))
+            self.mae.append(mean_absolute_error(flatten_sal.astype(float), flatten_label.astype(float)))
             self.wfscore.append(FLIMMetrics.weighted_fmeasure(saliency, label)) 
             if(self.use_smeasure):
                 self.smeasure.append(FLIMMetrics.s_measure(saliency, label))

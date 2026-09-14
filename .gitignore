@@ -183,6 +183,9 @@ results/Parasites_*/
 results/BraTS_*/
 results/conjunctiva/
 results/baselines/*/
+results/baselines/*.pth
+*.pth
+*.pt
 
 # ── aplicacao ────────────────────────────────────────────────────────────────
 flim_app/uploads/

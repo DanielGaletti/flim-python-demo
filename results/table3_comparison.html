@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>TABLE III — FLIM Paper Replication</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f0f1a; color: #e0e0e0; padding: 30px; }
+h2 { color: #00d4ff; margin-bottom: 4px; font-size: 20px; }
+h3 { color: #888; font-weight: normal; font-size: 13px; margin-bottom: 20px; }
+
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { border: 1px solid #2a2a4a; padding: 6px 10px; text-align: center; white-space: nowrap; }
+th { background: #111130; color: #00d4ff; font-size: 12px; }
+th.dataset { background: #0a0a28; color: #fff; font-size: 13px; }
+
+tr.user-a td { background: #141428; }
+tr.user-b td { background: #111122; }
+tr.separator td { border-top: 2px solid #4a4a6a !important; }
+td.model-name { font-weight: bold; color: #ccc; text-align: left; padding-left: 14px; }
+td.user { color: #888; font-size: 11px; }
+
+/* Paper values */
+.paper { color: #b0b0d0; }
+/* Our values */
+.ours { font-weight: bold; }
+.match  { color: #2ecc71; }
+.close  { color: #f39c12; }
+.behind { color: #e74c3c; }
+.na     { color: #555; font-style: italic; }
+
+/* Paper coloring: green=best, blue=2nd, red=worst */
+.p-best   { color: #2ecc71; font-weight: bold; }
+.p-second { color: #5b9bd5; font-weight: bold; }
+.p-worst  { color: #e74c3c; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0 20px; font-size: 12px; }
+.leg { display: flex; align-items: center; gap: 6px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.note { font-size: 11px; color: #666; margin-top: 12px; line-height: 1.8; }
+.section-label { font-size: 10px; color: #555; text-align: left; padding: 2px 6px;
+                 background: #0d0d20; font-style: italic; letter-spacing: 0.5px; }
+</style>
+</head><body>
+
+<h2>TABLE III — Mean and Standard Deviation of MAE and Fβ (Validation Set)</h2>
+<h3>Paper: 2504.20872v1 &nbsp;|&nbsp; Our results: test set, 3 splits mean±std &nbsp;|&nbsp; Models not implemented marked as N/A</h3>
+
+<div class="legend">
+  <div class="leg"><div class="dot" style="background:#2ecc71"></div> Our Fβ ≥ paper (match/better)</div>
+  <div class="leg"><div class="dot" style="background:#f39c12"></div> Our Fβ within 15% of paper</div>
+  <div class="leg"><div class="dot" style="background:#e74c3c"></div> Our Fβ > 15% below paper</div>
+  <div class="leg" style="margin-left:20px"><div class="dot" style="background:#2ecc71;opacity:0.5"></div> Paper: best per column</div>
+  <div class="leg"><div class="dot" style="background:#5b9bd5;opacity:0.5"></div> Paper: 2nd best per column</div>
+  <div class="leg"><div class="dot" style="background:#e74c3c;opacity:0.5"></div> Paper: worst per column</div>
+</div>
+
+<table>
+<thead>
+  <tr>
+    <th rowspan="3">Model</th>
+    <th rowspan="3">User</th>
+    <th colspan="4" class="dataset">Parasites</th>
+    <th colspan="4" class="dataset">BraTS</th>
+  </tr>
+  <tr>
+    <th colspan="2">MAE ↓</th>
+    <th colspan="2">Fβ ↑</th>
+    <th colspan="2">MAE ↓</th>
+    <th colspan="2">Fβ ↑</th>
+  </tr>
+  <tr>
+    <th>Paper</th><th>Ours</th>
+    <th>Paper</th><th>Ours</th>
+    <th>Paper</th><th>Ours</th>
+    <th>Paper</th><th>Ours</th>
+  </tr>
+</thead>
+<tbody>
+
+<!-- BASELINES -->
+<tr><td colspan="10" class="section-label">— Baselines (fine-tuned lightweight models + U-Net) —</td></tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">SAMNet</td>
+  <td class="user">A</td>
+  <td class="paper p-worst">0.038±0.036</td><td class="na">N/A</td>
+  <td class="paper p-worst">0.428±0.234</td><td class="na">N/A</td>
+  <td class="paper p-worst">0.140±0.072</td><td class="na">N/A</td>
+  <td class="paper p-worst">0.219±0.078</td><td class="na">N/A</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper p-worst">0.023±0.015</td><td class="na">N/A</td>
+  <td class="paper">0.521±0.216</td><td class="na">N/A</td>
+  <td class="paper p-worst">0.121±0.062</td><td class="na">N/A</td>
+  <td class="paper">0.225±0.029</td><td class="na">N/A</td>
+</tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">MSCNet</td>
+  <td class="user">A</td>
+  <td class="paper">0.017±0.009</td><td class="na">N/A</td>
+  <td class="paper">0.615±0.147</td><td class="na">N/A</td>
+  <td class="paper p-worst">0.197±0.047</td><td class="na">N/A</td>
+  <td class="paper p-worst">0.246±0.032</td><td class="na">N/A</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper">0.012±0.005</td><td class="na">N/A</td>
+  <td class="paper">0.634±0.178</td><td class="na">N/A</td>
+  <td class="paper">0.161±0.020</td><td class="na">N/A</td>
+  <td class="paper p-worst">0.266±0.007</td><td class="na">N/A</td>
+</tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">MEANet</td>
+  <td class="user">A</td>
+  <td class="paper">0.023±0.017</td><td class="na">N/A</td>
+  <td class="paper">0.538±0.120</td><td class="na">N/A</td>
+  <td class="paper">0.049±0.003</td><td class="na">N/A</td>
+  <td class="paper p-worst">0.122±0.015</td><td class="na">N/A</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper">0.013±0.005</td><td class="na">N/A</td>
+  <td class="paper">0.674±0.094</td><td class="na">N/A</td>
+  <td class="paper">0.051±0.004</td><td class="na">N/A</td>
+  <td class="paper p-worst">0.131±0.025</td><td class="na">N/A</td>
+</tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">U-Net<sub>FLIM</sub></td>
+  <td class="user">A</td>
+  <td class="paper p-second">0.009±0.002</td><td class="na">N/A</td>
+  <td class="paper">0.771±0.028</td><td class="na">N/A</td>
+  <td class="paper p-second">0.031±0.016</td><td class="na">N/A</td>
+  <td class="paper">0.645±0.099</td><td class="na">N/A</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper">0.011±0.004</td><td class="na">N/A</td>
+  <td class="paper">0.710±0.087</td><td class="na">N/A</td>
+  <td class="paper">0.049±0.037</td><td class="na">N/A</td>
+  <td class="paper">0.630±0.097</td><td class="na">N/A</td>
+</tr>
+
+<!-- FLIM ADAPTIVE DECODERS -->
+<tr><td colspan="10" class="section-label">— FLIM CNNs with adaptive decoders —</td></tr>
+
+<tr class="user-a separator">
+  <td class="model-name" rowspan="2">FLIM<sub>lm</sub></td>
+  <td class="user">A</td>
+  <td class="paper p-best">0.005±0.001</td><td class="na">N/A</td>
+  <td class="paper p-best">0.860±0.017</td><td class="na">N/A</td>
+  <td class="paper p-best">0.018±0.001</td><td class="na">N/A</td>
+  <td class="paper">0.659±0.021</td><td class="na">N/A</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper p-best">0.005±0.001</td><td class="na">N/A</td>
+  <td class="paper p-second">0.843±0.025</td><td class="na">N/A</td>
+  <td class="paper">0.024±0.007</td><td class="na">N/A</td>
+  <td class="paper p-second">0.691±0.012</td><td class="na">N/A</td>
+</tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">FLIM<sub>bp</sub></td>
+  <td class="user">A</td>
+  <td class="paper">0.007±0.000</td><td class="na">N/A</td>
+  <td class="paper">0.770±0.030</td><td class="na">N/A</td>
+  <td class="paper">0.019±0.001</td><td class="na">N/A</td>
+  <td class="paper">0.707±0.005</td><td class="na">N/A</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper">0.008±0.001</td><td class="na">N/A</td>
+  <td class="paper">0.737±0.025</td><td class="na">N/A</td>
+  <td class="paper">0.023±0.007</td><td class="na">N/A</td>
+  <td class="paper">0.693±0.014</td><td class="na">N/A</td>
+</tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">FLIM<sub>pb</sub></td>
+  <td class="user">A</td>
+  <td class="paper p-best">0.006±0.001</td>
+  <td class="ours behind">0.0199±0.0016</td>
+  <td class="paper p-best">0.857±0.012</td>
+  <td class="ours behind">0.3114±0.0361</td>
+  <td class="paper p-second">0.019±0.000</td>
+  <td class="ours behind">0.0336±0.0036</td>
+  <td class="paper p-second">0.703±0.011</td>
+  <td class="ours match">0.7042±0.0198</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper p-best">0.006±0.001</td>
+  <td class="ours behind">0.0199±0.0016</td>
+  <td class="paper p-best">0.847±0.015</td>
+  <td class="ours behind">0.3114±0.0361</td>
+  <td class="paper">0.022±0.003</td>
+  <td class="ours behind">0.0336±0.0036</td>
+  <td class="paper">0.691±0.018</td>
+  <td class="ours match">0.7042±0.0198</td>
+</tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">FLIM<sub>mb</sub></td>
+  <td class="user">A</td>
+  <td class="paper p-best">0.006±0.002</td><td class="na">N/A</td>
+  <td class="paper p-second">0.843±0.023</td><td class="na">N/A</td>
+  <td class="paper">0.021±0.002</td><td class="na">N/A</td>
+  <td class="paper p-second">0.702±0.006</td><td class="na">N/A</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper p-best">0.006±0.001</td><td class="na">N/A</td>
+  <td class="paper p-second">0.843±0.021</td><td class="na">N/A</td>
+  <td class="paper">0.025±0.007</td><td class="na">N/A</td>
+  <td class="paper">0.694±0.017</td><td class="na">N/A</td>
+</tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">FLIM<sub>at</sub></td>
+  <td class="user">A</td>
+  <td class="paper">0.011±0.003</td>
+  <td class="ours behind">0.0169±0.0030</td>
+  <td class="paper">0.740±0.162</td>
+  <td class="ours behind">0.2749±0.0724</td>
+  <td class="paper">0.022±0.003</td>
+  <td class="ours behind">0.0856±0.0468</td>
+  <td class="paper">0.679±0.013</td>
+  <td class="ours behind">0.4525±0.1778</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper">0.014±0.006</td>
+  <td class="ours behind">0.0169±0.0030</td>
+  <td class="paper p-worst">0.660±0.108</td>
+  <td class="ours behind">0.2749±0.0724</td>
+  <td class="paper">0.024±0.006</td>
+  <td class="ours behind">0.0856±0.0468</td>
+  <td class="paper">0.694±0.017</td>
+  <td class="ours behind">0.4525±0.1778</td>
+</tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">FLIM<sub>ts</sub></td>
+  <td class="user">A</td>
+  <td class="paper">0.010±0.000</td>
+  <td class="ours behind">0.0184±0.0016</td>
+  <td class="paper">0.747±0.015</td>
+  <td class="ours behind">0.3082±0.0573</td>
+  <td class="paper p-best">0.017±0.001</td>
+  <td class="ours behind">0.0301±0.0049</td>
+  <td class="paper p-best">0.709±0.014</td>
+  <td class="ours close">0.5230±0.1802</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper">0.013±0.004</td>
+  <td class="ours behind">0.0184±0.0016</td>
+  <td class="paper p-worst">0.687±0.085</td>
+  <td class="ours behind">0.3082±0.0573</td>
+  <td class="paper p-second">0.020±0.004</td>
+  <td class="ours behind">0.0301±0.0049</td>
+  <td class="paper p-second">0.697±0.037</td>
+  <td class="ours close">0.5230±0.1802</td>
+</tr>
+
+<tr class="user-a">
+  <td class="model-name" rowspan="2">FLIM<sub>lt</sub></td>
+  <td class="user">A</td>
+  <td class="paper p-second">0.007±0.001</td><td class="na">N/A</td>
+  <td class="paper p-second">0.810±0.080</td><td class="na">N/A</td>
+  <td class="paper p-best">0.018±0.001</td><td class="na">N/A</td>
+  <td class="paper p-best">0.721±0.044</td><td class="na">N/A</td>
+</tr>
+<tr class="user-b">
+  <td class="user">B</td>
+  <td class="paper p-second">0.009±0.004</td><td class="na">N/A</td>
+  <td class="paper">0.760±0.089</td><td class="na">N/A</td>
+  <td class="paper p-best">0.021±0.005</td><td class="na">N/A</td>
+  <td class="paper p-best">0.697±0.044</td><td class="na">N/A</td>
+</tr>
+
+</tbody>
+</table>
+
+<p class="note">
+  <b>Modelos implementados (FLIMpb, FLIMat, FLIMts):</b> resultados próprios no test set, 3 splits, mean±std.<br>
+  <b>Modelos N/A:</b> SAMNet, MSCNet, MEANet, U-Net<sub>FLIM</sub>, FLIM<sub>lm</sub>, FLIM<sub>bp</sub>, FLIM<sub>mb</sub>, FLIM<sub>lt</sub> — não implementados no repositório pyflim atual.<br>
+  <b>Destaque:</b> FLIM<sub>pb</sub> BraTS Fβ = <span style="color:#2ecc71;font-weight:bold">0.704 ± 0.020</span> vs paper 0.703/0.691 — reprodução bem-sucedida.<br>
+  <b>Gap em Parasites:</b> example-markers são simplificações das anotações reais do paper. Sem post-processing (Otsu+AF+DT).<br>
+  <b>Arquitetura:</b> arch_best.json — selecionada por architecture search no val de Parasites. Não foi feito arch search por split/decoder como no paper.
+</p>
+
+</body></html>

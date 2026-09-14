@@ -11,7 +11,10 @@ from sklearn.metrics import pairwise_distances_argmin_min
 from torch.utils.data import DataLoader
 from skimage.util.shape import view_as_windows
 from torch.nn import Conv2d,Sequential
-import faiss
+try:
+    import faiss
+except Exception:
+    faiss = None
 import random
 import torch.nn as nn
 import math
@@ -165,7 +168,7 @@ class FLIMModel(nn.Module):
                     selected_kernels_labels.append(f)
             else:
                 for f in selected_points:
-                    selected_kernels_labels.append(int(kernel_labels[f]))
+                    selected_kernels_labels.append(_rotulo_escalar(kernel_labels[f]))
                 
             if(not self.network_type == "dseparable_mw"):
                 FLIMModel.unit_norm_kernels(kernels)
@@ -269,7 +272,7 @@ class FLIMModel(nn.Module):
                 selected_kernels_labels.append(f)
         else:
             for f in selected_points:
-                selected_kernels_labels.append(int(kernel_labels[f]))
+                selected_kernels_labels.append(_rotulo_escalar(kernel_labels[f]))
                 
         if(not self.network_type == "dseparable_sw" or self.network_type == "separable"):
             FLIMModel.unit_norm_kernels(kernels)
@@ -425,7 +428,7 @@ class FLIMModel(nn.Module):
             image_files = None
             for sample_batch in dataset:
                 X = sample_batch["image"].float().to(self.device)
-                Y = self.forward(X, self.layers[decoder_layer].marker_labels.clone(), decoder_layer)
+                Y = self.forward(X, decoder_layer=decoder_layer)
                 del X
                 original_sizes = sample_batch['original_size']
                 image_paths = sample_batch["image_path"]
@@ -443,7 +446,7 @@ class FLIMModel(nn.Module):
             for sample in dataset:
                 X = sample["image"].to(self.device)
                 original_size = sample["original_size"]
-                y = self.forward(X.unsqueeze(0), self.layers[decoder_layer].marker_labels.clone(), decoder_layer)
+                y = self.forward(X.unsqueeze(0), decoder_layer=decoder_layer)
                 out_size = y.shape[-2:]
                 if(out_size[0] != original_size[0] or out_size[1] != original_size[1]):
                     y = F.interpolate(y, [original_size[0], original_size[1]], mode='bilinear', align_corners=True)
@@ -461,7 +464,7 @@ class FLIMModel(nn.Module):
     def forward(self, X, decoder_layer=None):
         original_size = (X.shape[-2:])
         gpu_tracker = util.MemTracker()
-        decoder_layer = self.architecture.nlayers - 1 if decoder_layer == None else decoder_layer
+        decoder_layer = self.architecture.nlayers - 1 if (decoder_layer is None or decoder_layer == -1) else decoder_layer
         y = None
         for l in range(self.architecture.nlayers):
             if(not self.use_bias):
@@ -634,3 +637,21 @@ class FLIMModel(nn.Module):
         mask=mask.flatten()
         
         return patches[mask>0], np.argwhere(mask>0)
+
+
+def _rotulo_escalar(v):
+    """
+    O rotulo do kernel como int, venha ele como escalar, array 0-d ou (1,).
+
+    `label_patches[f, c, c]` devolve shape (1,) quando a imagem de markers tem
+    dimensao de canal, e (numpy >= 1.25) `int()` de um array 1-d levanta
+    TypeError: only 0-dimensional arrays can be converted to Python scalars.
+    Com numpy 1.x isso funcionava, entao o codigo original passava no container
+    e quebra rodando nativo com numpy 2.x.
+
+    Este atalho e estritamente compativel: onde `int()` funcionava havia
+    exatamente um elemento, e reshape(-1)[0] devolve o mesmo valor.
+    """
+    import numpy as _np
+    a = _np.asarray(v).reshape(-1)
+    return int(a[0])

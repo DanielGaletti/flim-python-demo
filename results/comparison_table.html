@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>FLIM Comparison Table</title>
+<style>
+  body  { font-family: 'Segoe UI', Arial, sans-serif; padding:30px; background:#12121f; color:#eee; }
+  h2    { color:#00d4ff; border-bottom:1px solid #333; padding-bottom:8px; }
+  h3    { color:#aaa; font-weight:normal; font-size:14px; }
+  table { border-collapse:collapse; width:100%; font-size:14px; margin-top:16px; }
+  th    { background:#16213e; color:#00d4ff; padding:12px 16px; border:1px solid #2a2a4a; text-align:center; }
+  td    { padding:10px 16px; border:1px solid #2a2a4a; text-align:center; }
+  tr:nth-child(odd) td { background:#191930; }
+  tr:nth-child(even) td { background:#141428; }
+  .legend  { display:flex; gap:24px; margin:12px 0; font-size:13px; align-items:center; }
+  .dot     { width:13px;height:13px;border-radius:50%;display:inline-block;margin-right:5px; }
+  .note    { font-size:12px; color:#888; margin-top:14px; line-height:1.7; }
+  .highlight { background:#002244 !important; }
+</style>
+</head><body>
+<h2>FLIM — Comparação com TABLE III do Paper (2504.20872v1)</h2>
+<h3>Nossos resultados: test set (média ± desvio, 3 splits) &nbsp;|&nbsp; Paper: validation set Z₁\T, Usuário A / Usuário B</h3>
+
+<div class="legend">
+  <span><span class="dot" style="background:#2ecc71"></span>Gap ≤ 2% (excelente)</span>
+  <span><span class="dot" style="background:#f39c12"></span>Gap 2–15% (moderado)</span>
+  <span><span class="dot" style="background:#e74c3c"></span>Gap &gt; 15% (significativo)</span>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2">Dataset</th>
+      <th rowspan="2">Modelo</th>
+      <th colspan="2">MAE ↓</th>
+      <th colspan="2">Fβ ↑</th>
+    </tr>
+    <tr>
+      <th>Ours (test)</th><th>Paper (val) A/B</th>
+      <th>Ours (test)</th><th>Paper (val) A/B</th>
+    </tr>
+  </thead>
+  <tbody>
+        <tr>
+          <td rowspan="3" style="font-weight:bold;vertical-align:middle;background:#1a1a3e">Parasites</td>
+          <td><b>FLIMts</b></td>
+          <td style="color:#2ecc71;font-weight:bold">0.0184 ± 0.0016</td>
+          <td style="color:#aaa">0.010 / 0.013</td>
+          <td style="color:#e74c3c;font-weight:bold">0.3082 ± 0.0573</td>
+          <td style="color:#aaa">0.747 / 0.687</td>
+        </tr>
+        <tr>
+          
+          <td><b>FLIMat</b></td>
+          <td style="color:#2ecc71;font-weight:bold">0.0169 ± 0.0030</td>
+          <td style="color:#aaa">0.011 / 0.014</td>
+          <td style="color:#e74c3c;font-weight:bold">0.2749 ± 0.0724</td>
+          <td style="color:#aaa">0.740 / 0.660</td>
+        </tr>
+        <tr>
+          
+          <td><b>FLIMpb</b></td>
+          <td style="color:#2ecc71;font-weight:bold">0.0199 ± 0.0016</td>
+          <td style="color:#aaa">0.006 / 0.006</td>
+          <td style="color:#e74c3c;font-weight:bold">0.3114 ± 0.0361</td>
+          <td style="color:#aaa">0.857 / 0.847</td>
+        </tr>
+        <tr>
+          <td rowspan="3" style="font-weight:bold;vertical-align:middle;background:#1a1a3e">BraTS</td>
+          <td><b>FLIMts</b></td>
+          <td style="color:#2ecc71;font-weight:bold">0.0301 ± 0.0049</td>
+          <td style="color:#aaa">0.017 / 0.020</td>
+          <td style="color:#e74c3c;font-weight:bold">0.5230 ± 0.1802</td>
+          <td style="color:#aaa">0.709 / 0.697</td>
+        </tr>
+        <tr>
+          
+          <td><b>FLIMat</b></td>
+          <td style="color:#f39c12;font-weight:bold">0.0856 ± 0.0468</td>
+          <td style="color:#aaa">0.022 / 0.024</td>
+          <td style="color:#e74c3c;font-weight:bold">0.4525 ± 0.1778</td>
+          <td style="color:#aaa">0.679 / 0.694</td>
+        </tr>
+        <tr>
+          
+          <td><b>FLIMpb</b></td>
+          <td style="color:#2ecc71;font-weight:bold">0.0336 ± 0.0036</td>
+          <td style="color:#aaa">0.019 / 0.022</td>
+          <td style="color:#2ecc71;font-weight:bold">0.7042 ± 0.0198</td>
+          <td style="color:#aaa">0.703 / 0.691</td>
+        </tr></tbody>
+</table>
+
+<p class="note">
+  <b>Arquitetura:</b> arch_best.json — selecionada por architecture search no split1-val de Parasites (Fβ=0.48 no val).<br>
+  <b>Pós-processamento:</b> apenas Otsu threshold. O paper aplica adicionalmente Otsu + Area Filtering + Dynamic Trees.<br>
+  <b>Destaque:</b> FLIMpb no BraTS atingiu Fβ=0.704 ± 0.020 vs paper 0.703/0.691 — <b style="color:#2ecc71">reprodução bem-sucedida</b>.<br>
+  <b>Gap em Parasites:</b> example-markers são simplificações das anotações reais do paper (User A/B). Markers reais produziriam Fβ próximo ao paper.
+</p>
+</body></html>
