@@ -1,0 +1,1658 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>FLIM + Active Learning ao vivo</title>
+<style>
+  :root{
+    --dark:#12324f; --blue:#2f7fd4; --green:#1e9e4a; --coral:#e8543f;
+    --gray:#5b6678; --light:#f2f5f9; --band:#e6ebf2; --line:#d4dce6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 system-ui,"Segoe UI",sans-serif;color:var(--dark);
+       background:#fff}
+  header{background:var(--dark);color:#fff;padding:14px 22px}
+  header h1{margin:0;font:600 19px/1.2 Cambria,Georgia,serif}
+  header p{margin:3px 0 0;font-size:12.5px;color:#9fb6d2}
+  .wrap{display:grid;grid-template-columns:1fr 360px;gap:18px;padding:18px 22px;
+        align-items:start}
+  .painel{background:var(--light);border:1px solid var(--line);border-radius:10px;
+          padding:14px}
+  .painel h2{margin:0 0 10px;font:600 14px/1 system-ui;text-transform:uppercase;
+             letter-spacing:.05em;color:var(--gray)}
+  #palco{position:relative;display:inline-block;line-height:0;
+         border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  #palco canvas,#palco img{position:absolute;inset:0;width:100%;height:100%}
+  #base{position:relative!important}
+  #desenho{cursor:crosshair;z-index:3}
+  #mascara{z-index:1;opacity:.9}
+  #contorno{z-index:2}
+  .barra{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  button{font:inherit;padding:7px 13px;border-radius:7px;border:1px solid var(--line);
+         background:#fff;cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.p{background:var(--blue);border-color:var(--blue);color:#fff}
+  button.p:hover:not(:disabled){background:#2569b0;color:#fff}
+  /* Reiniciar descarta a sessao inteira: fica discreto e longe do fluxo. */
+  button.destrutivo{color:#8a6d2b;border-color:#e0d3b0;background:#fdfaf2}
+  button.destrutivo:hover:not(:disabled){background:#f7efdc;color:#6d5620}
+  button.on{background:var(--dark);border-color:var(--dark);color:#fff}
+  select,input[type=range]{font:inherit;padding:5px;border-radius:6px;
+                           border:1px solid var(--line);background:#fff}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{padding:5px 7px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--gray);font-weight:600}
+  tr.sel{background:#e3f0ff}
+  tr.tem td:first-child::before{content:"✎ ";color:var(--green)}
+  .met{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+  .met div{background:#fff;border:1px solid var(--line);border-radius:8px;
+           padding:8px;text-align:center}
+  .met b{display:block;font-size:19px;color:var(--blue)}
+  .met span{font-size:11px;color:var(--gray)}
+  #log{font:12px/1.55 ui-monospace,Menlo,Consolas,monospace;background:#fff;
+       border:1px solid var(--line);border-radius:8px;padding:9px;height:130px;
+       overflow:auto;white-space:pre-wrap}
+  .dica{font-size:12px;color:var(--gray);margin:8px 0 0}
+  .passo{background:#fff;border:1px solid var(--blue);border-left:4px solid var(--blue);
+         border-radius:8px;padding:10px 12px;margin-bottom:12px}
+  .passo b{display:block;color:var(--blue);font-size:15px;margin-bottom:3px}
+  .passo div{font-size:12.5px;color:var(--dark)}
+  .passo.ok{border-color:var(--green);border-left-color:var(--green)}
+  .passo.ok b{color:var(--green)}
+  .fg{color:var(--green);font-weight:600}
+  .bg{color:var(--coral);font-weight:600}
+  svg{display:block}
+  .abas{display:flex;gap:6px;padding:0 22px;background:var(--dark)}
+  .abas button{background:transparent;border:none;border-radius:8px 8px 0 0;
+    color:#9fb6d2;padding:9px 16px;font:600 13px system-ui;cursor:pointer}
+  .abas button:hover{color:#fff}
+  .abas button.on{background:#fff;color:var(--dark)}
+  .tela{display:none} .tela.on{display:grid}
+  .campo{margin-bottom:11px}
+  .campo label{display:block;font-size:12px;color:var(--gray);margin-bottom:3px}
+  .campo select,.campo input{width:100%}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chips button{padding:5px 11px;font-size:13px}
+  .chips button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .barraprog{height:7px;background:var(--band);border-radius:4px;overflow:hidden;
+    margin:8px 0}
+  .barraprog i{display:block;height:100%;background:var(--blue);width:0;
+    transition:width .3s}
+  .mtz{display:grid;grid-template-columns:auto 1fr 1fr;gap:3px;margin-top:8px}
+  .mtz div{background:#fff;border:1px solid var(--line);border-radius:6px;
+    padding:9px;text-align:center;font-size:13px}
+  .mtz .cab{background:var(--band);font-weight:600;font-size:11.5px;
+    color:var(--gray)}
+  .mtz .vp{background:#e8f6ed;color:var(--green);font-weight:700}
+  .mtz .vn{background:#e8f6ed;color:var(--green);font-weight:700}
+  .mtz .er{background:#fdefec;color:var(--coral);font-weight:700}
+  .zona{border:2px dashed var(--line);border-radius:10px;padding:20px;
+    text-align:center;color:var(--gray);font-size:13px;cursor:pointer}
+  .zona.sobre{border-color:var(--blue);background:#f0f6ff}
+  .aviso{background:#fff7ed;border:1px solid #f0a868;border-left:4px solid #e8853f;
+    border-radius:9px;padding:12px 14px;font-size:12.5px;line-height:1.55;
+    margin-bottom:14px;color:var(--dark)}
+  .aviso b{color:#b45309}
+  .duplo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .duplo .col{min-width:0}
+  .tit{margin:0 0 8px;font:600 14px system-ui;padding-bottom:5px;
+    border-bottom:2px solid}
+  .tit.al{color:var(--blue);border-color:var(--blue)}
+  .tit.sem{color:var(--gray);border-color:var(--line)}
+  .palco{position:relative;display:block;line-height:0;border:1px solid var(--line);
+    border-radius:8px;overflow:hidden}
+  .palco img{width:100%;display:block}
+  .palco canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+  .palco img.ov{position:absolute;inset:0;height:100%}
+  .palco.pq img{max-height:200px;object-fit:contain}
+  .res{font-size:12.5px;color:var(--gray);margin-top:7px;min-height:18px}
+  .res b{color:var(--dark);font-size:14px}
+  .rot{font-size:11.5px;margin-top:5px;text-align:center}
+  .rot.al{color:var(--blue)} .rot.sem{color:var(--gray)}
+  .placar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+  .placar span{background:#fff;border:1px solid var(--line);border-radius:8px;
+    padding:9px;text-align:center;font-size:11.5px;color:var(--gray)}
+  .placar span b{display:block;font-size:20px;margin-top:2px;color:inherit}
+  .placar .al{color:var(--blue)} .placar .sem{color:var(--gray)}
+  .modal{position:fixed;inset:0;background:rgba(18,50,79,.72);z-index:99;
+    display:none;align-items:center;justify-content:center;padding:24px}
+  .modal.on{display:flex}
+  .modal .cx{background:#fff;border-radius:14px;max-width:1080px;width:100%;
+    max-height:94vh;overflow:auto;padding:22px 26px}
+  .modal h2{margin:0 0 4px;font:600 21px/1.25 Cambria,Georgia,serif;color:var(--dark)}
+  .modal .sub{color:var(--gray);font-size:13px;margin-bottom:14px}
+  .modal img{width:100%;border-radius:9px;border:1px solid var(--line)}
+  .regras{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  .regras div{background:var(--light);border-radius:9px;padding:11px 13px;
+    font-size:12.5px;line-height:1.5}
+  .regras b{display:block;color:var(--blue);margin-bottom:3px;font-size:13.5px}
+  .log2{font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;background:#fff;
+    border:1px solid var(--line);border-radius:8px;padding:8px;height:110px;
+    overflow:auto;margin-top:10px}
+.chipImg{font-size:12px;padding:5px 9px}
+.chipImg .dica{font-size:11px}
+</style>
+
+<header>
+  <h1>FLIM + Active Learning ao vivo</h1>
+  <p>Desenhe os markers, treine o encoder, veja a segmentação — e deixe o
+     critério escolher a próxima imagem. Sem backpropagation no encoder: o
+     treino é k-means sobre os patches dos markers.</p>
+</header>
+
+<div class="modal" id="tut"><div class="cx">
+  <h2>Como rabiscar — leia antes de começar</h2>
+  <div class="sub">Medido nas mesmas três imagens, variando só a anotação.
+    A diferença entre a primeira e a segunda coluna é só ONDE o toque cai.</div>
+  <img src="/fig/tutorial_anotacao.png" alt="como anotar">
+  <div class="regras">
+    <div><b>Objeto: na borda</b>Toque encostando no contorno do ovo, não no
+      meio. No centro o patch é textura uniforme, igual a qualquer região
+      escura — não discrimina nada. Na borda ele contém a transição
+      casca-fundo. <b style="color:var(--coral)">Centro → Fβ = 0</b></div>
+    <div><b>Fundo: bem longe</b>Espalhe pela imagem, longe do ovo. Perto da
+      borda o toque de fundo já contém parte da transição e fica parecido com
+      o de objeto. A 120 px o Fβ sobe de 0.665 para 0.700.</div>
+    <div><b>~4 objeto, ~9 fundo</b>Toques curtos, clique e solte — não arraste.
+      É a proporção medida nos 31 markers desenhados pelos usuários reais.
+      Acima de ~6000 px por imagem o desempenho despenca.</div>
+  </div>
+  <div class="barra"><button class="p" id="tutOk">Entendi, começar</button>
+    <label style="font-size:12.5px;margin-left:8px">
+      <input type="checkbox" id="tutNao"> não mostrar de novo</label></div>
+</div></div>
+
+<div class="abas">
+  <button data-t="duplo" class="on">Comparar: FLIM puro × AL</button>
+  <button data-t="anotar">Anotar e treinar</button>
+  <button data-t="lote">Curva de aprendizado</button>
+  <button data-t="validar">Validar com especialista</button>
+  <button data-t="dados">Datasets</button>
+  <button id="bTut" style="margin-left:auto;color:#9fb6d2">? como rabiscar</button>
+</div>
+
+<div class="wrap tela" id="t-anotar">
+  <div>
+    <div class="barra">
+      <button id="bFg" class="on">Pincel <span class="fg">objeto</span></button>
+      <button id="bBg">Pincel <span class="bg">fundo</span></button>
+      <label>raio <input type="range" id="raio" min="1" max="14" value="5"></label>
+      <span id="raioV">5</span>
+      <button id="bLimpar">Limpar imagem</button>
+      <button id="bGt">Mostrar anotação</button>
+    </div>
+    <div id="palco">
+      <img id="base" alt="">
+      <img id="mascara" alt="">
+      <img id="contorno" alt="">
+      <img id="ovRegiao" alt="" style="position:absolute;inset:0;width:100%;
+           height:100%;display:none;pointer-events:none">
+      <canvas id="desenho"></canvas>
+    </div>
+    <p class="dica">Arraste para pintar. O pincel do FLIM real é circular de
+      raio 5 — foi o que medimos nos 31 markers desenhados pelos usuários.</p>
+
+    <div class="painel" style="margin-top:14px">
+      <h2>Curva de aprendizado</h2>
+      <svg id="curva" width="100%" height="150" viewBox="0 0 600 150"
+           preserveAspectRatio="none"></svg>
+      <p class="dica" id="curvaTxt">Treine para começar a curva.</p>
+    </div>
+  </div>
+
+  <div>
+    <div class="painel">
+      <h2>Laço de active learning</h2>
+      <div id="passo" class="passo">
+        <b id="pTitulo">Rodada 1</b>
+        <div id="pTexto">Clique em iniciar — o sistema escolhe a primeira
+          imagem.</div>
+      </div>
+      <div class="barra">
+        <button id="bProxima" class="p">Iniciar</button>
+        <button id="bTreinar">Treinar com o que anotei</button>
+        <button id="bPrever">Ver segmentação</button>
+      </div>
+      <label>parar em
+        <select id="selK"><option>3</option><option>5</option>
+          <option>8</option><option>16</option></select> imagens
+      </label>
+      <div class="met">
+        <div><b id="mFb">—</b><span>Fβ (imagens c/ ovo)</span></div>
+        <div><b id="mIou">—</b><span>IoU</span></div>
+        <div><b id="mN">0</b><span>imagens em T</span></div>
+      </div>
+      <label>decoder
+        <select id="selDec"></select>
+      </label>
+      <label style="margin-left:6px">bloco
+        <select id="selBlk">
+          <option>1</option><option selected>2</option><option>3</option>
+        </select>
+      </label>
+      <label style="margin-left:6px">critério de AL
+        <select id="selCrit"></select>
+      </label>
+      <p class="dica" id="critNota"></p>
+      <div id="log" style="margin-top:10px"></div>
+    </div>
+
+    <div class="painel" style="margin-top:14px">
+      <h2>Regiões confusas — o especialista decide</h2>
+      <p class="dica">O modelo marca <b>onde</b> está mais incerto e pergunta,
+        região por região, se aquilo é objeto ou fundo. Você não desenha:
+        só julga. É o híbrido — a máquina propõe a geometria, você dá o
+        rótulo.</p>
+      <div class="campo"><label>quantas regiões julgar</label>
+        <select id="rK"><option>3</option><option selected>5</option>
+          <option>8</option><option>12</option></select></div>
+      <label style="font-size:12.5px;display:block;margin-bottom:8px">
+        <input type="checkbox" id="rPalpite"> mostrar o palpite do modelo
+        <span class="dica">(mostrar antes ancora a sua resposta)</span>
+      </label>
+      <div class="barra">
+        <button id="bRegiao" class="p">Pedir as regiões confusas</button>
+      </div>
+      <div id="rPasso" class="passo" style="display:none">
+        <b id="rTitulo">—</b><div id="rTexto"></div></div>
+      <div class="barra" id="rBotoes" style="display:none">
+        <button id="bRFg">É <span class="fg">objeto</span></button>
+        <button id="bRBg">É <span class="bg">fundo</span></button>
+        <button id="bRPular">Pular</button>
+      </div>
+      <div id="rResumo"></div>
+    </div>
+
+    <div class="painel" style="margin-top:14px">
+      <h2>Pool disponível</h2>
+      <table><thead><tr><th>imagem</th><th>entropia</th></tr></thead>
+        <tbody id="tPool"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div class="wrap tela" id="t-lote">
+  <div>
+    <div class="painel">
+      <h2>Curva de aprendizado — Fβ e tempo por K</h2>
+      <p class="dica" style="margin-top:0">A seleção usa <b>CoreSet</b>, que foi
+        o critério mais confiável nos nossos testes. Varia-se apenas o número de
+        imagens anotadas.</p>
+      <div class="barraprog"><i id="progBar"></i></div>
+      <div id="progTxt" class="dica">Configure ao lado e clique em executar.</div>
+      <svg id="curvaLote" width="100%" height="200" viewBox="0 0 640 200"
+           preserveAspectRatio="none" style="margin-top:12px"></svg>
+      <table style="margin-top:12px"><thead><tr>
+        <th>K</th><th>Fβ</th><th>IoU</th><th>seleção</th><th>treino</th>
+        <th>teste</th><th>ms/imagem</th></tr></thead>
+        <tbody id="tLote"></tbody></table>
+    </div>
+  </div>
+  <div>
+    <div class="painel">
+      <h2>Configuração</h2>
+      <div class="campo"><label>dataset</label>
+        <select id="loteDs"></select></div>
+      <div class="campo"><label>valores de K (imagens anotadas)</label>
+        <div class="chips" id="loteKs"></div></div>
+      <div class="campo"><label>decoder</label>
+        <select id="loteDec"></select></div>
+      <div class="campo"><label>imagens de teste — mais é mais preciso e mais
+        lento</label>
+        <select id="loteNT"><option>40</option><option selected>60</option>
+          <option>120</option><option>240</option></select></div>
+      <div class="barra">
+        <button id="bLote" class="p">Executar</button>
+        <button id="bLoteCancel">Cancelar</button>
+      </div>
+      <p class="dica">O FLIM estima os kernels por k-means, sem
+        backpropagation — o treino leva segundos. A tabela separa os tempos por
+        etapa para você poder afirmar isso com número.</p>
+      <p class="dica"><b>Recorte declarado:</b> pool e teste usam só imagens
+        <b>com objeto anotado</b>. No Schisto 49% não têm ovo; incluí-las faria
+        o encoder colapsar e o Fβ travar na fração de imagens vazias — a tabela
+        mediria a patologia do dataset, não o critério.</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap tela on" id="t-duplo">
+  <div>
+    <div class="barra">
+      <button id="dFg" class="on">Pincel <span class="fg">objeto</span></button>
+      <button id="dBg">Pincel <span class="bg">fundo</span></button>
+      <button id="dLimpar">Corrigir (apaga tudo)</button>
+      <button id="dPre">Pré-marcar com o modelo</button>
+    </div>
+
+    <div class="passo" id="cImgInfo"><b>—</b>
+      <div>clique em iniciar para o sistema escolher a primeira imagem</div></div>
+    <div id="cFilaLista"></div>
+
+    <div id="palcoC" class="palco">
+      <img id="cBase" alt="">
+      <canvas id="cDes"></canvas>
+    </div>
+
+    <div class="barra" style="margin-top:10px">
+      <button id="cConfirmar" class="p">Confirmar esta imagem</button>
+      <span id="cContador" class="dica"></span>
+    </div>
+
+    <div class="aviso" id="cAviso" style="display:none"></div>
+
+    <div class="aviso" style="background:#eef4fc;border-color:var(--blue)">
+      <b>Onde tocar importa mais que quanto tocar.</b><br>
+      Objeto: <b>na borda do ovo</b>, não no centro — ~4 toques.
+      Fundo: <b>bem longe do ovo</b> — ~9 toques. Toques curtos, sem arrastar.
+      É essa geometria que a pré-marcação reproduz.
+    </div>
+
+    <div class="painel" style="margin-top:14px">
+      <h2>Mesma imagem, todos os modelos</h2>
+      <div class="campo"><label>imagem de teste</label>
+        <select id="dTeste"></select></div>
+      <label style="font-size:12.5px;display:block;margin:-4px 0 10px">
+        <input type="checkbox" id="dGt" checked> sobrepor a
+        <b style="color:#ff00d9">anotação de referência</b> quando existir
+      </label>
+      <div id="cGrade" class="duplo"></div>
+      <p class="dica">Predição em ciano, referência em magenta.
+        <b>Ciano fora do magenta</b> é vazamento; <b>magenta sem ciano</b> é
+        buraco. Só imagens que nenhum braço treinou aparecem aqui.</p>
+    </div>
+  </div>
+
+  <div>
+    <div class="painel">
+      <h2>Comparação: FLIM puro × active learning</h2>
+      <p class="dica">O braço <b>FLIM puro</b> sorteia as imagens, como o
+        artigo faz na primeira rodada. Cada braço de AL usa o próprio critério.
+        Todos recebem o <b>mesmo orçamento</b> de imagens e são medidos no
+        <b>mesmo conjunto</b> de validação.</p>
+
+      <div class="campo"><label>imagens por braço (K)</label>
+        <select id="dK"><option>2</option><option selected>3</option>
+          <option>5</option><option>8</option></select></div>
+
+      <div class="campo"><label>critérios de AL a comparar</label>
+        <div id="cCrits" class="barra" style="flex-wrap:wrap"></div></div>
+
+      <label style="font-size:12.5px;display:block;margin-bottom:10px">
+        <input type="checkbox" id="dMulti"> também sortear
+        <b>3 conjuntos extras</b> para ver a variância do braço puro
+      </label>
+
+      <div class="barra">
+        <button id="dIniciar" class="p">Iniciar comparação</button>
+        <button id="dProxima">Próxima rodada</button>
+        <button id="dTreinar">Treinar e comparar</button>
+        <button id="dReiniciar" class="destrutivo">Reiniciar</button>
+      </div>
+
+      <div id="cBracos"></div>
+      <div id="dPlacar"></div>
+      <div id="dTabela"></div>
+      <div id="dLog" class="log2"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap tela" id="t-validar">
+  <div>
+    <div id="palcoV" style="position:relative;display:inline-block;line-height:0;
+         border:1px solid var(--line);border-radius:8px;overflow:hidden">
+      <img id="vBase" alt="" style="position:relative;max-width:560px">
+      <img id="vMask" alt="" style="position:absolute;inset:0;width:100%;
+           height:100%">
+      <img id="vGt" alt="" style="position:absolute;inset:0;width:100%;
+           height:100%">
+    </div>
+    <label style="font-size:12.5px;display:block;margin:8px 0 0">
+      <input type="checkbox" id="vGtChk"> mostrar a
+      <b style="color:#ff00d9">anotação de referência</b> (só para conferir
+      depois — não olhe antes de julgar)
+    </label>
+    <p class="dica" id="vLegenda">Treine o modelo primeiro, na aba anterior.</p>
+  </div>
+  <div>
+    <div class="painel">
+      <h2>Julgamento do especialista</h2>
+      <div class="passo"><b id="vTitulo">Não iniciado</b>
+        <div id="vTexto">O modelo prediz; você confirma se há objeto.</div></div>
+      <div class="campo"><label>quantas imagens julgar</label>
+        <select id="vN"><option>8</option><option selected>12</option>
+          <option>20</option><option>40</option></select></div>
+      <div class="barra">
+        <button id="bVIniciar" class="p">Iniciar validação</button>
+      </div>
+      <div class="barra" id="vBotoes" style="display:none">
+        <button id="bVSim">Tem objeto</button>
+        <button id="bVNao">Não tem</button>
+      </div>
+      <div id="vMatriz"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap tela" id="t-dados">
+  <div>
+    <div class="painel">
+      <h2>Datasets disponíveis</h2>
+      <table><thead><tr><th>dataset</th><th>imagens</th><th>anotação</th>
+        <th></th></tr></thead><tbody id="tDs"></tbody></table>
+      <p class="dica">Padrão: um diretório com <code>orig/</code> e,
+        opcionalmente, <code>label/</code>. Sem <code>label/</code> o sistema
+        treina e prevê normalmente — o que não dá é calcular Fβ sozinho, e aí a
+        avaliação passa a ser o seu julgamento na aba de validação.</p>
+    </div>
+  </div>
+  <div>
+    <div class="painel">
+      <h2>Enviar dataset</h2>
+      <div class="campo"><label>nome</label>
+        <input id="upNome" placeholder="ex: lâminas do laboratório">
+      <div class="campo"><label>este lote é</label>
+        <select id="upPapel">
+          <option value="treino" selected>treino — o modelo escolhe destas e você anota</option>
+          <option value="validacao">validação — só para medir, o modelo não treina nelas</option>
+        </select></div>
+      <div class="campo"><label>enviar para</label>
+        <select id="upDestino"><option value="">um dataset novo</option></select></div>
+      <p class="dica" id="upDica">Para o fluxo "treino com 10, valido com 5":
+        envie as 10 como <b>treino</b>, depois selecione o mesmo dataset em
+        <b>enviar para</b> e mande as 5 como <b>validação</b>. As de validação
+        ficam fora do pool de anotação e são o conjunto onde o Fβ é medido.</p></div>
+      <div class="zona" id="upZona">Arraste as imagens aqui<br>
+        <span style="font-size:11.5px">ou clique para escolher</span></div>
+      <input type="file" id="upInput" multiple accept="image/*"
+             style="display:none">
+      <div class="barraprog"><i id="upBar"></i></div>
+      <div id="upTxt" class="dica">Envie só as imagens originais. O sistema
+        escolhe quais anotar.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let atual = null, modo = "fg", raio = 5, pintando = false;
+let pend = {fg: [], bg: []}, entropias = {}, hist = [];
+
+const log = (m, cor) => {
+  const el = $("#log");
+  el.innerHTML += `<div${cor ? ` style="color:${cor}"` : ""}>${m}</div>`;
+  el.scrollTop = el.scrollHeight;
+};
+/*
+ * api() NUNCA lanca.
+ *
+ * Antes lancava, e a consequencia era ruim: todo botao segue o padrao
+ * `disabled = true; await api(...); disabled = false`. Se o fetch falhava --
+ * servidor reiniciado, processo morto no meio de um treino -- a excecao pulava
+ * o `disabled = false` e o botao ficava preso em "Treinando..." para sempre,
+ * sem nenhuma mensagem. Uma pessoa esperou uma hora assim.
+ *
+ * Agora falha vira `{erro: ...}`, que e o formato que todos os chamadores ja
+ * sabem tratar, e o banner de servidor fora aparece no topo.
+ */
+const api = async (r, b) => {
+  const o = b ? {method: "POST", headers: {"Content-Type": "application/json"},
+                 body: JSON.stringify(b)} : {};
+  try {
+    const res = await fetch(r, o);
+    const txt = await res.text();
+    let dados;
+    try {
+      dados = JSON.parse(txt);
+    } catch {
+      servidorFora(`resposta inesperada (HTTP ${res.status})`);
+      return {erro: `resposta inesperada do servidor (HTTP ${res.status})`};
+    }
+    servidorOk();
+    return dados;
+  } catch (e) {
+    servidorFora(e.message || "sem resposta");
+    return {erro: "o servidor não respondeu — a sessão pode ter sido "
+                  + "reiniciada. Recarregue a página."};
+  }
+};
+
+function bannerServidor() {
+  let el = document.getElementById("bannerServidor");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "bannerServidor";
+    el.style.cssText = "display:none;position:sticky;top:0;z-index:99;"
+      + "padding:10px 14px;background:#fdecea;border-bottom:2px solid #e8543f;"
+      + "color:#8a2b1c;font-size:13px";
+    document.body.insertBefore(el, document.body.firstChild);
+  }
+  return el;
+}
+
+function servidorFora(motivo) {
+  const el = bannerServidor();
+  el.style.display = "block";
+  el.innerHTML = `<b>Sem resposta do servidor</b> (${motivo}). O estado da `
+    + `sessão vive em memória, então um reinício descarta o encoder, os `
+    + `rabiscos e a comparação em andamento. `
+    + `<button onclick="location.reload()">Recarregar</button>`;
+}
+
+function servidorOk() {
+  const el = document.getElementById("bannerServidor");
+  if (el) el.style.display = "none";
+}
+
+/*
+ * Vigia de reinicio: se o identificador da instancia mudar, o servidor subiu
+ * de novo e tudo que estava em memoria se foi. Melhor dizer isso na hora do
+ * que deixar a pessoa clicando numa comparacao que nao existe mais.
+ */
+let BOOT_VISTO = null;
+function vigiaReinicio(dados) {
+  if (!dados || !dados.boot) return;
+  if (BOOT_VISTO === null) { BOOT_VISTO = dados.boot; return; }
+  if (dados.boot !== BOOT_VISTO) {
+    BOOT_VISTO = dados.boot;
+    const el = bannerServidor();
+    el.style.display = "block";
+    el.innerHTML = `<b>O servidor foi reiniciado.</b> A comparação, o encoder `
+      + `e os rabiscos desta sessão foram descartados — nada disso é gravado `
+      + `em disco. Recarregue e comece de novo. `
+      + `<button onclick="location.reload()">Recarregar</button>`;
+  }
+}
+
+// ── canvas ──────────────────────────────────────────────────────────────────
+function carregar(id) {
+  atual = id;
+  const img = $("#base");
+  img.onload = () => {
+    const c = $("#desenho");
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    $("#palco").style.width = Math.min(img.naturalWidth, 560) + "px";
+    c.getContext("2d").clearRect(0, 0, c.width, c.height);
+    pend = {fg: [], bg: []};
+  };
+  img.src = `/img/${id}.png?t=${Date.now()}`;
+  $("#mascara").src = ""; $("#contorno").src = "";
+  // a regiao destacada pertence a imagem anterior: sem isto ela ficaria
+  // sobreposta a nova, apontando para coordenadas de outra imagem
+  const ov = $("#ovRegiao");
+  if (ov) { ov.style.display = "none"; ov.removeAttribute("src"); }
+  $("#rPasso").style.display = "none";
+  $("#rBotoes").style.display = "none";
+  marcarLinha();
+}
+
+function pos(e) {
+  const c = $("#desenho"), r = c.getBoundingClientRect();
+  return [Math.round((e.clientX - r.left) * c.width / r.width),
+          Math.round((e.clientY - r.top) * c.height / r.height)];
+}
+
+// pincel circular: replica a ferramenta real, cujo raio medimos em 5 px
+function pincel(cx, cy) {
+  const c = $("#desenho"), ctx = c.getContext("2d");
+  ctx.fillStyle = modo === "fg" ? "rgba(30,158,74,.85)" : "rgba(232,84,63,.85)";
+  ctx.beginPath(); ctx.arc(cx, cy, raio, 0, 7); ctx.fill();
+  for (let dy = -raio; dy <= raio; dy++)
+    for (let dx = -raio; dx <= raio; dx++)
+      if (dx * dx + dy * dy <= raio * raio) {
+        const x = cx + dx, y = cy + dy;
+        if (x >= 0 && y >= 0 && x < c.width && y < c.height)
+          pend[modo].push([x, y]);
+      }
+}
+
+$("#desenho").addEventListener("pointerdown", e => {
+  if (!atual) return; pintando = true; pincel(...pos(e));
+});
+$("#desenho").addEventListener("pointermove", e => {
+  if (pintando) pincel(...pos(e));
+});
+addEventListener("pointerup", async () => {
+  if (!pintando) return;
+  pintando = false;
+  if (!pend.fg.length && !pend.bg.length) return;
+  const r = await api("/api/marker", {id: atual, fg: pend.fg, bg: pend.bg});
+  pend = {fg: [], bg: []};
+  log(`${atual}: ${r.fg} px objeto, ${r.bg} px fundo`);
+  hist.T = r.T; $("#mN").textContent = r.T.length;
+  marcarLinha();
+});
+
+// ── ações ───────────────────────────────────────────────────────────────────
+$("#bFg").onclick = () => {modo = "fg"; $("#bFg").classList.add("on");
+                           $("#bBg").classList.remove("on");};
+$("#bBg").onclick = () => {modo = "bg"; $("#bBg").classList.add("on");
+                           $("#bFg").classList.remove("on");};
+$("#raio").oninput = e => {raio = +e.target.value; $("#raioV").textContent = raio;};
+
+$("#bLimpar").onclick = async () => {
+  if (!atual) return;
+  const r = await api("/api/limpar", {id: atual});
+  $("#desenho").getContext("2d").clearRect(0, 0, 9999, 9999);
+  log(`${atual}: markers apagados`);
+  $("#mN").textContent = r.T.length; marcarLinha();
+};
+
+$("#bGt").onclick = async () => {
+  if (!atual) return;
+  const el = $("#contorno");
+  if (el.src) {el.src = ""; return;}
+  const r = await api(`/gt/${atual}.png`);
+  if (r.mask) el.src = r.mask;
+};
+
+$("#bTreinar").onclick = async () => {
+  const b = $("#bTreinar"); b.disabled = true; b.textContent = "Treinando…";
+  log("estimando kernels por k-means sobre os patches dos markers…", "#2f7fd4");
+  const r = await api("/api/treinar", {});
+  b.disabled = false; b.textContent = "Treinar encoder";
+  if (r.erro) return log("erro: " + r.erro, "#e8543f");
+  $("#mN").textContent = r.n_imgs;
+  log(`encoder estimado com ${r.n_imgs} imagem(ns) em ${r.t_treino}s`, "#1e9e4a");
+  // a segmentação aparece já; o Fβ vem depois, porque medir custa 10x treinar
+  if (atual) await $("#bPrever").onclick();
+  await avaliar();
+  const n = (hist.T || []).length;
+  if (n >= (window.KALVO || 3)) {
+    $("#passo").classList.add("ok");
+    $("#pTitulo").textContent = `Laço concluído — ${n} imagens anotadas`;
+    $("#pTexto").textContent = "O encoder foi treinado só com estas. "
+      + "Nenhuma consulta a segmentação de referência foi feita.";
+    $("#bProxima").disabled = true;
+  } else {
+    $("#pTitulo").textContent = "Peça a próxima imagem";
+    $("#pTexto").textContent = `${n} de ${window.KALVO || 3} anotadas. `
+      + "O sistema vai escolher a mais distante das que você já marcou.";
+  }
+};
+
+async function avaliar() {
+  $("#mFb").textContent = "…"; $("#mIou").textContent = "…";
+  const r = await api("/api/avaliar", {});
+  if (r.erro) return log("erro: " + r.erro, "#e8543f");
+  $("#mFb").textContent = r.fb; $("#mIou").textContent = r.iou;
+  log(`Fβ=${r.fb} em ${window.NVAL} imagens de validação (${r.t_aval}s)`,
+      "#1e9e4a");
+  hist = r.history; curva();
+}
+
+$("#bPrever").onclick = async () => {
+  if (!atual) return;
+  if (!atual) return;
+  const r = await api("/api/prever", {id: atual});
+  if (r.erro) return log("erro: " + r.erro, "#e8543f");
+  $("#mascara").src = r.mask;
+  log(`${atual}: Fβ=${r.fb === null ? "—" : r.fb.toFixed(3)} · `
+      + `${r.area} px preditos`);
+};
+
+$("#bProxima").onclick = async () => {
+  const b = $("#bProxima"); b.disabled = true; b.textContent = "Escolhendo…";
+  const r = await api("/api/proxima", {});
+  b.disabled = false; b.textContent = "Próxima imagem";
+  if (r.erro) { b.disabled = true; return log("erro: " + r.erro, "#e8543f"); }
+  $("#passo").classList.remove("ok");
+  $("#pTitulo").textContent = `Rodada ${r.rodada} de ${r.k_alvo} — anote ${r.alvo}`;
+  $("#pTexto").textContent = `O sistema escolheu esta imagem: ${r.motivo}.`;
+  log(`rodada ${r.rodada}: sistema escolheu ${r.alvo}`, "#2f7fd4");
+  log(`  motivo: ${r.motivo}`);
+  carregar(r.alvo);
+};
+
+$("#selK").onchange = async e => {
+  await api("/api/k_alvo", {k: +e.target.value});
+  log("laço vai até " + e.target.value + " imagens");
+};
+
+$("#selDec").onchange = async e => {
+  await api("/api/config", {decoder: e.target.value});
+  log("decoder → " + e.target.selectedOptions[0].textContent);
+};
+$("#selCrit").onchange = async e => {
+  await api("/api/config", {criterio: e.target.value});
+  notaCrit();
+  log(`critério de seleção → ${e.target.selectedOptions[0].textContent}`,
+      "#2f7fd4");
+};
+
+/*
+ * A nota de cada criterio nao e enfeite: cada um deles se comportou de um jeito
+ * diferente na medicao, e a diferenca importa para quem esta olhando a tela.
+ * O texto vem do servidor para nao haver duas versoes da mesma afirmacao.
+ */
+function notaCrit() {
+  const cs = window.CRITERIOS || [];
+  const acha = v => (cs.find(c => c.id === v) || {}).nota || "";
+  const sc = $("#selCrit");
+  if (sc && sc.value) $("#critNota").textContent = acha(sc.value);
+}
+
+$("#selBlk").onchange = async e => {
+  await api("/api/config", {block: e.target.value});
+  log("bloco → " + e.target.value);
+};
+
+// ── tabela e curva ──────────────────────────────────────────────────────────
+function tabela() {
+  const T = new Set(hist.T || []);
+  $("#tPool").innerHTML = (window.POOL || []).map(id => {
+    const e = entropias[id];
+    return `<tr data-id="${id}" class="${id === atual ? "sel" : ""}${T.has(id) ? " tem" : ""}">`
+      + `<td>${id}</td><td>${e === undefined ? "—" : e.toFixed(5)}</td></tr>`;
+  }).join("");
+  $("#tPool").querySelectorAll("tr").forEach(tr =>
+    tr.onclick = () => carregar(tr.dataset.id));
+}
+const marcarLinha = () => tabela();
+
+function curva() {
+  const svg = $("#curva");
+  if (!hist.length) return;
+  const W = 600, H = 150, m = 26;
+  const xs = hist.map(h => h.n_imgs), ys = hist.map(h => h.fb);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs, x0 + 1);
+  const y0 = Math.min(...ys, 0.4), y1 = Math.max(...ys, 0.8);
+  const px = v => m + (v - x0) / (x1 - x0) * (W - 2 * m);
+  const py = v => H - m - (v - y0) / (y1 - y0) * (H - 2 * m);
+  const pts = hist.map((h, i) => `${px(xs[i])},${py(ys[i])}`).join(" ");
+  svg.innerHTML =
+    `<line x1="${m}" y1="${H - m}" x2="${W - m}" y2="${H - m}" stroke="#d4dce6"/>`
+    + `<line x1="${m}" y1="${m}" x2="${m}" y2="${H - m}" stroke="#d4dce6"/>`
+    + `<polyline points="${pts}" fill="none" stroke="#2f7fd4" stroke-width="2.5"/>`
+    + hist.map((h, i) => `<circle cx="${px(xs[i])}" cy="${py(ys[i])}" r="4"
+        fill="#2f7fd4"><title>${h.n_imgs} imagens · Fβ ${h.fb}</title></circle>`).join("")
+    + `<text x="${m}" y="${H - 8}" font-size="11" fill="#5b6678">${x0} img</text>`
+    + `<text x="${W - m}" y="${H - 8}" font-size="11" fill="#5b6678"
+        text-anchor="end">${x1} img</text>`
+    + `<text x="4" y="${py(y1) + 4}" font-size="11" fill="#5b6678">${y1.toFixed(2)}</text>`
+    + `<text x="4" y="${py(y0) + 4}" font-size="11" fill="#5b6678">${y0.toFixed(2)}</text>`;
+  $("#curvaTxt").textContent =
+    `Fβ em ${window.NVAL} imagens de validação com ovo, nunca anotadas. `
+    + `Última: ${hist[hist.length - 1].fb} com ${hist[hist.length - 1].n_imgs} imagem(ns).`;
+}
+
+// ── tutorial ────────────────────────────────────────────────────────────────
+const tutFecha = () => {
+  $("#tut").classList.remove("on");
+  if ($("#tutNao").checked) localStorage.setItem("flim_tut", "1");
+};
+$("#tutOk").onclick = tutFecha;
+$("#tut").onclick = e => { if (e.target.id === "tut") tutFecha(); };
+$("#bTut").onclick = () => $("#tut").classList.add("on");
+if (!localStorage.getItem("flim_tut")) $("#tut").classList.add("on");
+
+// ── abas ────────────────────────────────────────────────────────────────────
+// O botao do tutorial mora dentro de .abas mas nao e uma aba: nao tem data-t,
+// e sem esta guarda ele caia no mesmo handler, procurava "#t-undefined", achava
+// null e estourava -- derrubando a troca de abas ate recarregar a pagina.
+document.querySelectorAll(".abas button[data-t]").forEach(b => b.onclick = () => {
+  const tela = document.querySelector("#t-" + b.dataset.t);
+  if (!tela) return;
+  document.querySelectorAll(".abas button[data-t]").forEach(
+    x => x.classList.remove("on"));
+  document.querySelectorAll(".tela").forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  tela.classList.add("on");
+  if (b.dataset.t === "dados") listarDs();
+});
+
+// ── regioes confusas: o hibrido maquina propoe / pessoa rotula ─────────────
+//
+// A medicao que justifica esta tela: decompondo o ganho dos metodos de regiao,
+// a SELECAO de imagens valeu +0.050 de Fbeta e a GEOMETRIA dos seeds valeu
+// +0.108 -- 2.1x mais. E o caminho oposto tambem foi medido: seeds gerados
+// inteiramente pela maquina custaram -0.214 contra os markers do especialista.
+// Ou seja: a maquina acha bem ONDE olhar, e erra o rotulo. Esta tela junta os
+// dois.
+function rMostrar(r) {
+  if (r.erro) { log("erro: " + r.erro, "#e8543f"); return; }
+  if (r.fim) {
+    $("#rPasso").style.display = "none";
+    $("#rBotoes").style.display = "none";
+    $("#ovRegiao").style.display = "none";
+    $("#rResumo").innerHTML =
+      `<p class="dica"><b>${r.regioes || 0} regiões rotuladas</b> — geraram `
+      + `${r.fg} seeds de objeto e ${r.bg} de fundo em ${r.img}. `
+      + `Total na imagem: ${r.total_fg ?? "—"} objeto / ${r.total_bg ?? "—"} fundo.</p>`
+      + (r.aviso ? `<div class="aviso" style="border-color:var(--coral)">`
+                   + `${r.aviso}</div>` : "");
+    log(`regiões: +${r.fg} objeto / +${r.bg} fundo em ${r.img}`,
+        r.aviso ? "#e8543f" : "#1e9e4a");
+    marcarLinha();
+    return;
+  }
+  $("#rPasso").style.display = "";
+  $("#rBotoes").style.display = "flex";
+  $("#ovRegiao").src = r.overlay;
+  $("#ovRegiao").style.display = "";
+  $("#rTitulo").textContent = `Região ${r.i} de ${r.n} — ${r.px} px`;
+  if (r.degenerado) {
+    $("#rResumo").innerHTML = `<div class="aviso" style="border-color:var(--coral)">`
+      + `<b>O modelo está confiante em toda a imagem</b> (entropia máxima `
+      + `${r.entropia_maxima}). O ranking de regiões existe, mas está ordenando `
+      + `ruído — julgar aqui gasta o seu tempo sem informar o modelo. `
+      + `Treine com mais imagens antes, ou peça outra imagem ao critério.</div>`;
+  }
+  $("#rTexto").innerHTML =
+    `Está destacada em <b style="color:#c98f00">amarelo</b> na imagem. `
+    + `Entropia do modelo aqui: <b>${r.entropia}</b>.`
+    + ($("#rPalpite").checked
+       ? `<br><span class="dica">palpite do modelo: <b>${r.palpite}</b> `
+         + `(p = ${r.prob_media})</span>` : "");
+}
+
+$("#bRegiao").onclick = async () => {
+  const b = $("#bRegiao"); b.disabled = true; b.textContent = "Calculando…";
+  $("#rResumo").innerHTML = "";
+  const r = await api("/api/regiao/iniciar", {k: +$("#rK").value});
+  b.disabled = false; b.textContent = "Pedir as regiões confusas";
+  rMostrar(r);
+};
+const rResp = async v => rMostrar(await api("/api/regiao/responder",
+                                            {resposta: v}));
+$("#bRFg").onclick = () => rResp("fg");
+$("#bRBg").onclick = () => rResp("bg");
+$("#bRPular").onclick = () => rResp("pular");
+
+// ── datasets ────────────────────────────────────────────────────────────────
+async function listarDs() {
+  const r = await api("/api/datasets");
+  $("#tDs").innerHTML = r.datasets.map(d => `<tr><td>${d.nome}</td>`
+    + `<td>${d.n_imagens}</td><td>${d.tem_label ? "sim" : "—"}</td>`
+    + `<td><button data-ds="${d.id}" class="selDs"`
+    + `${d.id === r.atual ? " disabled" : ""}>`
+    + `${d.id === r.atual ? "em uso" : "usar"}</button></td></tr>`).join("");
+  const ups = r.datasets.filter(d => (d.id || "").startsWith("upload:"));
+  $("#upDestino").innerHTML = `<option value="">um dataset novo</option>`
+    + ups.map(d => `<option value="${d.id}">${d.nome} (${d.n_imagens} imagens)`
+                 + `</option>`).join("");
+  $("#loteDs").innerHTML = r.datasets.map(
+    d => `<option value="${d.id}"${d.id === r.atual ? " selected" : ""}>`
+       + `${d.nome} (${d.n_imagens})</option>`).join("");
+  document.querySelectorAll(".selDs").forEach(b => b.onclick = async () => {
+    const x = await api("/api/dataset", {id: b.dataset.ds});
+    // Trocar de dataset invalida TUDO que dependia do anterior: o encoder, os
+    // markers, a curva, as filas de validacao e os paineis de comparacao.
+    // O servidor ja zera o estado; a interface precisa zerar junto, senao
+    // sobram listas do dataset velho apontando para imagens que nao existem
+    // mais -- foi assim que as imagens de validacao "sumiam".
+    window.POOL = x.pool; window.NVAL = x.val; hist = []; hist.T = [];
+    log(`dataset → ${x.nome} · pool ${x.pool.length} · validação ${x.val}`,
+        "#2f7fd4");
+    log("o encoder e os rabiscos foram descartados: treine de novo neste "
+        + "dataset antes de validar ou comparar.", "#8a6d2b");
+    if (!x.tem_label) log("sem anotação: Fβ automático indisponível; use a aba "
+      + "de validação com especialista.", "#e8543f");
+    $("#mFb").textContent = "—"; $("#mIou").textContent = "—";
+    $("#mN").textContent = "0"; $("#bProxima").disabled = false;
+
+    // seletor de teste da comparacao: repovoa com o pool novo
+    $("#dTeste").innerHTML = (x.pool || []).slice(0, 20)
+      .map(i => `<option>${i}</option>`).join("");
+    ["vBase", "vMask", "vGt"].forEach(
+      k => { const el = $("#" + k); if (el) el.src = ""; });
+
+    // painel de validacao com especialista
+    $("#vMatriz").innerHTML = "";
+    $("#vBotoes").style.display = "none";
+    $("#vTitulo").textContent = "Validação não iniciada";
+    $("#vTexto").textContent = `Dataset ${x.nome}. Treine um modelo neste `
+      + `dataset e clique em iniciar — as imagens aparecem aqui.`;
+
+    // painel da comparacao com/sem AL
+    $("#dPlacar").innerHTML = ""; $("#dTabela").innerHTML = "";
+    $("#cBracos").innerHTML = ""; $("#cGrade").innerHTML = "";
+    $("#cBase").src = ""; cAlvo = null; cFila = []; cBracos = [];
+    $("#cImgInfo").innerHTML =
+      `<b>—</b><div>dataset trocado: clique em iniciar comparação</div>`;
+    $("#cFilaLista").innerHTML = ""; $("#cAviso").style.display = "none";
+    fluxo("inicio");
+
+    tabela(); listarDs();
+  });
+}
+
+// ── curva de aprendizado (lote) ─────────────────────────────────────────────
+let KS = [3, 5, 8];
+function chipsK() {
+  $("#loteKs").innerHTML = [1, 2, 3, 5, 8, 12, 16, 20].map(
+    k => `<button data-k="${k}" class="${KS.includes(k) ? "on" : ""}">${k}</button>`
+  ).join("");
+  $("#loteKs").querySelectorAll("button").forEach(b => b.onclick = () => {
+    const k = +b.dataset.k;
+    KS = KS.includes(k) ? KS.filter(x => x !== k) : [...KS, k].sort((a, c) => a - c);
+    if (!KS.length) KS = [k];
+    chipsK();
+  });
+}
+
+$("#bLote").onclick = async () => {
+  const r = await api("/api/lote/iniciar", {
+    ds: $("#loteDs").value, ks: KS, decoder: $("#loteDec").value,
+    n_test: +$("#loteNT").value});
+  if (r.erro) return log("erro: " + r.erro, "#e8543f");
+  $("#bLote").disabled = true;
+  poll();
+};
+$("#bLoteCancel").onclick = () => api("/api/lote/cancelar", {});
+
+async function poll() {
+  const r = await api("/api/lote");
+  const pc = r.total ? Math.round(100 * r.feito / r.total) : 0;
+  $("#progBar").style.width = pc + "%";
+  $("#progTxt").textContent = r.erro ? "erro: " + r.erro
+    : r.rodando ? `${r.feito} de ${r.total} pontos · teste com ${r.n_test} imagens`
+    : (r.resultados || []).length ? `concluído — ${r.resultados.length} pontos, `
+        + `teste com ${r.n_test} imagens` : "pronto para executar";
+  tabelaLote(r.resultados || []);
+  if (r.rodando) setTimeout(poll, 2000); else $("#bLote").disabled = false;
+}
+
+function tabelaLote(res) {
+  const ok = res.filter(r => !r.erro).sort((a, b) => a.k - b.k);
+  $("#tLote").innerHTML = [...res].sort((a, b) => a.k - b.k).map(r => r.erro
+    ? `<tr><td>${r.k}</td><td colspan="6" style="color:#e8543f">${r.erro}</td></tr>`
+    : `<tr><td>${r.k}</td><td><b>${r.fb.toFixed(4)}</b></td>`
+      + `<td>${r.iou.toFixed(3)}</td><td>${r.t_selecao}s</td>`
+      + `<td>${r.t_treino}s</td><td>${r.t_teste}s</td>`
+      + `<td>${r.ms_por_imagem}</td></tr>`).join("");
+  if (ok.length < 2) { $("#curvaLote").innerHTML = ""; return; }
+  const W = 640, H = 200, m = 34;
+  const xs = ok.map(r => r.k), ys = ok.map(r => r.fb);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys) - 0.02, y1 = Math.max(...ys) + 0.02;
+  const px = v => m + (v - x0) / Math.max(1e-9, x1 - x0) * (W - 2 * m);
+  const py = v => H - m - (v - y0) / Math.max(1e-9, y1 - y0) * (H - 2 * m);
+  $("#curvaLote").innerHTML =
+    `<line x1="${m}" y1="${H - m}" x2="${W - m}" y2="${H - m}" stroke="#d4dce6"/>`
+    + `<line x1="${m}" y1="${m}" x2="${m}" y2="${H - m}" stroke="#d4dce6"/>`
+    + `<polyline points="${ok.map((r, i) => px(xs[i]) + "," + py(ys[i])).join(" ")}" fill="none" stroke="#2f7fd4" stroke-width="2.5"/>`
+    + ok.map((r, i) => `<circle cx="${px(xs[i])}" cy="${py(ys[i])}" r="4.5" fill="#2f7fd4"><title>K=${r.k} · Fβ ${r.fb} · treino ${r.t_treino}s</title></circle>`).join("")
+    + `<text x="${m}" y="${H - 10}" font-size="11" fill="#5b6678">K=${x0}</text>`
+    + `<text x="${W - m}" y="${H - 10}" font-size="11" fill="#5b6678" text-anchor="end">K=${x1}</text>`
+    + `<text x="4" y="${py(y1) + 10}" font-size="11" fill="#5b6678">${y1.toFixed(2)}</text>`
+    + `<text x="4" y="${py(y0)}" font-size="11" fill="#5b6678">${y0.toFixed(2)}</text>`;
+}
+
+// ── validação com o especialista ────────────────────────────────────────────
+function mostrarV(r) {
+  if (r.erro) { log("erro: " + r.erro, "#e8543f"); return; }
+  if (r.fim) {
+    $("#vBotoes").style.display = "none";
+    $("#vTitulo").textContent = "Validação concluída";
+    $("#vTexto").textContent = "Matriz de confusão de detecção abaixo.";
+    matriz(r.matriz, r.por_classe);
+    return;
+  }
+  $("#vBase").src = `/img/${r.id}.png?t=${Date.now()}`;
+  $("#vMask").src = r.mask;
+  const g = $("#vGt");
+  if ($("#vGtChk").checked && r.tem_gt) {
+    g.onerror = () => { g.style.display = "none"; };
+    g.onload = () => { g.style.display = ""; };
+    g.src = `/gt/${r.id}.png?t=${Date.now()}`;
+  } else { g.style.display = "none"; g.removeAttribute("src"); }
+  $("#vBotoes").style.display = "flex";
+  const tag = r.classe === "dificil"
+    ? `<span style="color:var(--coral)"><b>caso difícil</b></span>`
+    : r.classe === "facil"
+      ? `<span style="color:var(--green)"><b>caso fácil</b></span>` : "";
+  $("#vTitulo").innerHTML = `Imagem ${r.i} de ${r.n} — ${r.id} ${tag}`;
+  $("#vTexto").innerHTML = (r.detectou
+    ? `O modelo DETECTOU objeto (${r.area} px). Confere?`
+    : "O modelo NÃO detectou objeto. Confere?")
+    + (r.entropia != null
+       ? `<br><span class="dica">entropia do modelo nesta imagem: `
+         + `<b>${r.entropia}</b> — a fila alterna a mais confusa com a mais `
+         + `confiante, para o julgamento não ser gasto só em casos triviais.`
+         + `</span>` : "");
+}
+
+function matriz(m, porClasse) {
+  // A matriz separada por estrato responde a pergunta que a matriz agregada
+  // esconde: o erro esta concentrado nos casos que o modelo ja sinalizava como
+  // confusos, ou aparece tambem onde ele estava confiante? O segundo caso e
+  // muito pior -- e so a estratificacao mostra a diferenca.
+  const linha = (rot, x, cor) => x && x.n
+    ? `<tr><td style="color:${cor}"><b>${rot}</b></td><td>${x.n}</td>`
+      + `<td>${x.vp}</td><td>${x.fp}</td><td>${x.fn}</td><td>${x.vn}</td>`
+      + `<td><b>${x.acuracia}</b></td><td>${x.fbeta}</td></tr>` : "";
+  const extra = porClasse
+    ? `<h3 style="margin:14px 0 6px">Separado por estrato</h3>
+       <table><thead><tr><th>estrato</th><th>n</th><th>VP</th><th>FP</th>
+         <th>FN</th><th>VN</th><th>acurácia</th><th>Fβ</th></tr></thead><tbody>
+         ${linha("casos difíceis", porClasse.dificil, "var(--coral)")}
+         ${linha("casos fáceis", porClasse.facil, "var(--green)")}
+       </tbody></table>
+       <p class="dica">Se a acurácia dos fáceis também cair, o problema não é
+       de fronteira — é do modelo. Se só a dos difíceis cair, o modelo já
+       sabia onde estava inseguro, e é exatamente ali que vale gastar a
+       próxima anotação.</p>` : "";
+  $("#vMatriz").innerHTML = `<div class="mtz">
+    <div class="cab"></div><div class="cab">especialista: tem</div>
+    <div class="cab">especialista: não tem</div>
+    <div class="cab">modelo: detectou</div><div class="vp">${m.vp}</div>
+    <div class="er">${m.fp}</div>
+    <div class="cab">modelo: não detectou</div><div class="er">${m.fn}</div>
+    <div class="vn">${m.vn}</div></div>
+    <p class="dica">acurácia ${m.acuracia} · precisão ${m.precisao} ·
+    revocação ${m.revocacao} · Fβ ${m.fbeta} · ${m.n} imagens julgadas</p>`
+    + extra;
+}
+
+$("#bVIniciar").onclick = async () => {
+  const b = $("#bVIniciar"); b.disabled = true; b.textContent = "Prevendo…";
+  const r = await api("/api/validar/iniciar", {n: +$("#vN").value});
+  b.disabled = false; b.textContent = "Reiniciar validação";
+  $("#vMatriz").innerHTML = "";
+  mostrarV(r);
+};
+$("#vGtChk").onchange = () => {
+  const g = $("#vGt");
+  if (!$("#vGtChk").checked) { g.style.display = "none"; }
+};
+$("#bVSim").onclick = async () =>
+  mostrarV(await api("/api/validar/responder", {tem_objeto: true}));
+$("#bVNao").onclick = async () =>
+  mostrarV(await api("/api/validar/responder", {tem_objeto: false}));
+
+// ── upload ──────────────────────────────────────────────────────────────────
+$("#upZona").onclick = () => $("#upInput").click();
+["dragover", "dragleave", "drop"].forEach(ev =>
+  $("#upZona").addEventListener(ev, e => {
+    e.preventDefault();
+    $("#upZona").classList.toggle("sobre", ev === "dragover");
+    if (ev === "drop") enviar([...e.dataTransfer.files]);
+  }));
+$("#upInput").onchange = e => enviar([...e.target.files]);
+
+async function enviar(arqs) {
+  arqs = arqs.filter(f => f.type.startsWith("image/"));
+  if (!arqs.length) return;
+  const nome = $("#upNome").value.trim() || "dataset enviado";
+  const destino = $("#upDestino").value || null;
+  const papel = $("#upPapel").value;
+  // Com "existente" preenchido o servidor devolve o mesmo dataset em vez de
+  // criar outro. Sem isso, o segundo lote virava um dataset separado e trocar
+  // de dataset descarta o encoder -- o modelo treinado no primeiro lote se
+  // perdia exatamente quando se queria validar com o segundo.
+  const criado = await api("/api/upload/criar", {nome, existente: destino});
+  for (let i = 0; i < arqs.length; i++) {
+    const b64 = await new Promise(res => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.readAsDataURL(arqs[i]);
+    });
+    await api("/api/upload/arquivo",
+              {id: criado.id, nome: arqs[i].name, b64, tipo: "orig"});
+    $("#upBar").style.width = Math.round(100 * (i + 1) / arqs.length) + "%";
+    $("#upTxt").textContent = `${i + 1} de ${arqs.length} enviadas`;
+  }
+  if (papel === "validacao") {
+    const r = await api("/api/upload/validacao",
+                        {id: criado.id, nomes: arqs.map(a => a.name)});
+    $("#upTxt").textContent = `${arqs.length} imagens enviadas como `
+      + `VALIDAÇÃO. O dataset agora tem ${r.n_validacao} de validação e `
+      + `${r.pool} no pool de anotação.`;
+  } else {
+    $("#upTxt").textContent = `${arqs.length} imagens enviadas como treino. `
+      + `Selecione o dataset na tabela ao lado para começar a anotar.`;
+  }
+  listarDs();
+}
+
+// ── comparação: FLIM puro contra N critérios de active learning ─────────────
+//
+// A tela mostra UMA imagem por vez, não uma coluna por braço. Duas razões:
+//
+//  1. Quando dois critérios pedem a mesma imagem, o especialista anota uma vez
+//     e os dois recebem o mesmo rabisco. Isso é o que torna a comparação
+//     pareada — a diferença medida no fim vem do critério de seleção, não de
+//     dois rabiscos diferentes sobre a mesma figura. E a geometria do traço
+//     pesa 2.1x a seleção de imagens, então duas anotações "parecidas" já
+//     seriam ruído suficiente para enterrar o efeito.
+//  2. Com N braços, N colunas ficariam ilegíveis e o esforço de anotação
+//     cresceria linearmente. Aqui ele cresce com o número de imagens DISTINTAS.
+
+let dModo = "fg", dPend = {fg: [], bg: []}, dPintando = false;
+let cAlvo = null, cFila = [], cCrits = ["coreset"], cBracos = [];
+
+const dlog = (m, cor) => {
+  const el = $("#dLog");
+  el.innerHTML += `<div${cor ? ` style="color:${cor}"` : ""}>${m}</div>`;
+  el.scrollTop = el.scrollHeight;
+};
+
+$("#dFg").onclick = () => {dModo = "fg"; $("#dFg").classList.add("on");
+                            $("#dBg").classList.remove("on");};
+$("#dBg").onclick = () => {dModo = "bg"; $("#dBg").classList.add("on");
+                            $("#dFg").classList.remove("on");};
+
+// ── seleção dos critérios a comparar ────────────────────────────────────────
+function chipsCrit() {
+  const cs = (window.CRITERIOS || []).filter(c => c.id !== "random");
+  $("#cCrits").innerHTML = cs.map(
+    c => `<button data-c="${c.id}" class="${cCrits.includes(c.id) ? "on" : ""}">`
+       + `${c.nome}</button>`).join("");
+  $("#cCrits").querySelectorAll("button").forEach(b => b.onclick = () => {
+    const c = b.dataset.c;
+    cCrits = cCrits.includes(c) ? cCrits.filter(x => x !== c) : [...cCrits, c];
+    if (!cCrits.length) cCrits = [c];      // sem nenhum não há o que comparar
+    chipsCrit();
+  });
+}
+
+// ── canvas ──────────────────────────────────────────────────────────────────
+function cCarregar(id, centros) {
+  cAlvo = id;
+  const img = $("#cBase"), cv = $("#cDes");
+  img.onload = () => {
+    cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    $("#palcoC").style.width = Math.min(img.naturalWidth, 560) + "px";
+    cv.getContext("2d").clearRect(0, 0, cv.width, cv.height);
+    dPend = {fg: [], bg: []};
+    if (centros) cDesenharPontos(centros.fg || [], centros.bg || []);
+  };
+  img.src = id ? `/img/${id}.png?t=${Date.now()}` : "";
+}
+
+function cPos(e) {
+  const cv = $("#cDes"), r = cv.getBoundingClientRect();
+  return [Math.round((e.clientX - r.left) * cv.width / r.width),
+          Math.round((e.clientY - r.top) * cv.height / r.height)];
+}
+
+function cPintar(x, y) {
+  const cv = $("#cDes"), ctx = cv.getContext("2d");
+  ctx.fillStyle = dModo === "fg" ? "rgba(46,204,113,.95)" : "rgba(231,76,60,.95)";
+  ctx.beginPath(); ctx.arc(x, y, 5, 0, 6.2832); ctx.fill();
+  // O disco do pincel PRECISA ser recortado na imagem. Sem isto, pintar perto
+  // da borda gera coordenadas como (402, 380) numa imagem de 400x400; o FLIM
+  // grava esses seeds no arquivo e o treino quebra com
+  // "not enough values to unpack (expected 4, got 1)" -- porque a leitura dos
+  // markers fora do quadro deixa o conjunto de candidatos a kernel vazio.
+  for (let dy = -5; dy <= 5; dy++)
+    for (let dx = -5; dx <= 5; dx++) {
+      if (dx * dx + dy * dy > 25) continue;
+      const px = x + dx, py = y + dy;
+      if (px < 0 || py < 0 || px >= cv.width || py >= cv.height) continue;
+      dPend[dModo].push([px, py]);
+    }
+}
+
+$("#cDes").addEventListener("pointerdown", e => {
+  if (!cAlvo) return;
+  dPintando = true; const [x, y] = cPos(e); cPintar(x, y);
+});
+$("#cDes").addEventListener("pointermove", e => {
+  if (!dPintando) return; const [x, y] = cPos(e); cPintar(x, y);
+});
+["pointerup", "pointerleave"].forEach(ev =>
+  $("#cDes").addEventListener(ev, async () => {
+    if (!dPintando) return;
+    dPintando = false;
+    if (!dPend.fg.length && !dPend.bg.length) return;
+    const r = await api("/api/comp/marker",
+                        {id: cAlvo, fg: dPend.fg, bg: dPend.bg});
+    dPend = {fg: [], bg: []};
+    $("#cContador").textContent =
+      `${r.fg} px de objeto · ${r.bg} px de fundo nesta imagem`;
+  }));
+
+// ── desenhar os pontos que vieram do servidor (pré-marcação) ────────────────
+function cDesenharPontos(fg, bg) {
+  const cv = $("#cDes"), ctx = cv.getContext("2d");
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const bolinha = (pts, cor) => {
+    ctx.fillStyle = cor;
+    pts.forEach(([x, y]) => {
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, 6.2832); ctx.fill();
+    });
+  };
+  bolinha(bg, "rgba(231,76,60,.95)");
+  bolinha(fg, "rgba(46,204,113,.95)");
+}
+
+// ── fluxo da rodada ─────────────────────────────────────────────────────────
+let cRodada = 0, cKAlvo = 0;
+
+/*
+ * A lista das imagens da rodada.
+ *
+ * Sem ela a tela mostrava uma imagem so e parecia que apenas um braco tinha
+ * escolhido -- a informacao de que os outros tambem escolheram estava na
+ * tabela lateral, longe de onde o olho estava. Cada chip diz quem pediu a
+ * imagem e se ela ja foi anotada; clicar troca para ela.
+ */
+function cListaFila() {
+  if (!cFila.length) { $("#cFilaLista").innerHTML = ""; return; }
+  const chips = cFila.map(f => {
+    const on = f.id === cAlvo ? " on" : "";
+    const marca = f.anotada ? "\u2713 " : "\u25cb ";
+    const pre = f.proposto
+      ? ` <span style="color:var(--blue)">pré-marcada</span>` : "";
+    return `<button data-img="${f.id}" class="chipImg${on}">${marca}`
+      + `<b>${f.id}</b> <span class="dica">${f.pedida_por.join(" · ")}</span>`
+      + `${pre}</button>`;
+  }).join("");
+  $("#cFilaLista").innerHTML =
+    `<div class="barra" style="flex-wrap:wrap;margin:8px 0">${chips}</div>`;
+  $("#cFilaLista").querySelectorAll("button").forEach(
+    b => b.onclick = () => cAbrir(b.dataset.img));
+}
+
+function cAbrir(id) {
+  const f = cFila.find(x => x.id === id);
+  if (!f) return;
+  $("#cImgInfo").innerHTML =
+    `<b>Rodada ${cRodada} de ${cKAlvo} — ${f.id}</b>`
+    + `<div>pedida por: <b>${f.pedida_por.join(", ")}</b></div>`
+    + `<div class="dica">${f.motivo}</div>`;
+  cCarregar(f.id, f.centros);
+  cListaFila();
+  destaque("cConfirmar");
+  const n = cFila.filter(x => x.anotada).length;
+  $("#cContador").textContent = (f.proposto && !f.anotada)
+    ? `pré-marcada pelo modelo: ${f.px.fg} px de objeto, ${f.px.bg} de fundo `
+      + `— confira e confirme, ou clique em corrigir`
+    : `${n} de ${cFila.length} imagens desta rodada já anotadas`;
+}
+
+function cMostraRodada(r) {
+  if (r.erro) {
+    dlog("erro: " + r.erro, "#e8543f");
+    $("#cAviso").style.display = "block";
+    $("#cAviso").innerHTML = `<b>${r.erro}</b>`;
+    return;
+  }
+  cBracos = r.bracos || cBracos;
+  paineisBracos();
+  if (r.fim) {
+    $("#cImgInfo").innerHTML = `<b>Orçamento concluído</b>`
+      + `<div>${r.k} imagens por braço — clique em treinar e comparar</div>`;
+    $("#dProxima").disabled = true;
+    cAlvo = null; $("#cBase").src = ""; cFila = []; cListaFila();
+    destaque("dTreinar");
+    return;
+  }
+  $("#dProxima").disabled = false;
+  cFila = r.fila || [];
+  cRodada = r.rodada; cKAlvo = r.k;
+
+  $("#cAviso").style.display = "block";
+  if (r.semente_comum) {
+    $("#cAviso").innerHTML =
+      `<b>Imagem inicial — comum a todos os braços.</b> Você anota uma vez e o `
+      + `rabisco vale para todos. Assim todos partem do mesmo ponto, e a `
+      + `diferença que aparecer no fim vem do critério, não da imagem que `
+      + `calhou de sair primeiro — que é a maior fonte de variância do método `
+      + `(0.10 a 0.22 de Fβ).`;
+  } else {
+    const n = cFila.length;
+    $("#cAviso").innerHTML =
+      `<b>${n} ${n > 1 ? "imagens" : "imagem"} nesta rodada</b> — cada braço `
+      + `escolheu a sua. Quando dois critérios pedem a mesma, ela aparece uma `
+      + `vez só e o rabisco vale para os dois. `
+      + (cFila.some(f => f.proposto)
+         ? `Já vieram <b>pré-marcadas pelo modelo</b>: confira, corrija se `
+           + `estiver errado, e confirme.` : "");
+  }
+  const pend = cFila.filter(f => !f.anotada);
+  cAbrir((pend[0] || cFila[0]).id);
+}
+
+/*
+ * Um botao por passo: so aparece o que faz sentido fazer agora.
+ *
+ * Duas coisas que estavam erradas antes:
+ *
+ *  - "Reiniciar" era o unico botao azul da tela depois que a comparacao
+ *    comecava, embora seja o unico destrutivo -- descarta a sessao inteira.
+ *  - "Treinar e comparar" ficava disponivel o tempo todo. Treinar antes de
+ *    fechar o orcamento compara bracos com numeros de imagens diferentes, que
+ *    e exatamente a premissa que a comparacao precisa manter.
+ *
+ * Agora: enquanto ha rodadas a fazer so existe "Proxima rodada"; ao fechar o
+ * orcamento ela some e da lugar a "Treinar e comparar".
+ */
+const BOTOES = ["cConfirmar", "dIniciar", "dProxima", "dTreinar",
+                "dReiniciar"];
+
+/*
+ * Um unico botao de acao por vez, sempre na mesma posicao da barra:
+ *
+ *   Iniciar comparacao  ->  Proxima rodada  ->  Treinar e comparar
+ *
+ * "Iniciar" some assim que a comparacao comeca e da lugar a "Proxima rodada";
+ * quando o orcamento fecha, "Proxima rodada" some e entra "Treinar e
+ * comparar".
+ *
+ * O segundo botao muda de papel conforme a fase, e nao por acaso:
+ *
+ *   durante as rodadas  ->  "Reiniciar", discreto, porque abandonar uma
+ *                           comparacao pela metade e jogar fora trabalho de
+ *                           anotacao que voce acabou de fazer;
+ *   com o orcamento fechado -> "Iniciar comparacao", porque ali a anotacao ja
+ *                           rendeu o que tinha para render e comecar outra e
+ *                           um passo normal, nao um arrependimento.
+ *
+ * Os dois chamam a mesma funcao; o que muda e o nome e o peso visual, que
+ * devem dizer a verdade sobre o que se perde ao clicar.
+ */
+const FASES = {
+  inicio:   [null,         ["dIniciar"]],
+  anotar:   ["cConfirmar", ["cConfirmar", "dProxima", "dReiniciar"]],
+  rodada:   ["dProxima",   ["dProxima", "dReiniciar"]],
+  fim:      ["dTreinar",   ["dTreinar", "dIniciar"]],
+  treinado: [null,         ["dTreinar", "dIniciar"]],
+};
+
+function fluxo(fase) {
+  const [azul, visiveis] = FASES[fase] || FASES.inicio;
+  BOTOES.forEach(id => {
+    const b = $("#" + id);
+    if (!b) return;
+    b.classList.toggle("p", id === azul);
+    // display direto em vez de [hidden]: a barra e flex e o hidden do
+    // navegador seria sobrescrito pela regra de layout dos botoes.
+    b.style.display = visiveis.includes(id) ? "" : "none";
+  });
+}
+
+// compatibilidade com as chamadas antigas
+function destaque(qual) {
+  fluxo(qual === "cConfirmar" ? "anotar"
+      : qual === "dProxima" ? "rodada"
+      : qual === "dTreinar" ? "fim" : "treinado");
+}
+
+function paineisBracos() {
+  if (!cBracos.length) { $("#cBracos").innerHTML = ""; return; }
+  // A coluna "nesta rodada" existe porque um braço pode não pedir imagem
+  // nenhuma: se o critério dele escolher uma que outro braço já fez você
+  // anotar, ela entra sem custo e não aparece na fila. Sem esta coluna o braço
+  // parecia ter sumido da rodada.
+  const linha = b => {
+    const cor = b.imgs.length === Math.max(...cBracos.map(x => x.imgs.length))
+      ? "" : ' style="color:var(--coral)"';
+    const compart = (b.compartilha_com || []).length
+      ? ` <span class="dica">(mesma imagem de ${b.compartilha_com.join(", ")})</span>`
+      : "";
+    return `<tr><td><b>${b.nome}</b></td><td${cor}>${b.imgs.length}</td>`
+      + `<td>${b.alvo || "—"}${compart}</td>`
+      + `<td class="dica">${b.evento || "—"}</td></tr>`;
+  };
+  $("#cBracos").innerHTML = `<table style="margin:10px 0"><thead><tr>
+    <th>braço</th><th>imgs</th><th>próxima</th><th>nesta rodada</th>
+    </tr></thead><tbody>` + cBracos.map(linha).join("") + `</tbody></table>
+    <p class="dica">Quando dois critérios escolhem a mesma imagem, ela aparece
+    <b>uma vez só</b> na fila e o rabisco vale para os dois. Quando um critério
+    escolhe uma imagem que já foi anotada em rodada anterior, ele a recebe
+    <b>sem custo</b> — por isso um braço pode avançar sem pedir nada.</p>`;
+}
+
+async function iniciarComparacao(botao) {
+  const b = botao;
+  const rotulo = b.textContent;
+  b.disabled = true; b.textContent = "Preparando…";
+  window.KDUPLO = +$("#dK").value;
+  const r = await api("/api/comp/iniciar",
+                      {k: window.KDUPLO, criterios: cCrits});
+  b.disabled = false; b.textContent = rotulo;
+  $("#dPlacar").innerHTML = ""; $("#dTabela").innerHTML = "";
+  $("#dLog").innerHTML = "";
+  fluxo("anotar");
+  dlog(`comparação iniciada — K = ${window.KDUPLO} · FLIM puro contra `
+       + `${cCrits.length} critério(s)`, "#2f7fd4");
+  cMostraRodada(r);
+}
+
+// Os dois disparam a mesma coisa: "Iniciar" some quando a comparação começa e
+// "Reiniciar" toma o lugar dele, discreto e fora do caminho do fluxo.
+$("#dIniciar").onclick = () => iniciarComparacao($("#dIniciar"));
+$("#dReiniciar").onclick = () => iniciarComparacao($("#dReiniciar"));
+
+$("#cConfirmar").onclick = async () => {
+  if (!cAlvo) return;
+  const r = await api("/api/comp/confirmar", {id: cAlvo});
+  if (r.erro) { dlog("erro: " + r.erro, "#e8543f"); return; }
+  cBracos = r.bracos; paineisBracos();
+  cFila = cFila.map(f => f.id === cAlvo ? {...f, anotada: true} : f);
+  dlog(`${cAlvo} confirmada`, "#1e9e4a");
+  const pend = cFila.filter(f => !f.anotada);
+  if (pend.length) {
+    cAbrir(pend[0].id);
+  } else {
+    cListaFila();
+    $("#cImgInfo").innerHTML = `<b>Rodada ${cRodada} completa</b>`
+      + `<div>as ${cFila.length} imagens desta rodada foram anotadas — `
+      + `clique em próxima rodada</div>`;
+    $("#cAviso").style.display = "none";
+    destaque("dProxima");
+  }
+};
+
+$("#dLimpar").onclick = async () => {
+  if (!cAlvo) return;
+  const r = await api("/api/comp/limpar", {id: cAlvo});
+  $("#cDes").getContext("2d").clearRect(0, 0, $("#cDes").width,
+                                        $("#cDes").height);
+  dPend = {fg: [], bg: []};
+  $("#cContador").textContent = "0 px de objeto · 0 px de fundo nesta imagem";
+  cFila = cFila.map(f => f.id === cAlvo
+    ? {...f, anotada: false, proposto: false, centros: null,
+       px: {fg: 0, bg: 0}} : f);
+  cListaFila();
+  dlog(`${cAlvo}: ${r.aviso}`, "#8a6d2b");
+};
+
+$("#dPre").onclick = async () => {
+  if (!cAlvo) return;
+  const b = $("#dPre"); b.disabled = true; b.textContent = "Propondo…";
+  const r = await api("/api/comp/premarcar", {id: cAlvo});
+  b.disabled = false; b.textContent = "Pré-marcar com o modelo";
+  if (r.erro) { dlog("erro: " + r.erro, "#e8543f"); return; }
+  cDesenharPontos(r.fg, r.bg);
+  cFila = cFila.map(f => f.id === cAlvo
+    ? {...f, proposto: true, centros: {fg: r.fg, bg: r.bg},
+       px: {fg: r.px_fg, bg: r.px_bg}} : f);
+  cListaFila();
+  $("#cContador").textContent =
+    `${r.n_fg} toques de objeto (${r.px_fg} px) · ${r.n_bg} de fundo `
+    + `(${r.px_bg} px) — propostos pelo modelo`;
+  dlog(`${cAlvo}: modelo propôs ${r.n_fg} objeto / ${r.n_bg} fundo`
+       + (r.encontrou_objeto ? "" : " (não achou objeto)"),
+       r.encontrou_objeto ? "#1e9e4a" : "#8a6d2b");
+  if (r.aviso) {
+    $("#cAviso").style.display = "block";
+    $("#cAviso").innerHTML = `<b>${r.aviso}</b>`;
+  }
+};
+
+$("#dProxima").onclick = async () => {
+  const b = $("#dProxima"); b.disabled = true; b.textContent = "Retreinando…";
+  const r = await api("/api/comp/proxima", {});
+  b.disabled = false; b.textContent = "Próxima rodada";
+  cMostraRodada(r);
+};
+
+// ── treino e tabela final ───────────────────────────────────────────────────
+/*
+ * Treino e teste são cronometrados SEPARADAMENTE de propósito: o argumento de
+ * leveza do FLIM é sobre o treino (k-means, sem backpropagation no encoder), e
+ * somar o tempo de avaliação esconderia isso.
+ */
+function tabelaFinal(r) {
+  const num = (x, d = 3) => (x === null || x === undefined) ? "—" : (+x).toFixed(d);
+  const base = r.linhas.find(l => l.id === "puro");
+  const melhor = Math.max(...r.linhas.filter(l => l.fb != null).map(l => l.fb));
+  const linha = l => {
+    const d = l.delta;
+    const cor = l.id === "puro" ? "var(--gray)"
+      : d > 0 ? "var(--green)" : d < 0 ? "var(--coral)" : "var(--gray)";
+    return `<tr><td><b${l.fb === melhor ? ' style="color:var(--green)"' : ""}>`
+      + `${l.nome}</b></td><td>${l.n_imgs ?? "—"}</td>`
+      + `<td><b>${num(l.fb)}</b></td><td>${num(l.iou)}</td>`
+      + `<td>${num(l.t_treino, 1)} s</td><td>${num(l.t_aval, 1)} s</td>`
+      + `<td style="color:${cor}">${l.id === "puro" ? "—"
+          : (d > 0 ? "+" : "") + num(d)}</td></tr>`;
+  };
+  let extra = "";
+  const m = r.sorteios_extras;
+  if (m && m.execucoes) {
+    extra = `<p class="dica"><b>Três sorteios extras do braço puro:</b> pior
+      ${num(m.pior.fb)} · mediana ${num(m.fb_mediana)} · melhor
+      ${num(m.melhor.fb)} — <b>amplitude ${num(m.amplitude)}</b>. Compare os
+      critérios com a mediana, não com um sorteio só: a amplitude do sorteio é
+      maior que qualquer efeito que você vá ver numa rodada.</p>`;
+  }
+  $("#dTabela").innerHTML = `<h3 style="margin:14px 0 6px">Resultado</h3>
+    <table><thead><tr><th>braço</th><th>imgs</th><th>Fβ</th><th>IoU</th>
+      <th>treino</th><th>teste</th><th>Δ vs puro</th></tr></thead><tbody>
+      ${r.linhas.map(linha).join("")}
+    </tbody></table>
+    <p class="dica">Validação com <b>${r.n_val}</b> imagens, a mesma para todos
+    os braços. <b>Treino</b> é estimar os kernels do encoder por k-means — é o
+    número que sustenta o argumento de leveza do FLIM. <b>Teste</b> é rodar o
+    decoder nas imagens de validação; cresce com o conjunto, não com o método.
+    </p>${extra}
+    <div class="aviso" style="border-color:var(--coral)"><b>Uma rodada não é
+    evidência.</b> O desvio de Fβ entre sorteios diferentes é de 0.10 a 0.22, e
+    o ganho médio do AL com orçamento pequeno é de +0.012. Qualquer ordem entre
+    os braços aqui pode inverter na próxima execução.</div>`;
+}
+
+$("#dTreinar").onclick = async () => {
+  const b = $("#dTreinar"); b.disabled = true; b.textContent = "Treinando…";
+  const r = await api("/api/comp/treinar",
+                      {sorteios: $("#dMulti").checked ? 3 : 1});
+  b.disabled = false; b.textContent = "Treinar e comparar";
+  if (r.erro || !r.linhas) {
+    dlog("erro: " + (r.erro || "resposta sem resultado"), "#e8543f");
+    $("#cAviso").style.display = "block";
+    $("#cAviso").innerHTML = `<b>${r.erro || "resposta sem resultado"}</b>`;
+    return;   // sem tabela: melhor nada do que uma tabela de tracos
+  }
+  fluxo("treinado");
+  const comFb = r.linhas.filter(l => l.fb != null);
+  if (!comFb.length) {
+    dlog("sem anotação de referência: use a aba de validação com especialista",
+         "#8a6d2b");
+  }
+  $("#dPlacar").innerHTML = `<div class="placar">` + r.linhas.map(
+    l => `<span class="${l.id === "puro" ? "sem" : "al"}">${l.nome}`
+       + `<b>${l.fb ?? "—"}</b></span>`).join("") + `</div>`;
+  tabelaFinal(r);
+  r.linhas.forEach(l => dlog(`${l.nome}: Fβ ${l.fb ?? "—"} `
+    + `(${l.n_imgs} imgs, treino ${l.t_treino}s)`,
+    l.delta > 0 ? "#1e9e4a" : l.delta < 0 ? "#e8543f" : null));
+
+  // Só imagens que NENHUM braço treinou. Sem este filtro o seletor ofereceria
+  // imagens do próprio conjunto de treino de algum lado, e a comparação
+  // mediria memorização em vez de generalização.
+  const treinadas = new Set(r.linhas.flatMap(l => l.imagens || []));
+  const pool = (window.POOL || []).filter(i => !treinadas.has(i)).slice(0, 20);
+  $("#dTeste").innerHTML = pool.length
+    ? pool.map(i => `<option>${i}</option>`).join("")
+    : `<option value="">— nenhuma imagem não-treinada no pool —</option>`;
+  if (pool.length) { $("#dTeste").value = pool[0]; dPrever(); }
+};
+
+// ── comparação visual: a mesma imagem por todos os encoders ─────────────────
+async function dPrever() {
+  const id = $("#dTeste").value;
+  if (!id) return;
+  const r = await api("/api/comp/prever", {id});
+  const mostraGt = $("#dGt").checked;
+  $("#cGrade").innerHTML = (r.ordem || []).map(bid => {
+    const b = r.bracos[bid] || {};
+    return `<div class="col"><div class="palco pq">
+      <img src="/img/${id}.png?t=${Date.now()}" alt="">
+      ${b.mask ? `<img class="ov" src="${b.mask}" alt="">` : ""}
+      ${mostraGt ? `<img class="ov" src="/gt/${id}.png?t=${Date.now()}"
+         onerror="this.style.display='none'" alt="">` : ""}
+      </div><div class="rot ${bid === "puro" ? "sem" : "al"}">
+      ${b.nome || bid} — Fβ ${b.fb == null ? "—" : b.fb.toFixed(3)}</div></div>`;
+  }).join("");
+}
+$("#dTeste").onchange = dPrever;
+$("#dGt").onchange = dPrever;
+
+// ── início ──────────────────────────────────────────────────────────────────
+(async () => {
+  const e = await api("/api/estado");
+  window.POOL = e.pool; window.NVAL = e.val; window.KALVO = e.k_alvo;
+  hist = e.history; hist.T = e.T;
+  $("#selDec").innerHTML = e.decoders.map(
+    d => `<option value="${d.id}"${d.id === e.decoder ? " selected" : ""}>${d.nome}</option>`
+  ).join("");
+  $("#selBlk").value = e.block;
+  vigiaReinicio(e);
+  window.CRITERIOS = e.criterios || [];
+  const opts = (sel) => window.CRITERIOS.map(
+    c => `<option value="${c.id}"${c.id === sel ? " selected" : ""}>${c.nome}</option>`
+  ).join("");
+  $("#selCrit").innerHTML = opts(e.criterio);
+  notaCrit();
+  // Os criterios da comparacao sao chips de multipla escolha: a tela compara N
+  // bracos, nao um. "random" fica de fora porque o braco de controle (FLIM
+  // puro) ja e o sorteio -- oferece-lo criaria dois controles e nenhum
+  // tratamento.
+  if (!cCrits.includes(e.criterio) && e.criterio !== "random")
+    cCrits = [e.criterio];
+  chipsCrit();
+  $("#mN").textContent = e.T.length;
+  tabela();
+  $("#selK").value = e.k_alvo;
+  $("#loteDec").innerHTML = $("#selDec").innerHTML;
+  chipsK(); listarDs(); poll();
+  fluxo("inicio");
+
+  // Retoma a comparacao que estiver em andamento no servidor: a tabela e a
+  // fila da rodada vivem no cliente, entao sem isto recarregar a pagina dava a
+  // impressao de que tudo tinha sido perdido -- mesmo com o servidor intacto.
+  const ce = await api("/api/comp/estado", {});
+  if (ce && ce.ativo) {
+    cBracos = ce.bracos || []; cRodada = ce.rodada; cKAlvo = ce.k;
+    paineisBracos();
+    const res = await api("/api/comp/resultado", {});
+    if (res && !res.vazio && res.linhas) {
+      $("#dPlacar").innerHTML = `<div class="placar">` + res.linhas.map(
+        l => `<span class="${l.id === "puro" ? "sem" : "al"}">${l.nome}`
+           + `<b>${l.fb ?? "—"}</b></span>`).join("") + `</div>`;
+      tabelaFinal(res);
+      dlog("resultado da comparação anterior recuperado do servidor",
+           "#2f7fd4");
+    }
+    // A rodada em andamento tem prioridade sobre o resultado guardado: se ha
+    // imagens pendentes, o passo seguinte e anota-las, nao olhar a tabela de
+    // um treino anterior. Antes a fase "treinado" ganhava e a interface
+    // escondia justamente o botao que o proprio log mandava clicar.
+    cFila = ce.fila_detalhe || [];
+    const pendentes = cFila.filter(f => !f.anotada);
+    const orcamentoAberto = (ce.bracos || []).some(b => b.imgs.length < ce.k);
+
+    if (pendentes.length) {
+      dlog(`comparação retomada — rodada ${ce.rodada}, ${pendentes.length} `
+           + `imagem(ns) ainda por confirmar.`, "#8a6d2b");
+      cListaFila();
+      cAbrir(pendentes[0].id);          // ja deixa a fase em "anotar"
+    } else if (orcamentoAberto) {
+      dlog(`comparação retomada — rodada ${ce.rodada} completa. `
+           + `Clique em próxima rodada.`, "#8a6d2b");
+      cListaFila();
+      fluxo("rodada");
+    } else {
+      fluxo(res && res.linhas ? "treinado" : "fim");
+    }
+  }
+  log(`pool com ${e.pool.length} imagens não anotadas · validação com ${e.val}`);
+  log("clique em Iniciar — quem escolhe a imagem é o sistema.");
+  if (hist.length) curva();
+})();
+</script>
