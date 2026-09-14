@@ -1,20 +1,21 @@
 % Técnicas de Active Learning contra o sorteio
-% GERADO por flim_al/tabelas.py em 2026-09-14T17:26:21+00:00
+% GERADO por flim_al/tabelas.py em 2026-09-14T17:33:24+00:00
 % NAO EDITE A MAO: a proxima geracao sobrescreve, e o numero editado deixa de bater com evidencia/execucoes/.
 % Proveniencia: comparacao_criterios.proveniencia.json
-\begin{tabular}{lrrrrrrr}
+\begin{tabular}{lrrrrrrrrr}
 \hline
-técnica & nível & Fβ (células pareadas) & n pares & Δ vs random & p & Δ vs controle do nível & veredito \\
+técnica & nível & Fβ (células pareadas) & n pares & Δ vs random & p & Δ vs FLIM (K=3) & p (FLIM) & Δ vs controle do nível & veredito \\
 \hline
-badge & imagem & 0.430 & 95 & \textbf{-0.019} & 0.0105 & — & suportado \\
-coreset & imagem & 0.450 & 94 & 0.003 & 0.7144 & — & sem suporte \\
-entropy & imagem & 0.457 & 211 & \textbf{0.046} & 0.0000 & — & suportado \\
-least\_confidence & imagem & 0.424 & 135 & \textbf{0.039} & 0.0006 & — & suportado \\
-margin & imagem & 0.451 & 72 & 0.023 & 0.2110 & — & sem suporte \\
-random & imagem & — & — & — & — & — & piso \\
-oracle & imagem (usa GT) & 0.686 & 31 & 0.011 & 0.0889 & — & indicativo \\
-random\_region & região & 0.442 & 252 & \textbf{0.108} & 0.0000 & — & suportado \\
-region\_bald & região & 0.462 & 135 & \textbf{0.077} & 0.0000 & 0.050 & suportado \\
-region\_entropy & região & 0.437 & 66 & 0.014 & 0.4295 & — & sem suporte \\
+badge & imagem & 0.430 & 95 & \textbf{-0.019} & 0.0105 & — & — & — & suportado \\
+coreset & imagem & 0.450 & 94 & 0.003 & 0.7144 & — & — & — & sem suporte \\
+entropy & imagem & 0.457 & 211 & \textbf{0.046} & 0.0000 & — & — & — & suportado \\
+least\_confidence & imagem & 0.424 & 135 & \textbf{0.039} & 0.0006 & — & — & — & suportado \\
+margin & imagem & 0.451 & 72 & 0.023 & 0.2110 & — & — & — & sem suporte \\
+random & imagem & — & — & — & — & — & — & — & piso \\
+oracle & imagem (usa GT) & 0.686 & 31 & 0.011 & 0.0889 & — & — & — & indicativo \\
+flim\_3img & linha de base & — & 0 & — & — & — & — & — & sem pares suficientes \\
+random\_region & região & 0.442 & 252 & \textbf{0.108} & 0.0000 & — & — & — & suportado \\
+region\_bald & região & 0.462 & 135 & \textbf{0.077} & 0.0000 & — & — & 0.050 & suportado \\
+region\_entropy & região & 0.437 & 66 & 0.014 & 0.4295 & — & — & — & sem suporte \\
 \hline
 \end{tabular}

@@ -137,6 +137,47 @@ def _i(v):
         return UNK
 
 
+def _marker(v):
+    """
+    Normaliza a origem do marker: quem desenhou os traços.
+
+    Campo decisivo e quase sempre ausente. O braço do artigo treina com os 31
+    markers REAIS que um especialista desenhou; os braços de AL sobre o pool
+    completo usam SINTÉTICOS, porque marker real só existe para 31 imagens.
+    Comparar os dois sem casar este campo mede a qualidade do traço e
+    apresenta o resultado como efeito da seleção.
+    """
+    if v is None:
+        return UNK
+    t = str(v).strip().lower()
+    if t in ("real", "reais", "user", "usuario"):
+        return "real"
+    if t in ("synthetic", "sintetico", "sintético", "generated", "full"):
+        return "sintetico"
+    return UNK
+
+
+def _origem_por_braco(braco: str, experimento: str):
+    """
+    Inferência ESTRUTURAL da origem do marker, onde a linha não a registra.
+
+    Vale só para as famílias `al_*`, e vem do que o próprio
+    `al_encoder_experiment.py` documenta no cabeçalho: o braço `original` são
+    as 3 imagens do artigo, com os markers reais; os braços de AL e de sorteio
+    recebem markers sintéticos ("Gera markers sintéticos (simula usuário
+    desenhando seeds)").
+
+    Fora dessas famílias, UNKNOWN — inferir por analogia seria adivinhar.
+    """
+    if not experimento.startswith("al_"):
+        return UNK
+    if braco == "original":
+        return "real"
+    if braco in ("al", "random"):
+        return "sintetico"
+    return UNK
+
+
 def _seed_do_arm(arm: str):
     """
     Extrai a seed embutida no rótulo do braço.
@@ -162,6 +203,8 @@ def ad_paper_selection(linha, ctx):
         split=_i(linha.get("split")),
         orcamento=_i(linha.get("n_images")),
         imagens=linha.get("selected", UNK) or UNK,
+        # A unica familia que registra a origem do marker na propria linha.
+        marker_origem=_marker(linha.get("marker_source")),
         fb=_f(linha.get("fb")), dice=_f(linha.get("dice")),
         iou=_f(linha.get("iou")), mae=_f(linha.get("mae")),
     )
@@ -350,6 +393,9 @@ def migrar(dry: bool = False) -> int:
                     campos["esquema_origem"] = cab
                     campos["fonte"] = rel.replace(os.sep, "/")
                     campos["linha_origem"] = n_linha
+                    if campos.get("marker_origem", UNK) == UNK:
+                        campos["marker_origem"] = _origem_por_braco(
+                            campos.get("braco", UNK), ctx["experimento"])
                     # Migrado: o commit que produziu o número se perdeu.
                     campos["git_commit"] = UNK
                     campos["config_hash"] = UNK

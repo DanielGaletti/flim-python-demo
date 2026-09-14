@@ -66,6 +66,7 @@ CAMPOS = [
     "orcamento",       # numero de imagens anotadas (K / budget / n_train)
     "seed",            # semente da execucao
     "imagens",         # ids do conjunto de treino, separados por "|"
+    "marker_origem",   # real | sintetico | UNKNOWN — quem desenhou os traços
     # ── medidas ─────────────────────────────────────────────────────────────
     "fb",              # Fbeta, beta^2 = 0.3 — a metrica principal do artigo
     "dice",
@@ -73,6 +74,8 @@ CAMPOS = [
     "mae",
     "fb_val",          # Fbeta na validacao, quando o bloco foi escolhido nela
     "colapsou",        # 1 quando a predicao degenerou (Fb=DICE=IoU~0.479)
+    # marker_origem e condicao experimental, nao metadado. Ver o comentario
+    # em CAMPOS_ID.
     "segundos",
     # ── proveniencia ────────────────────────────────────────────────────────
     "git_commit",      # commit do codigo que produziu o numero
@@ -102,7 +105,7 @@ CAMPOS = [
 CAMPOS_ID = [
     "experimento", "dataset", "usuario", "split", "braco", "variante",
     "criterio", "decoder", "bloco", "orcamento", "seed", "imagens",
-    "fonte", "linha_origem",
+    "marker_origem", "fonte", "linha_origem",
 ]
 
 NUMERICOS = {"fb", "dice", "iou", "mae", "fb_val", "segundos"}

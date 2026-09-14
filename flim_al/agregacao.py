@@ -43,7 +43,7 @@ from flim_al import evidencia as ev  # noqa: E402
 # Colunas que definem uma CONDIÇÃO experimental. Duas execuções que coincidem
 # em todas elas e diferem só na seed são repetições da mesma condição.
 CONDICAO = ["dataset", "experimento", "braco", "criterio", "decoder",
-            "decoder_paper", "orcamento", "split"]
+            "decoder_paper", "orcamento", "split", "marker_origem"]
 
 # Colunas que identificam um PAR, para o teste pareado: duas execuções de
 # braços diferentes que compartilham tudo isto foram feitas sob as mesmas
@@ -54,8 +54,22 @@ CONDICAO = ["dataset", "experimento", "braco", "criterio", "decoder",
 # na chave tornava o pareamento impossível por construção — nenhum par casava,
 # e a tabela reportava "sem pares suficientes" em todas as linhas como se
 # faltasse dado, quando o que faltava era a chave certa.
+# `marker_origem` entra no pareamento, e isso e o ponto mais importante desta
+# lista. O braco do artigo usa os 31 markers REAIS desenhados pelo
+# especialista; os bracos de AL, sobre o pool completo, usam markers
+# SINTETICOS -- o proprio al_encoder_experiment.py diz isso ("Gera markers
+# sinteticos (simula usuario desenhando seeds)"), e ESTADO_ATUAL.md registra
+# a restricao: so 31 imagens do Schisto tem marker real.
+#
+# Comparar os dois lados sem casar esse campo mede QUEM DESENHOU O TRACO e
+# apresenta o resultado como se fosse efeito da selecao. Numa primeira versao
+# desta tabela isso produziu "AL perde do FLIM por -0.29 com p<0.0001" --
+# numero real, conclusao falsa.
+#
+# Com o campo na chave, o par confundido simplesmente nao se forma, e a
+# celula aparece vazia em vez de mentir.
 PAREAMENTO = ["dataset", "experimento", "decoder", "orcamento",
-              "split", "seed"]
+              "split", "seed", "marker_origem"]
 
 
 # ── estatística ─────────────────────────────────────────────────────────────

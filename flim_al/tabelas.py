@@ -345,7 +345,12 @@ def tabela_resumo_registro(recs=None) -> Tabela:
 # duas coisas ao mesmo tempo — quais imagens entram e como os seeds são
 # desenhados — então comparar região contra imagem sem o controle
 # `random_region` credita à seleção um ganho que é de geometria.
+# O braço do FLIM publicado: 3 imagens escolhidas pelos autores, sem seleção
+# automática nenhuma. É a referência da pergunta central da dissertação.
+FLIM_BASE = "flim_3img"
+
 NIVEL_TECNICA = {
+    FLIM_BASE: "linha de base",
     "random": "imagem", "entropy": "imagem", "least_confidence": "imagem",
     "margin": "imagem", "coreset": "imagem", "badge": "imagem",
     "random_region": "região", "region_entropy": "região",
@@ -392,13 +397,20 @@ def tabela_comparacao_criterios(recs=None, base: str = "random",
     # tempo. Normalizar aqui, e não na migração, preserva o rótulo original
     # em `evidencia/execucoes/` — o registro guarda o que a origem dizia.
     APELIDOS = {"aleatorio": "random", "entropia": "entropy"}
-    # Não são técnicas de seleção: `none` marca o braço sem critério.
-    NAO_TECNICA = {"none", ev.UNKNOWN, ""}
+    NAO_TECNICA = {ev.UNKNOWN, ""}
 
     limpos = []
     for r in recs:
         c = APELIDOS.get(r.get("criterio"), r.get("criterio"))
-        if c in NAO_TECNICA:
+        # O braço `original` tem criterio="none" porque não seleciona nada: é
+        # o FLIM do artigo, treinado com as 3 imagens que os autores usaram.
+        # Numa primeira versão ele foi descartado junto com os rótulos de
+        # migração — certo na definição (não é técnica de AL), errado na
+        # consequência: é exatamente a referência contra a qual a pergunta
+        # "AL melhora?" se responde. Entra com nome próprio.
+        if r.get("braco") == "original":
+            c = FLIM_BASE
+        elif c in NAO_TECNICA or c == "none":
             continue
         limpos.append(dict(r, criterio=c))
     if not limpos:
@@ -413,7 +425,8 @@ def tabela_comparacao_criterios(recs=None, base: str = "random",
         "comparacao_criterios",
         "Técnicas de Active Learning contra o sorteio",
         ["técnica", "nível", "Fβ (células pareadas)", "n pares",
-         f"Δ vs {base}", "p", "Δ vs controle do nível", "veredito"],
+         f"Δ vs {base}", "p", "Δ vs FLIM (K=3)", "p (FLIM)",
+         "Δ vs controle do nível", "veredito"],
         nota=(f"`{base}` é o piso — sem critério nenhum. O pareamento casa "
               "split, decoder, orçamento e semente **dentro da mesma família "
               "de experimento**; a média mostrada vem dessas mesmas células, "
@@ -423,7 +436,24 @@ def tabela_comparacao_criterios(recs=None, base: str = "random",
               "aconteceu com as quatro de imagem. Negrito só com p < 0,05. "
               "Para técnicas de REGIÃO, leia a coluna do controle de nível "
               "(`random_region`): o Δ contra `random` soma seleção e "
-              "geometria, e a geometria pesa ~2× a seleção neste projeto."))
+              "geometria, e a geometria pesa ~2× a seleção neste projeto. "
+              f"**`{FLIM_BASE}` é o FLIM do artigo** — as 3 imagens que os "
+              "autores escolheram, sem seleção automática. A coluna "
+              "`Δ vs FLIM` responde à pergunta central: aplicar AL melhora "
+              "sobre isso? Ela só aparece em orçamento casado (K=3), porque o "
+              "braço do artigo só existe com 3 imagens; comparar AL com 10 "
+              "imagens contra FLIM com 3 mediria orçamento, não seleção. "
+              "**Coluna toda vazia significa comparação IMPOSSÍVEL com os "
+              "dados existentes, não ausente por descuido**: o braço do "
+              "artigo usa os 31 markers REAIS do especialista, e os braços "
+              "de AL sobre o pool completo usam sintéticos, porque marker "
+              "real só existe para 31 imagens. `marker_origem` entra no "
+              "pareamento para que esse par não se forme — ele mediria "
+              "quem desenhou o traço e apresentaria como efeito da "
+              "seleção. Para responder à pergunta, rode "
+              "`scripts/varrer_criterios.py --modo imagem`: marker real "
+              "nos dois lados, com `oracle` (o passo 7 do Algoritmo 1) "
+              "como referência."))
 
     def _mede(trat, ref):
         return _comparar_por_criterio(limpos, trat, ref)
@@ -434,15 +464,16 @@ def tabela_comparacao_criterios(recs=None, base: str = "random",
         controle = "random_region" if nivel == "região" else None
 
         if crit == base:
-            t.adicionar([crit, nivel, "—", "—", "—", "—", "—", "piso"],
+            t.adicionar([crit, nivel, "—", "—", "—", "—", "—", "—", "—",
+                         "piso"],
                         [r["run_id"] for r in limpos
                          if r["criterio"] == crit][:500])
             continue
 
         r = _mede(crit, base)
         if r["n_pares"] < 2:
-            t.adicionar([crit, nivel, "—", r["n_pares"], "—", "—", "—",
-                         "sem pares suficientes"],
+            t.adicionar([crit, nivel, "—", r["n_pares"], "—", "—", "—", "—",
+                         "—", "sem pares suficientes"],
                         [x["run_id"] for x in limpos
                          if x["criterio"] == crit][:500])
             continue
@@ -453,10 +484,22 @@ def tabela_comparacao_criterios(recs=None, base: str = "random",
             if rc["p"] is not None:
                 dn = _fmt(rc["delta"])
 
+        # Contra o FLIM do artigo. O pareamento inclui `orcamento`, então só
+        # casam as execuções em K=3 — que é o único orçamento em que o braço
+        # do artigo existe. Sem essa restrição a coluna compararia AL com 10
+        # imagens contra FLIM com 3.
+        df, pf = "—", "—"
+        if crit != FLIM_BASE and FLIM_BASE in presentes:
+            rf = _mede(crit, FLIM_BASE)
+            if rf["p"] is not None:
+                df = _fmt(rf["delta"])
+                pf = _fmt(rf["p"], 4)
+
         p = r["p"]
         t.adicionar(
             [crit, nivel, _fmt(r["media_a"]), r["n_pares"], _fmt(r["delta"]),
-             _fmt(p, 4) if p is not None else "—", dn, ag.classificar(p)],
+             _fmt(p, 4) if p is not None else "—", df, pf, dn,
+             ag.classificar(p)],
             r["run_ids"],
             4 if (p is not None and p < 0.05) else None)
     return t
@@ -475,7 +518,8 @@ def _comparar_por_criterio(recs, tratamento: str, base: str) -> dict:
     uma média de um conjunto e um Δ de outro.
     """
     import collections as _c
-    chave = ("dataset", "experimento", "decoder", "orcamento", "split", "seed")
+    chave = ("dataset", "experimento", "decoder", "orcamento", "split",
+             "seed", "marker_origem")
     mapa = _c.defaultdict(dict)
     for r in recs:
         v = ag._num(r.get("fb"))
