@@ -38,18 +38,25 @@
 
 ---
 
-## Tabela 3 — Contribuição AL (FLIM-AL, pendente execução)
+## Tabela 3 — Curva AL: Fβ por budget de anotação (média splits 1/2/3)
 
-| Modelo         | User | MAE   | Fβ    | Δ vs FLIMpb | acquisition | rounds |
-|----------------|------|-------|-------|-------------|-------------|--------|
-| FLIM-AL(pb)    | A    | -     | -     | -           | entropy     | 10     |
-| FLIM-AL(pb)    | B    | -     | -     | -           | entropy     | 10     |
-| FLIM-AL(ts)    | A    | -     | -     | -           | entropy     | 10     |
-| FLIM-AL(ts)    | B    | -     | -     | -           | entropy     | 10     |
-| FLIM-AL(BALD)  | A    | -     | -     | -           | bald        | 10     |
+Método: entropy scoring dos saliency maps do `labeled_marker` → seleciona top-K imagens → treina `SaliencyRefiner` com GT masks.
 
-> Execute `bash scripts/schisto/al_train.sh && bash scripts/schisto/al_eval.sh`  
-> Os valores serão preenchidos automaticamente pelo script `flim_al/eval_al_decoder.py`.
+| Budget | % dataset | AL Fβ (A) | Rand Fβ (A) | ΔFβ (A) | AL Fβ (B) | Rand Fβ (B) | ΔFβ (B) |
+|--------|-----------|-----------|-------------|---------|-----------|-------------|---------|
+| 5      | 0.8%      | 0.248     | 0.220       | +0.028  | 0.167     | 0.168       | -0.001  |
+| 10     | 1.6%      | 0.262     | 0.198       | +0.064  | 0.333     | 0.287       | +0.046  |
+| 20     | 3.3%      | 0.354     | 0.320       | +0.035  | 0.225     | 0.273       | -0.048  |
+| 30     | 4.9%      | 0.369     | 0.300       | +0.070  | 0.358     | 0.322       | +0.036  |
+| **50** | **8.2%**  | **0.391** | **0.312**   | **+0.079** | **0.377** | **0.275** | **+0.102** |
+| 100    | 16.4%     | 0.389     | 0.342       | +0.047  | 0.371     | 0.334       | +0.037  |
+| 610    | 100%      | 0.347     | 0.358       | -0.011  | 0.343     | 0.351       | -0.007  |
+
+**Achado principal:** com apenas 50 imagens (8.2% do dataset), AL-entropy atinge Fβ≈0.39 — superando o treino com dataset completo (0.35) em user_A e 97-113% do desempenho full com 8× menos anotações.
+
+**Ponto ótimo:** budget=50. A partir de 100+, ganho do AL diminui (curva random converge).
+
+> Gerado por: `bash scripts/schisto/al_curve.sh` → `out/al_curve/`
 
 ---
 
