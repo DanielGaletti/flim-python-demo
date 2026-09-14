@@ -29,9 +29,44 @@ tabela.
 Para medir de verdade, use os scripts de experimento — com seeds, splits e o
 teste comum. É o único caminho cujo resultado entra em `evidencia/`.
 
+## As duas perguntas, e por que não se misturam
+
+Este projeto tem dois experimentos distintos, e confundi-los produz conclusão
+falsa com número real. Antes de rodar qualquer coisa, decida qual você está
+respondendo.
+
+**"Aplicar AL melhora sobre o FLIM?"** — `--modo imagem`. Seleção de QUAIS
+imagens anotar, do pool de 31 com marker **real** de especialista. Inclui
+`oracle`, que é o passo 7 do Algoritmo 1 do artigo. Os dois lados usam o
+mesmo traço humano, então a diferença isola a seleção.
+
+**"Selecionar região ganha de selecionar imagem?"** — `--modo regiao`. Seleção
+de ONDE anotar dentro da imagem (a borda confusa), sobre o pool completo.
+Marker real só existe para 31 imagens, então este runner **gera markers
+sintéticos**. Traz `random_region` como controle, para separar geometria de
+seleção.
+
+**Nunca compare uma campanha com a outra.** O braço do artigo usa marker
+real; os braços sobre o pool completo usam sintético. Comparar os dois mede
+*quem desenhou o traço* e apresenta como efeito da seleção — já aconteceu
+neste projeto e produziu "AL perde do FLIM por −0,29 com p < 0,0001": número
+real, conclusão falsa. O campo `marker_origem` entra no pareamento
+justamente para impedir que esse par se forme. Se uma coluna de comparação
+sair vazia, é porque ela é **impossível**, não porque faltou dado.
+
+
 ## Como rodar
 
 Sempre de dentro de `flim_ad/` (os caminhos de dataset são relativos a ela).
+
+**Varredura — caminho preferido, porque pré-registra a lista:**
+
+```bash
+python scripts/varrer_criterios.py --modo imagem --plano   # vê o custo
+python scripts/varrer_criterios.py --modo imagem           # roda
+python scripts/varrer_criterios.py --modo regiao --plano
+```
+
 
 **Seleção por critério, pool real de markers:**
 
