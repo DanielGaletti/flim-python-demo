@@ -1,0 +1,16 @@
+# Dependências do job rápido do CI.
+#
+# Os testes de integridade científica — registro, agregação, tabelas,
+# proveniência, vazamento — não importam torch, numpy nem PIL. Isso não é
+# coincidência: a estatística foi implementada à mão em `agregacao.py` e o
+# registro é CSV puro, justamente para que a verificação da base empírica
+# rode em segundos e não dependa de uma imagem de 2 GB.
+#
+# O job completo instala `requirements-dissertacao.txt` e roda tudo.
+
+pytest>=8.0
+
+# scipy entra só para `test_p_bicaudal_confere_com_scipy`, que confere a
+# estatística artesanal contra a de referência. Sem ele o teste pula e a
+# verificação se perde — é barato o bastante para valer a pena.
+scipy>=1.11

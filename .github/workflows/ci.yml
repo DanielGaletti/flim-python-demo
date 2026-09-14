@@ -1,0 +1,130 @@
+name: CI
+
+# Dois níveis, e a separação é deliberada.
+#
+#   integridade  roda em segundos, sem torch, e responde a única pergunta que
+#                não pode ficar sem resposta: as tabelas ainda batem com os
+#                dados? É o que impede a dissertação e a evidência de se
+#                separarem em silêncio.
+#
+#   suite        instala o ambiente completo e roda tudo. Mais lento, ainda
+#                barato.
+#
+# O que NÃO está aqui, de propósito: experimento científico. Uma campanha de
+# AL leva horas de GPU, e um runner do GitHub não tem GPU nem os 14 GB de
+# dataset. Validação científica completa roda na máquina, não no CI.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integridade:
+    name: integridade científica
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: instalar
+        run: pip install -r requirements-ci.txt
+
+      - name: registro, agregação, tabelas e vazamento
+        run: |
+          python -m pytest -v \
+            tests/test_evidencia.py \
+            tests/test_tabelas.py \
+            tests/test_sanidade_cientifica.py \
+            tests/test_ambiente_experimental.py
+
+      # A trava principal, isolada para que a falha seja legível no resumo do
+      # PR: regenera tudo num diretório temporário e compara com o que está
+      # versionado. Falha se alguém editou um número à mão ou se o registro
+      # mudou sem regenerar.
+      - name: as tabelas batem com o registro?
+        run: |
+          python -m pytest -v \
+            tests/test_tabelas.py::test_tabelas_batem_com_o_registro
+
+      - name: resumo do registro
+        if: always()
+        run: python -m flim_al.evidencia
+
+  suite:
+    name: suite completa
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      # torch em CPU: a versão com CUDA são ~2,5 GB que o runner não usa.
+      - name: instalar
+        run: |
+          pip install torch torchvision \
+            --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-dissertacao.txt
+
+      # O teste que exige a ausência do faiss é a razão de ele não estar em
+      # requirements-dissertacao.txt. Se algum dia entrar por dependência
+      # transitiva, este job falha — que é o comportamento desejado.
+      - name: faiss não pode estar presente
+        run: |
+          python - <<'PY'
+          import importlib.util, sys
+          if importlib.util.find_spec("faiss"):
+              sys.exit("faiss instalado: trocaria o k-means do encoder e os "
+                       "numeros deixariam de ser comparaveis com os existentes")
+          print("faiss ausente — k-means do sklearn, como nos resultados")
+          PY
+
+      - name: pytest
+        run: python -m pytest -v
+
+  docker:
+    name: build da imagem
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Só quando o ambiente muda, ou sob demanda. A base
+    # pytorch/pytorch:2.7.0-cuda12.8 tem ~8 GB e o runner tem ~14 GB livres:
+    # rodar isso a cada push gastaria minutos para confirmar o que não mudou.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(toJSON(github.event.commits.*.modified), 'Dockerfile') ||
+      contains(toJSON(github.event.commits.*.modified), 'requirements')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: liberar espaço
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android
+          df -h /
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Sem registry e sem push: este job responde "a imagem ainda constrói?",
+      # não "publique isto". Publicação entra quando houver política de tags
+      # ligada aos gates de validação — não antes.
+      - name: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.gpu
+          push: false
+          tags: flim-ad-env:gpu
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
