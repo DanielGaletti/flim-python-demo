@@ -1,0 +1,39 @@
+# Dependências reais do trabalho de dissertação (AL + aplicação interativa).
+#
+# `requirements.txt` é o da biblioteca FLIM-Python upstream e está incompleto
+# para este projeto: falta monai, transformers e scipy, e ele PEDE faiss, que
+# não deve ser instalado (ver abaixo). Ele fica como está, para não quebrar
+# quem instala a biblioteca sozinha.
+#
+# Instalar:
+#   pip install -r requirements-dissertacao.txt
+#
+# ── faiss: NÃO instalar ──────────────────────────────────────────────────────
+# `FLIMModel.cluster_patches_faiss` usa faiss quando o import funciona e cai no
+# `sklearn.KMeans` quando não. Os dois dão centróides diferentes → kernels
+# diferentes → Fβ diferente. Todos os resultados da dissertação vieram do
+# fallback do sklearn, porque na imagem do container o faiss está quebrado e o
+# `Dockerfile.gpu` o exclui de propósito.
+#
+# `tests/test_ambiente_experimental.py::test_kmeans_usa_o_mesmo_caminho_dos_resultados`
+# falha se faiss estiver presente. Isso é intencional.
+
+# núcleo
+numpy>=1.26,<3
+torch>=2.0
+torchvision
+pillow>=9.3.0
+scipy>=1.11
+scikit-image>=0.22.0
+scikit-learn>=1.3.2
+matplotlib>=3.7
+
+# pyflim/flim.py importa destes no topo do módulo; sem eles nada roda
+monai>=1.5
+transformers>=4.40
+
+# geração dos decks (flim_al/build_deck*.py)
+python-pptx>=1.0
+
+# testes
+pytest>=8.0
