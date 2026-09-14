@@ -41,6 +41,8 @@ CATALOGO = [
      lambda recs: tb.tabela_por_decoder(
          "al_corrected_results", "regiao_vs_imagem",
          "Active Learning por região: braços e controle, por decoder", recs)),
+    ("comparacao_criterios",
+     lambda recs: tb.tabela_comparacao_criterios(recs)),
     ("curva_orcamento", lambda recs: tb.tabela_curva_orcamento(recs)),
     ("proveniencia_registro",
      lambda recs: tb.tabela_resumo_registro(recs)),

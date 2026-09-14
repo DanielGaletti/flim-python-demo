@@ -86,7 +86,8 @@ from flim_al.marker_generator import (  # noqa: E402
 )
 from flim_al.realistic_markers import generate_realistic_markers  # noqa: E402
 
-CRITERIA = ["oracle", "entropy", "coreset", "badge", "random"]
+CRITERIA = ["oracle", "entropy", "least_confidence", "coreset", "badge",
+            "random"]
 
 
 # ── fontes de markers reais ───────────────────────────────────────────────────
@@ -153,6 +154,31 @@ def pool_entropy(sal_dir: str, fnames: list[str]) -> dict[str, float]:
     return out
 
 
+def pool_least_confidence(sal_dir: str, fnames: list[str]) -> dict:
+    """
+    Least confidence médio do saliency map: 1 - |p - 0.5| * 2. Sem ground truth.
+
+    Mede a mesma coisa que a entropia — o quanto o modelo está no muro — com
+    uma curva diferente. A entropia pesa mais o que está perto de 0.5; o least
+    confidence é linear na distância até 0.5. Em pools onde a saliência é quase
+    toda saturada, os dois ordenam igual; onde há uma cauda de valores
+    intermediários, divergem.
+
+    Existe aqui porque estava implementado só na aplicação interativa
+    (`flim_app/server.py`), e comparar critério em execução única de demo não
+    é evidência. Para entrar numa tabela ele precisa do mesmo caminho dos
+    outros: este script, com seeds e teste comum.
+    """
+    out: dict = {}
+    for fn in fnames:
+        p = os.path.join(sal_dir, fn)
+        if not os.path.exists(p):
+            continue
+        a = np.array(Image.open(p).convert("L"), dtype=np.float32) / 255.0
+        out[fn] = float((1.0 - np.abs(a - 0.5) * 2.0).mean())
+    return out
+
+
 # ── critérios de escolha da próxima imagem ────────────────────────────────────
 
 def pick_next(criterion: str, candidates: list[str], sal_dir: str,
@@ -186,6 +212,13 @@ def pick_next(criterion: str, candidates: list[str], sal_dir: str,
             return rng.choice(candidates), "sem saliência — sorteio"
         z = max(ents, key=ents.get)
         return z, f"maior entropia = {ents[z]:.4f}"
+
+    if criterion == "least_confidence":
+        lcs = pool_least_confidence(sal_dir, candidates)
+        if not lcs:
+            return rng.choice(candidates), "sem saliencia - sorteio"
+        z = max(lcs, key=lcs.get)
+        return z, f"maior least confidence = {lcs[z]:.4f}"
 
     if criterion in ("coreset", "badge"):
         from flim_al.coreset_badge import extract_encoder_features

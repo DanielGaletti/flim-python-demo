@@ -340,3 +340,158 @@ def tabela_resumo_registro(recs=None) -> Tabela:
                      f"{100 * f['sem_seed'] / f['n']:.0f}%",
                      f"{100 * f['sem_commit'] / f['n']:.0f}%"], f["ids"])
     return t
+
+# Nível de cada técnica. Importa para a leitura: uma técnica de REGIÃO muda
+# duas coisas ao mesmo tempo — quais imagens entram e como os seeds são
+# desenhados — então comparar região contra imagem sem o controle
+# `random_region` credita à seleção um ganho que é de geometria.
+NIVEL_TECNICA = {
+    "random": "imagem", "entropy": "imagem", "least_confidence": "imagem",
+    "margin": "imagem", "coreset": "imagem", "badge": "imagem",
+    "random_region": "região", "region_entropy": "região",
+    "region_margin": "região", "region_bald": "região",
+    "oracle": "imagem (usa GT)",
+}
+
+
+def tabela_comparacao_criterios(recs=None, base: str = "random",
+                                experimentos=None) -> Tabela:
+    """
+    Todas as técnicas de Active Learning lado a lado, contra o piso.
+
+    O piso é o sorteio, e ele não é formalidade: neste projeto, no experimento
+    com o encoder retreinado, os quatro critérios de imagem PERDERAM do
+    aleatório. Sem a linha do sorteio na mesma tabela, uma coluna de Fβ alto
+    parece boa e não é.
+
+    Duas armadilhas que esta função evita, e a segunda quase passou
+        1. **Rótulos que não são técnica.** A migração trouxe `none`
+           (execuções do braço "original_3imgs", que não usa critério nenhum)
+           e as versões em português `aleatorio` e `entropia`, da família
+           `orcamento`. Listá-los como métodos inventaria quatro técnicas que
+           não existem.
+
+        2. **Média agregando protocolos diferentes.** O Δ e o p são pareados
+           DENTRO de cada família — split, decoder, orçamento e semente têm de
+           casar. Mas a média, se calculada sobre todas as execuções, mistura
+           famílias com encoders, conjuntos de teste e orçamentos diferentes.
+           Ficava uma linha em que a média dizia uma coisa e o Δ, outra.
+           Por isso a média sai **das mesmas células que entraram no teste**:
+           os dois números passam a falar do mesmo conjunto.
+
+    Nível importa na leitura. Técnica de REGIÃO muda quais imagens entram E
+    como os seeds são desenhados; o Δ dela contra `random` soma os dois
+    efeitos. O controle certo é `random_region`, e a tabela traz a coluna
+    "Δ vs controle do nível" para isso.
+    """
+    recs = ev.carregar() if recs is None else recs
+    if experimentos:
+        recs = [r for r in recs if r["experimento"] in experimentos]
+
+    # Apelidos: a mesma técnica registrada com nomes diferentes ao longo do
+    # tempo. Normalizar aqui, e não na migração, preserva o rótulo original
+    # em `evidencia/execucoes/` — o registro guarda o que a origem dizia.
+    APELIDOS = {"aleatorio": "random", "entropia": "entropy"}
+    # Não são técnicas de seleção: `none` marca o braço sem critério.
+    NAO_TECNICA = {"none", ev.UNKNOWN, ""}
+
+    limpos = []
+    for r in recs:
+        c = APELIDOS.get(r.get("criterio"), r.get("criterio"))
+        if c in NAO_TECNICA:
+            continue
+        limpos.append(dict(r, criterio=c))
+    if not limpos:
+        raise ValueError("nenhuma execução com técnica reconhecida")
+
+    presentes = sorted({r["criterio"] for r in limpos})
+    if base not in presentes:
+        raise ValueError(f"critério de base `{base}` ausente — sem piso, a "
+                         "tabela não diz se alguma técnica melhora nada")
+
+    t = Tabela(
+        "comparacao_criterios",
+        "Técnicas de Active Learning contra o sorteio",
+        ["técnica", "nível", "Fβ (células pareadas)", "n pares",
+         f"Δ vs {base}", "p", "Δ vs controle do nível", "veredito"],
+        nota=(f"`{base}` é o piso — sem critério nenhum. O pareamento casa "
+              "split, decoder, orçamento e semente **dentro da mesma família "
+              "de experimento**; a média mostrada vem dessas mesmas células, "
+              "para que média e Δ falem do mesmo conjunto. "
+              "**Toda técnica que rodou está aqui, inclusive as que perderam "
+              "do sorteio** — no experimento de encoder retreinado isso "
+              "aconteceu com as quatro de imagem. Negrito só com p < 0,05. "
+              "Para técnicas de REGIÃO, leia a coluna do controle de nível "
+              "(`random_region`): o Δ contra `random` soma seleção e "
+              "geometria, e a geometria pesa ~2× a seleção neste projeto."))
+
+    def _mede(trat, ref):
+        return _comparar_por_criterio(limpos, trat, ref)
+
+    ordem = sorted(presentes, key=lambda c: (NIVEL_TECNICA.get(c, "zzz"), c))
+    for crit in ordem:
+        nivel = NIVEL_TECNICA.get(crit, "?")
+        controle = "random_region" if nivel == "região" else None
+
+        if crit == base:
+            t.adicionar([crit, nivel, "—", "—", "—", "—", "—", "piso"],
+                        [r["run_id"] for r in limpos
+                         if r["criterio"] == crit][:500])
+            continue
+
+        r = _mede(crit, base)
+        if r["n_pares"] < 2:
+            t.adicionar([crit, nivel, "—", r["n_pares"], "—", "—", "—",
+                         "sem pares suficientes"],
+                        [x["run_id"] for x in limpos
+                         if x["criterio"] == crit][:500])
+            continue
+
+        dn = "—"
+        if controle and controle in presentes and crit != controle:
+            rc = _mede(crit, controle)
+            if rc["p"] is not None:
+                dn = _fmt(rc["delta"])
+
+        p = r["p"]
+        t.adicionar(
+            [crit, nivel, _fmt(r["media_a"]), r["n_pares"], _fmt(r["delta"]),
+             _fmt(p, 4) if p is not None else "—", dn, ag.classificar(p)],
+            r["run_ids"],
+            4 if (p is not None and p < 0.05) else None)
+    return t
+
+
+def _comparar_por_criterio(recs, tratamento: str, base: str) -> dict:
+    """
+    Teste pareado entre dois CRITÉRIOS (não entre braços).
+
+    O pareamento casa família, split, decoder, orçamento e semente — tudo
+    menos o critério, que é o tratamento. `experimento` entra na chave de
+    propósito: famílias diferentes usaram encoders e conjuntos de teste
+    diferentes, e parear entre elas compararia protocolos, não técnicas.
+
+    Devolve também a média das células pareadas, para que a tabela não mostre
+    uma média de um conjunto e um Δ de outro.
+    """
+    import collections as _c
+    chave = ("dataset", "experimento", "decoder", "orcamento", "split", "seed")
+    mapa = _c.defaultdict(dict)
+    for r in recs:
+        v = ag._num(r.get("fb"))
+        if v is None:
+            continue
+        mapa[tuple(r.get(c, ev.UNKNOWN) for c in chave)][r["criterio"]] = (
+            v, r["run_id"])
+    a, b, ids = [], [], []
+    for d in mapa.values():
+        if tratamento in d and base in d:
+            a.append(d[tratamento][0])
+            b.append(d[base][0])
+            ids += [d[tratamento][1], d[base][1]]
+    r = ag.teste_pareado(a, b)
+    import statistics as _st
+    r["media_a"] = _st.fmean(a) if a else None
+    r["media_b"] = _st.fmean(b) if b else None
+    r["run_ids"] = ids or ["sem-pares"]
+    return r
