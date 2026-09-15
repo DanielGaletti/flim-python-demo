@@ -3,9 +3,9 @@
 | técnica | nível | Fβ (células pareadas) | n pares | Δ vs random | p | Δ vs FLIM (K=3) | p (FLIM) | Δ vs controle do nível | veredito |
 |---|---|---|---|---|---|---|---|---|---|
 | badge | imagem | 0.430 | 95 | **-0.019** | 0.0105 | — | — | — | suportado |
-| coreset | imagem | 0.450 | 94 | 0.003 | 0.7144 | — | — | — | sem suporte |
-| entropy | imagem | 0.457 | 211 | **0.046** | 0.0000 | — | — | — | suportado |
-| least_confidence | imagem | 0.424 | 135 | **0.039** | 0.0006 | — | — | — | suportado |
+| coreset | imagem | 0.429 | 136 | -0.018 | 0.0526 | — | — | — | indicativo |
+| entropy | imagem | 0.441 | 253 | **0.024** | 0.0058 | — | — | — | suportado |
+| least_confidence | imagem | 0.406 | 177 | 0.006 | 0.5655 | — | — | — | sem suporte |
 | margin | imagem | 0.451 | 72 | 0.023 | 0.2110 | — | — | — | sem suporte |
 | random | imagem | — | — | — | — | — | — | — | piso |
 | oracle | imagem (usa GT) | 0.686 | 31 | 0.011 | 0.0889 | — | — | — | indicativo |
@@ -13,5 +13,7 @@
 | random_region | região | 0.442 | 252 | **0.108** | 0.0000 | — | — | — | suportado |
 | region_bald | região | 0.462 | 135 | **0.077** | 0.0000 | — | — | 0.050 | suportado |
 | region_entropy | região | 0.437 | 66 | 0.014 | 0.4295 | — | — | — | sem suporte |
+| flim_paper | ? | 0.405 | 35 | -0.020 | 0.4373 | — | — | — | sem suporte |
+| medoide | ? | 0.357 | 42 | **-0.089** | 0.0000 | — | — | — | suportado |
 
 `random` é o piso — sem critério nenhum. O pareamento casa split, decoder, orçamento e semente **dentro da mesma família de experimento**; a média mostrada vem dessas mesmas células, para que média e Δ falem do mesmo conjunto. **Toda técnica que rodou está aqui, inclusive as que perderam do sorteio** — no experimento de encoder retreinado isso aconteceu com as quatro de imagem. Negrito só com p < 0,05. Para técnicas de REGIÃO, leia a coluna do controle de nível (`random_region`): o Δ contra `random` soma seleção e geometria, e a geometria pesa ~2× a seleção neste projeto. **`flim_3img` é o FLIM do artigo** — as 3 imagens que os autores escolheram, sem seleção automática. A coluna `Δ vs FLIM` responde à pergunta central: aplicar AL melhora sobre isso? Ela só aparece em orçamento casado (K=3), porque o braço do artigo só existe com 3 imagens; comparar AL com 10 imagens contra FLIM com 3 mediria orçamento, não seleção. **Coluna toda vazia significa comparação IMPOSSÍVEL com os dados existentes, não ausente por descuido**: o braço do artigo usa os 31 markers REAIS do especialista, e os braços de AL sobre o pool completo usam sintéticos, porque marker real só existe para 31 imagens. `marker_origem` entra no pareamento para que esse par não se forme — ele mediria quem desenhou o traço e apresentaria como efeito da seleção. Para responder à pergunta, rode `scripts/varrer_criterios.py --modo imagem`: marker real nos dois lados, com `oracle` (o passo 7 do Algoritmo 1) como referência.

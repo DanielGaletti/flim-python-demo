@@ -539,3 +539,155 @@ def _comparar_por_criterio(recs, tratamento: str, base: str) -> dict:
     r["media_b"] = _st.fmean(b) if b else None
     r["run_ids"] = ids or ["sem-pares"]
     return r
+
+def tabela_k_por_modelo(recs=None, experimento: str = "tabela_k_por_modelo",
+                        base: str = "flim_paper", fonte=None) -> Tabela:
+    """
+    Fβ por (critério × K), com os sete decoders e o custo de cada configuração.
+
+    Uma linha por (critério, K): o Fβ de cada decoder, o melhor deles, e o
+    tempo. O tempo aparece porque é metade do argumento do FLIM — uma rede que
+    estima kernels por k-means treina em segundos, e isso só vira vantagem se
+    alguém puser o número na mesa.
+
+    O Δ é contra `flim_paper`, o braço das imagens fixas do artigo, **no mesmo
+    orçamento**. Todos os braços usam o mesmo gerador de marker sintético, o
+    que torna a comparação internamente válida: o que varia é a seleção, não
+    quem desenhou o traço.
+    """
+    recs = ev.carregar() if recs is None else recs
+    sub = [r for r in recs if r["experimento"] == experimento]
+    if not sub:
+        raise ValueError(f"nenhuma execução de {experimento}")
+
+    # Uma tabela, uma campanha.
+    #
+    # Campanhas diferentes deste experimento usam conjuntos de teste
+    # diferentes, e misturar as duas numa linha compara Fβ medido em
+    # populações distintas. Sem `fonte`, escolhe-se a campanha mais completa —
+    # a que cobre mais células (critério, K, decoder).
+    if fonte is None:
+        cobertura, ultimo = {}, {}
+        for r in sub:
+            cobertura.setdefault(r["fonte"], set()).add(
+                (r["criterio"], r["orcamento"], r["decoder_paper"]))
+            f = r["fonte"]
+            ultimo[f] = max(ultimo.get(f, ""), r["registrado_em"])
+        # Cobertura primeiro; empate vai para a campanha mais recente. Duas
+        # campanhas com a mesma grade empatam em cobertura por construcao, e
+        # sem o desempate a escolha dependeria da ordem das linhas no CSV.
+        fonte = max(cobertura,
+                    key=lambda f: (len(cobertura[f]), ultimo[f]))
+    sub = [r for r in sub if r["fonte"] == fonte]
+
+    # Depois do filtro, cada célula tem que ser única. Se não for, há duas
+    # medidas para a mesma configuração e escolher uma em silêncio é inventar
+    # resultado — melhor falhar dizendo qual.
+    vistas = {}
+    for r in sub:
+        vistas.setdefault(
+            (r["criterio"], r["orcamento"], r["decoder_paper"]), []).append(r)
+    ambiguas = {k: v for k, v in vistas.items() if len(v) > 1}
+    if ambiguas:
+        k, v = next(iter(ambiguas.items()))
+        raise ValueError(
+            f"{len(ambiguas)} célula(s) com mais de um registro na fonte "
+            f"{fonte!r}; a primeira é {k} com {len(v)} medidas "
+            f"(fb={[x['fb'] for x in v]}). Passe `fonte=` para desambiguar.")
+
+    decs = [d for d in dict.fromkeys(
+        r["decoder_paper"] for r in sub if r["decoder_paper"] != ev.UNKNOWN)]
+
+    # Fβ da referência por (K, decoder), para o Δ sair casado no orçamento.
+    ref = {}
+    for r in sub:
+        if r["criterio"] == base:
+            v = ag._num(r.get("fb"))
+            if v is not None:
+                ref[(r["orcamento"], r["decoder_paper"])] = v
+
+    t = Tabela(
+        "k_por_modelo",
+        "Fβ por critério e orçamento, nos sete decoders, com custo",
+        ["critério", "K"] + decs + ["melhor", "Δ vs artigo", "treino (s)",
+                                    "teste (s)"],
+        alinhamento="ll" + "r" * (len(decs) + 4),
+        nota=("Uma linha por (critério, K); cada coluna de decoder é o Fβ "
+              f"naquele decoder. `{base}` é o braço do artigo — as imagens "
+              "fixas que os autores escolheram, sem seleção automática. "
+              "**Todos os braços usam o mesmo gerador de marker sintético**, "
+              "inclusive o do artigo: marker real só existe para 31 imagens, "
+              "e misturar as duas origens faria o Δ medir quem desenhou o "
+              "traço em vez da seleção. A comparação é internamente válida e "
+              "**não** se compara com números produzidos a partir de markers "
+              "reais. `treino` é estimar os kernels por k-means — o que o "
+              "FLIM promete ser barato; `teste` é rodar os sete decoders no "
+              "conjunto de avaliação. Ele cresce com K porque o encoder "
+              "cresce: a arquitetura pede 200 kernels por camada, mas o "
+              "k-means só produz tantos quantos os patches dos markers "
+              "permitem — medido, 54/51/48/48 com uma imagem contra "
+              "200/200/200/200 com oito. Com poucas anotações a rede não é "
+              "só menos treinada, é menor. "
+              "Tempo com `~` é estimado a partir da soma treino+avaliação, "
+              "que era tudo que o registro guardava antes; sem `~` é medido. "
+              "Δ é contra o artigo no MESMO K, e fica vazio em K acima de "
+              "cinco porque o braço do artigo tem cinco imagens e não existe "
+              "referência para comparar. Todas as linhas vêm de uma única "
+              f"campanha (`{fonte}`): campanhas diferentes usam conjuntos de "
+              "teste diferentes e não se misturam na mesma linha."))
+
+    def _chave(r):
+        return (r["criterio"], int(r["orcamento"])
+                if r["orcamento"] != ev.UNKNOWN else 0)
+
+    grupos = {}
+    for r in sub:
+        grupos.setdefault(_chave(r), []).append(r)
+
+    for (crit, k) in sorted(grupos, key=lambda c: (c[0] != base, c[0], c[1])):
+        linhas = grupos[(crit, k)]
+        por_dec = {}
+        for r in linhas:
+            v = ag._num(r.get("fb"))
+            if v is not None:
+                por_dec[r["decoder_paper"]] = v
+
+        vals = [_fmt(por_dec.get(d)) for d in decs]
+        melhor_dec = max(por_dec, key=por_dec.get) if por_dec else None
+        melhor = (f"{por_dec[melhor_dec]:.3f} ({melhor_dec})"
+                  if melhor_dec else "—")
+
+        # Δ: média da diferença contra a referência, decoder a decoder, no
+        # mesmo K. Só entram decoders em que os dois lados existem.
+        difs = [por_dec[d] - ref[(str(k), d)] for d in por_dec
+                if (str(k), d) in ref]
+        delta = _fmt(sum(difs) / len(difs)) if difs else "—"
+
+        # Treino e avaliação, medidos separados quando existem.
+        #
+        # O runner grava os dois desde que o schema foi estendido. Antes disso
+        # só havia a soma por decoder, e o treino era estimado pelo menor dos
+        # sete `segundos` — número que carrega a avaliação mais barata
+        # embutida e erra o treino para cima. São sete equações e oito
+        # incógnitas: a separação não se recupera do que já foi gravado.
+        #
+        # Por isso a estimativa sobrevive como fallback, mas marcada com "~".
+        # Uma estimativa que se parece com medida é pior que nenhuma.
+        tt = [x for x in (ag._num(r.get("segundos_treino")) for r in linhas)
+              if x is not None]
+        ta = [x for x in (ag._num(r.get("segundos_aval")) for r in linhas)
+              if x is not None]
+        segs = [x for x in (ag._num(r.get("segundos")) for r in linhas)
+                if x is not None]
+        if tt and ta:
+            # O encoder é um só para os sete decoders: o treino não se soma.
+            treino, teste = _fmt(max(tt), 1), _fmt(sum(ta), 1)
+        elif segs:
+            treino = "~" + _fmt(min(segs), 1)
+            teste = "~" + _fmt(sum(x - min(segs) for x in segs), 1)
+        else:
+            treino = teste = "—"
+
+        t.adicionar([crit, k] + vals + [melhor, delta, treino, teste],
+                    [r["run_id"] for r in linhas])
+    return t

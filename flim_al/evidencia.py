@@ -84,6 +84,10 @@ CAMPOS = [
     "fonte",           # caminho relativo do arquivo de origem
     "linha_origem",    # numero da linha no CSV de origem; UNKNOWN nos novos
     "registrado_em",   # ISO-8601 UTC
+    # Campos acrescentados depois; por isso vem no fim. `segundos` continua
+    # sendo treino + avaliacao, para nao invalidar nenhum registro existente.
+    "segundos_treino", # estimar os kernels por k-means, sem backpropagacao
+    "segundos_aval",   # rodar o decoder no conjunto de teste
 ]
 
 # Campos que entram no run_id.
@@ -108,7 +112,8 @@ CAMPOS_ID = [
     "marker_origem", "fonte", "linha_origem",
 ]
 
-NUMERICOS = {"fb", "dice", "iou", "mae", "fb_val", "segundos"}
+NUMERICOS = {"fb", "dice", "iou", "mae", "fb_val", "segundos",
+             "segundos_treino", "segundos_aval"}
 INTEIROS = {"split", "bloco", "orcamento", "seed", "colapsou"}
 
 

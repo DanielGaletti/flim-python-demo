@@ -352,6 +352,17 @@ ADAPTADORES = {
 }
 
 
+def _veio_do_bruto(fonte: str) -> bool:
+    """
+    Um registro é migrado quando sua `fonte` aponta para um arquivo real
+    dentro de evidencia/bruto/. Campanhas registradas pelo runner usam um
+    rótulo lógico (ex.: "tabela_k_por_modelo/semente0"), que não existe lá.
+    """
+    if not fonte:
+        return False
+    return os.path.isfile(os.path.join(BRUTO, fonte.replace("/", os.sep)))
+
+
 def migrar(dry: bool = False) -> int:
     registros, pulados, sem_adaptador, superados = [], [], {}, []
 
@@ -420,7 +431,25 @@ def migrar(dry: bool = False) -> int:
         print("\n--dry-run: nada gravado")
         return 0
 
-    r = ev.registrar(registros, substituir=True)
+    # Preserva o que NÃO veio de evidencia/bruto/.
+    #
+    # `substituir=True` reescreve o arquivo inteiro, e a migração só reconstrói
+    # os registros históricos. Sem esta linha, rodar a migração depois de uma
+    # campanha nova apagaria a campanha — e a ordem que este projeto
+    # documenta ("arquivar, migrar, gerar tabelas") faz exatamente isso.
+    #
+    # Registros migrados são reconhecíveis pela `fonte`, que é o caminho
+    # relativo dentro de evidencia/bruto/. Qualquer outra origem é campanha
+    # registrada direto pelo runner e sobrevive.
+    fontes_brutas = {r["fonte"] for r in registros}
+    preservados = [r for r in ev.carregar()
+                   if r.get("fonte") not in fontes_brutas
+                   and not _veio_do_bruto(r.get("fonte", ""))]
+    if preservados:
+        print(f"\n{len(preservados)} registro(s) de campanha preservados "
+              "(não vieram de evidencia/bruto/)")
+
+    r = ev.registrar(registros + preservados, substituir=True)
     print(f"\ngravados: {r['novos']} novos, {r['duplicados']} duplicados "
           f"(mesma configuração), total {r['total']}")
     if r["divergentes"]:
