@@ -1,0 +1,41 @@
+{
+  "id": "onde_marcar_2026-09-15",
+  "declarado_em": "2026-09-15T03:57:56+00:00",
+  "git_commit": "499135f",
+  "pergunta": "Com as imagens FIXAS e um orcamento fixo de pixels anotados, escolher ONDE tracar por incerteza do modelo melhora o Fbeta sobre o traco espalhado do FLIM?",
+  "por_que_pixels": "O gargalo do FLIM com poucas imagens e o numero de pixels marcados, nao de imagens: medido, uma imagem com ~4 mil px rende 54/54/48/48 kernels e com ~23 mil px rende 200/200/183/183. Contar orcamento em imagens daria vitoria de graca a quem anota mais denso.",
+  "fonte": "onde_marcar/k3/teste60/seg300",
+  "imagens_fixas": [
+    "000002",
+    "000013",
+    "000156"
+  ],
+  "bracos_declarados": {
+    "uniforme": "o FLIM de hoje: tracos espalhados",
+    "regiao_incerteza": "superpixels de maior entropia do modelo",
+    "regiao_aleatoria": "superpixels sorteados - controle de GEOMETRIA",
+    "uniforme_balanceado": "pixels ao acaso com a mesma proporcao objeto/fundo da incerteza - controle de BALANCO",
+    "regiao_borda": "superpixels sobre a borda do gabarito - TETO, usa GT"
+  },
+  "confundidor_conhecido": "Medido ANTES de rodar, com 3000 px/imagem: o traco uniforme rende ~16% de pixels de objeto e o de incerteza ~73%. Os dois controles existem para separar localizacao de balanco de classes.",
+  "orcamentos_px_por_imagem": [
+    2000,
+    4000,
+    8000
+  ],
+  "sementes": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "decoders": [
+    "labeled_marker",
+    "decoder_2"
+  ],
+  "teste": "mesmo conjunto de 60 imagens da campanha de selecao de imagens",
+  "teste_estatistico": "t pareado por semente contra `uniforme`, alpha=0.05",
+  "regra_de_parada": "Rodar as 75 celulas declaradas e reportar todas. Nenhum braco entra ou sai depois de ver resultado.",
+  "o_que_falsearia": "Se `regiao_incerteza` nao bater `uniforme_balanceado`, o efeito era balanco de classes e nao localizacao. Se nao bater nem `uniforme`, AL de regiao nao ajuda neste regime."
+}

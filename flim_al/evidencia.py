@@ -88,6 +88,21 @@ CAMPOS = [
     # sendo treino + avaliacao, para nao invalidar nenhum registro existente.
     "segundos_treino", # estimar os kernels por k-means, sem backpropagacao
     "segundos_aval",   # rodar o decoder no conjunto de teste
+    # Orcamento em PIXELS anotados por imagem.
+    #
+    # `orcamento` conta imagens, que e como o artigo e quase toda a literatura
+    # de AL contam. Nao serve para o experimento de ONDE anotar: ali o numero
+    # de imagens e fixo de proposito, e o que varia e quanto se traca dentro
+    # delas. Sem campo proprio, dois orcamentos diferentes com o mesmo braco e
+    # a mesma semente colidiriam no run_id.
+    #
+    # Fica FORA de CAMPOS_ID de proposito. Acrescentar campo identificador
+    # recalcula o run_id de todo registro ja gravado, e `validar` compara o id
+    # armazenado com o recalculado: os 9 mil registros historicos passariam a
+    # falhar de uma vez, e a proveniencia das tabelas apontaria para ids que
+    # nao existem mais. Quem precisa distinguir orcamentos no id usa
+    # `variante`, que ja e identificador e carrega o rotulo cru do braco.
+    "orcamento_px",
 ]
 
 # Campos que entram no run_id.
@@ -114,7 +129,8 @@ CAMPOS_ID = [
 
 NUMERICOS = {"fb", "dice", "iou", "mae", "fb_val", "segundos",
              "segundos_treino", "segundos_aval"}
-INTEIROS = {"split", "bloco", "orcamento", "seed", "colapsou"}
+INTEIROS = {"split", "bloco", "orcamento", "seed", "colapsou",
+            "orcamento_px"}
 
 
 # ── construcao ──────────────────────────────────────────────────────────────
@@ -245,10 +261,25 @@ def validar(rec: dict) -> None:
 # ── leitura e escrita ───────────────────────────────────────────────────────
 
 def carregar(arquivo: str = ARQUIVO) -> list:
+    """
+    Le o registro, completando campos que o arquivo ainda nao tem.
+
+    `CAMPOS` so cresce pelo fim, e um arquivo gravado antes de um campo novo
+    nao tem a coluna dele. Sem completar aqui, todo registro antigo falharia a
+    validacao por "campos ausentes" no instante em que o esquema crescesse —
+    e o custo de estender o esquema viraria uma migracao do arquivo inteiro.
+
+    Vazio e o valor certo para isso: diz "nao foi medido", que e diferente de
+    UNKNOWN ("mediram, nao sabemos qual") e diferente de zero.
+    """
     if not os.path.isfile(arquivo):
         return []
     with open(arquivo, encoding="utf-8", newline="") as fh:
-        return list(csv.DictReader(fh))
+        linhas = list(csv.DictReader(fh))
+    for r in linhas:
+        for c in CAMPOS:
+            r.setdefault(c, "")
+    return linhas
 
 
 def registrar(recs, arquivo: str = ARQUIVO, substituir: bool = False) -> dict:
