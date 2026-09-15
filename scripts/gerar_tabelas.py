@@ -44,6 +44,7 @@ CATALOGO = [
     ("comparacao_criterios",
      lambda recs: tb.tabela_comparacao_criterios(recs)),
     ("k_por_modelo", lambda recs: tb.tabela_k_por_modelo(recs)),
+    ("al_vs_flim", lambda recs: tb.tabela_al_vs_flim(recs)),
     ("curva_orcamento", lambda recs: tb.tabela_curva_orcamento(recs)),
     ("proveniencia_registro",
      lambda recs: tb.tabela_resumo_registro(recs)),

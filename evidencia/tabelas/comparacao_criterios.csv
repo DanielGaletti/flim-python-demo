@@ -1,7 +1,7 @@
 técnica,nível,Fβ (células pareadas),n pares,Δ vs random,p,Δ vs FLIM (K=3),p (FLIM),Δ vs controle do nível,veredito
 badge,imagem,0.430,95,-0.019,0.0105,—,—,—,suportado
-coreset,imagem,0.429,136,-0.018,0.0526,—,—,—,indicativo
-entropy,imagem,0.441,253,0.024,0.0058,—,—,—,suportado
+coreset,imagem,0.430,136,-0.016,0.0657,—,—,—,indicativo
+entropy,imagem,0.442,253,0.024,0.0054,—,—,—,suportado
 least_confidence,imagem,0.406,177,0.006,0.5655,—,—,—,sem suporte
 margin,imagem,0.451,72,0.023,0.2110,—,—,—,sem suporte
 random,imagem,—,—,—,—,—,—,—,piso
@@ -10,5 +10,5 @@ flim_3img,linha de base,—,0,—,—,—,—,—,sem pares suficientes
 random_region,região,0.442,252,0.108,0.0000,—,—,—,suportado
 region_bald,região,0.462,135,0.077,0.0000,—,—,0.050,suportado
 region_entropy,região,0.437,66,0.014,0.4295,—,—,—,sem suporte
-flim_paper,?,0.405,35,-0.020,0.4373,—,—,—,sem suporte
+flim_paper,?,0.412,35,-0.013,0.5814,—,—,—,sem suporte
 medoide,?,0.357,42,-0.089,0.0000,—,—,—,suportado

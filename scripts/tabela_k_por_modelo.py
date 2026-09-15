@@ -37,6 +37,7 @@ Uso
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import shutil
 import sys
@@ -96,7 +97,25 @@ def _arquivo(cfg, img) -> str:
     return img + ".png"
 
 
-def _markers(cfg, ds_id, sel, dest, rng) -> int:
+def _semente_marker(img: str, semente: int) -> int:
+    """
+    Semente do traço, estável por imagem.
+
+    A versão anterior sorteava com `rng.integers()` dentro do laço, avançando o
+    gerador a cada arquivo: a mesma imagem recebia traços diferentes conforme
+    quais outras estivessem no conjunto e em que ordem. Dois braços que
+    escolhessem a mesma imagem anotavam ela de formas diferentes, e essa
+    diferença entrava no Fβ como se fosse efeito da seleção.
+
+    Derivar do id da imagem elimina isso: dentro de uma semente de campanha, a
+    imagem 000123 recebe sempre o mesmo traço, em qualquer braço e em qualquer
+    rodada. É o que `paper_selection.py` já fazia com `_stable_seed`.
+    """
+    h = hashlib.sha256(f"{semente}:{img}".encode()).hexdigest()
+    return int(h[:8], 16)
+
+
+def _markers(cfg, ds_id, sel, dest, semente) -> int:
     """Gera markers sintéticos — o MESMO processo em todos os braços."""
     shutil.rmtree(dest, ignore_errors=True)
     os.makedirs(dest, exist_ok=True)
@@ -106,13 +125,52 @@ def _markers(cfg, ds_id, sel, dest, rng) -> int:
         if not lp:
             continue
         d = generate_realistic_markers(lp, n_fg_dabs=6, n_bg_dabs=14,
-                                       seed=int(rng.integers(1 << 30)))
+                                       seed=_semente_marker(f, semente))
         save_markers(d, os.path.join(dest, f"{f}-seeds.txt"))
         n += 1
     return n
 
 
-def _seleciona(criterio, pool, k, cfg, enc, rng) -> list:
+def _escolhe_uma(criterio, candidatos, sel, pool, cfg, enc) -> str:
+    """A próxima imagem, segundo o encoder ATUAL."""
+    if criterio == "coreset":
+        from flim_al.coreset_badge import (coreset_select,
+                                           extract_encoder_features)
+        import torch
+        e = torch.load(enc, map_location="cpu", weights_only=False)
+        feats = extract_encoder_features(
+            e, [os.path.join(cfg["orig"], _arquivo(cfg, i)) for i in pool],
+            cfg["bloco"], "cpu")
+        # `labeled_indices` informa o que já está anotado, para o k-center
+        # medir distância ao conjunto existente em vez de recomeçar do zero.
+        idx = coreset_select(feats, budget=1,
+                             labeled_indices=[pool.index(x) for x in sel])
+        return pool[idx[0]]
+
+    from flim_app import server as SV
+    SV.S["ds"] = cfg.get("_id", "schisto")
+    SV.S["block"] = cfg["bloco"]
+    SV.S["decoder"] = "labeled_marker"
+    SV.S["encoder"] = enc
+    chave = "entropia" if criterio == "entropy" else "least_confidence"
+    pontos = SV._pontuar_pool(candidatos, enc)
+    return max(pontos, key=lambda r: r[chave])["id"]
+
+
+def _seleciona(criterio, pool, k, cfg, enc0, rng, work, ds_id, device,
+               semente, modo) -> list:
+    """
+    As K imagens a anotar.
+
+    `flim_paper`, `random` e `medoide` não consultam modelo nenhum, então não
+    há laço: a escolha é a mesma feita de uma vez ou uma a uma.
+
+    Os outros três são Active Learning de verdade só no modo `iterativa`:
+    escolhe uma, retreina o encoder com o que já foi anotado, repontua o pool,
+    escolhe a próxima. O modo `lote` pontua uma vez com o encoder inicial e
+    pega o top-K — é o que este script fazia antes, mantido para que a
+    comparação entre os dois seja ela mesma um resultado.
+    """
     if criterio == "flim_paper":
         return IMAGENS_ARTIGO[:k]
     if criterio == "random":
@@ -120,108 +178,75 @@ def _seleciona(criterio, pool, k, cfg, enc, rng) -> list:
                                            replace=False)]
     if criterio == "medoide":
         # Determinístico: a mais típica, depois as mais típicas restantes.
-        sel = []
-        resto = list(pool)
+        sel, resto = [], list(pool)
         for _ in range(min(k, len(resto))):
             m = imagem_medoide([_arquivo(cfg, i) for i in resto], cfg["orig"])
             m = os.path.splitext(m)[0]
             sel.append(m)
             resto.remove(m)
         return sel
-    # coreset / entropy / least_confidence precisam de um encoder inicial;
-    # usa-se o do medoide, que é o mesmo ponto de partida da aplicação.
-    from flim_al.coreset_badge import coreset_select, extract_encoder_features
-    import torch
-    if criterio == "coreset":
-        e = torch.load(enc, map_location="cpu", weights_only=False)
-        feats = extract_encoder_features(
-            e, [os.path.join(cfg["orig"], _arquivo(cfg, i)) for i in pool],
-            cfg["bloco"], "cpu")
-        idx = coreset_select(feats, budget=min(k, len(pool)))
-        return [pool[i] for i in idx]
-    # incerteza: ordena pelo mapa de saliência do encoder inicial
-    from flim_app import server as SV
-    SV.S["ds"] = cfg.get("_id", "schisto")
-    SV.S["block"] = cfg["bloco"]
-    SV.S["decoder"] = "labeled_marker"
-    SV.S["encoder"] = enc
-    pontos = SV._pontuar_pool(pool, enc)
-    chave = "entropia" if criterio == "entropy" else "least_confidence"
-    pontos.sort(key=lambda r: -r[chave])
-    return [p["id"] for p in pontos[:k]]
+
+    if modo == "lote":
+        from flim_al.coreset_badge import (coreset_select,
+                                           extract_encoder_features)
+        import torch
+        if criterio == "coreset":
+            e = torch.load(enc0, map_location="cpu", weights_only=False)
+            feats = extract_encoder_features(
+                e, [os.path.join(cfg["orig"], _arquivo(cfg, i)) for i in pool],
+                cfg["bloco"], "cpu")
+            return [pool[i] for i in coreset_select(feats,
+                                                    budget=min(k, len(pool)))]
+        from flim_app import server as SV
+        SV.S["ds"] = cfg.get("_id", "schisto")
+        SV.S["block"] = cfg["bloco"]
+        SV.S["decoder"] = "labeled_marker"
+        SV.S["encoder"] = enc0
+        chave = "entropia" if criterio == "entropy" else "least_confidence"
+        pontos = sorted(SV._pontuar_pool(pool, enc0),
+                        key=lambda r: -r[chave])
+        return [p["id"] for p in pontos[:k]]
+
+    sel, enc = [], enc0
+    for rodada in range(min(k, len(pool))):
+        cand = [x for x in pool if x not in sel]
+        sel.append(_escolhe_uma(criterio, cand, sel, pool, cfg, enc))
+        if len(sel) >= k:
+            break
+        # Retreina com o que já está anotado. É este passo que torna o laço
+        # ativo: a pontuação da próxima rodada sai de um modelo que já viu o
+        # que foi escolhido até aqui.
+        md = os.path.join(work, f"mit_{criterio}_{k}_{len(sel)}")
+        if _markers(cfg, ds_id, sel, md, semente) == 0:
+            break
+        enc = os.path.join(work, f"eit_{criterio}_{k}_{len(sel)}.pth")
+        retrain_encoder(cfg["arch"], md, cfg["orig"], cfg["label"], device, enc)
+    return sel
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--ds", default="schisto")
-    ap.add_argument("--ks", nargs="+", type=int, default=[1, 2, 3, 4, 5, 8])
-    ap.add_argument("--criterios", nargs="+", default=CRITERIOS)
-    ap.add_argument("--n_pool", type=int, default=40)
-    ap.add_argument("--n_test", type=int, default=60)
-    ap.add_argument("--semente", type=int, default=0)
-    ap.add_argument("--device", default="cpu")
-    ap.add_argument("--plano", action="store_true")
-    a = ap.parse_args()
+def _uma_semente(a, semente, cfg, pool, test, work, enc0, fonte, decoders):
+    """
+    Uma repeticao completa: todos os criterios, todos os K, todos os decoders.
 
-    cfg = DS.resolver(a.ds)
-    cfg["_id"] = a.ds
-    cfg["bloco"] = cfg.get("bloco", 2)
-
-    todas = [os.path.splitext(f)[0] for f in DS.imagens(a.ds)]
-    rng = np.random.default_rng(a.semente)
-
-    # Pool e teste só com imagens que TÊM objeto. No Schisto 49% não têm, e
-    # nelas o Fβ é 1.0 por definição (vazio-vazio): a métrica ficaria dominada
-    # por acertos triviais e a curva não se moveria. Está declarado.
-    com_obj = [i for i in todas[:600] if _tem_objeto(a.ds, i)]
-    emb = rng.permutation(len(com_obj))
-    pool = sorted(com_obj[i] for i in emb[:a.n_pool])
-    test = sorted(com_obj[i] for i in emb[a.n_pool:a.n_pool + a.n_test])
-    # As imagens do artigo não podem estar no teste.
-    test = [t for t in test if t not in IMAGENS_ARTIGO]
-
-    n_enc = len(a.criterios) * len(a.ks)
-    print(f"dataset {a.ds} · pool {len(pool)} · teste {len(test)}")
-    print(f"{len(a.criterios)} critérios × {len(a.ks)} K = {n_enc} encoders")
-    print(f"{n_enc * len(DECODERS)} avaliações de decoder")
-    print(f"marker: sintético em TODOS os braços (mesmo gerador)\n")
-    print("critérios:", ", ".join(a.criterios))
-    print("K:", a.ks)
-    if a.plano:
-        print(f"\nestimativa: ~{n_enc * 40 / 60:.0f} min de treino + "
-              f"~{n_enc * len(DECODERS) * 8 / 60:.0f} min de avaliação")
-        print("--plano: nada executado.")
-        return 0
-
-    work = tempfile.mkdtemp(prefix="tabk_")
-    # Encoder inicial (medoide), ponto de partida dos critérios que precisam
-    # de um modelo para pontuar o pool.
-    mdir0 = os.path.join(work, "m0")
-    _markers(cfg, a.ds, [os.path.splitext(
-        imagem_medoide([_arquivo(cfg, i) for i in pool], cfg["orig"]))[0]],
-        mdir0, np.random.default_rng(a.semente))
-    enc0 = os.path.join(work, "e0.pth")
-    retrain_encoder(cfg["arch"], mdir0, cfg["orig"], cfg["label"], a.device, enc0)
-
-    # A identidade da campanha inclui em que conjunto se mediu. Sem isso, um
-    # smoke test com teste menor colide com a campanha completa no run_id e a
-    # substitui em silencio -- foi o que ocorreu na primeira execucao.
-    fonte = (f"{EXPERIMENTO}/semente{a.semente}"
-             f"/pool{len(pool)}/teste{len(test)}")
-    print(f"fonte: {fonte}\n")
-
+    Esta era a parte de dentro de `main`. Virou funcao para que a campanha
+    ganhe varias sementes sem reindentar o corpo inteiro -- reindentacao em
+    massa e como se introduz erro silencioso num script que ja produziu
+    resultado.
+    """
     registros, falhas = [], []
     for criterio in a.criterios:
         for k in a.ks:
             if criterio == "flim_paper" and k > len(IMAGENS_ARTIGO):
                 continue
-            r = np.random.default_rng(a.semente + k)
+            r = np.random.default_rng(semente * 1000 + k)
             try:
-                sel = _seleciona(criterio, pool, k, cfg, enc0, r)
-                mdir = os.path.join(work, f"m_{criterio}_{k}")
-                if _markers(cfg, a.ds, sel, mdir, r) == 0:
+                sel = _seleciona(criterio, pool, k, cfg, enc0, r,
+                                 work, a.ds, a.device,
+                                 semente, a.selecao)
+                mdir = os.path.join(work, f"m_{criterio}_{k}_{semente}")
+                if _markers(cfg, a.ds, sel, mdir, semente) == 0:
                     raise ValueError("nenhum marker gerado")
-                enc = os.path.join(work, f"e_{criterio}_{k}.pth")
+                enc = os.path.join(work, f"e_{criterio}_{k}_{semente}.pth")
                 t0 = time.time()
                 retrain_encoder(cfg["arch"], mdir, cfg["orig"], cfg["label"],
                                 a.device, enc)
@@ -231,10 +256,10 @@ def main() -> int:
                 print(f"  {criterio:<18} K={k}  FALHOU: {e}", flush=True)
                 continue
 
-            print(f"  {criterio:<18} K={k}  treino {t_treino:5.1f}s", end="",
+            print(f"  s{semente} {criterio:<18} K={k}  treino {t_treino:5.1f}s", end="",
                   flush=True)
             novos_aqui = []
-            for dec, nome in DECODERS:
+            for dec, nome in decoders:
                 t1 = time.time()
                 try:
                     m = evaluate_decoder(
@@ -249,9 +274,9 @@ def main() -> int:
                 novos_aqui.append(ev.execucao(
                     experimento=EXPERIMENTO, dataset=a.ds,
                     braco="flim_paper" if criterio == "flim_paper" else "al",
-                    variante=criterio, criterio=criterio,
+                    variante=f"{criterio}:{a.selecao}", criterio=criterio,
                     decoder=dec, decoder_paper=nome, bloco=cfg["bloco"],
-                    orcamento=k, seed=a.semente, imagens=sel,
+                    orcamento=k, seed=semente, imagens=sel,
                     marker_origem="sintetico",
                     fb=m["fb"], dice=m["dice"], iou=m.get("iou"),
                     mae=m["mae"], segundos=round(t_treino + t_aval, 2),
@@ -275,8 +300,97 @@ def main() -> int:
                 if res["divergentes"]:
                     print(f"\n  DIVERGENCIA em {len(res['divergentes'])} "
                           f"run_id(s): {res['divergentes'][:3]}", flush=True)
-            print(f"  ·  {len(novos_aqui)} decoders  "
-                  f"[{len(registros)} registrados]", flush=True)
+            print(f"  ·  {len(novos_aqui)} decoders", flush=True)
+
+    return registros, falhas
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--ds", default="schisto")
+    ap.add_argument("--ks", nargs="+", type=int, default=[1, 2, 3, 4, 5, 8])
+    ap.add_argument("--criterios", nargs="+", default=CRITERIOS)
+    ap.add_argument("--n_pool", type=int, default=40)
+    ap.add_argument("--n_test", type=int, default=60)
+    ap.add_argument("--sementes", nargs="+", type=int, default=[0],
+                    help="repeticoes; cada uma varia tracos e braco aleatorio")
+    ap.add_argument("--semente_particao", type=int, default=0,
+                    help="fixa pool e teste; NAO varia entre repeticoes")
+    ap.add_argument("--selecao", choices=["iterativa", "lote"],
+                    default="iterativa",
+                    help="iterativa retreina a cada escolha; lote pega top-K "
+                         "de uma vez com o encoder inicial")
+    ap.add_argument("--decoders", nargs="+", default=None,
+                    help="nomes de codigo; padrao e os sete do artigo")
+    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--plano", action="store_true")
+    a = ap.parse_args()
+
+    decoders = DECODERS if not a.decoders else [
+        d for d in DECODERS if d[0] in a.decoders]
+    if not decoders:
+        print(f"nenhum decoder casa com {a.decoders}")
+        return 2
+
+    cfg = DS.resolver(a.ds)
+    cfg["_id"] = a.ds
+    cfg["bloco"] = cfg.get("bloco", 2)
+
+    todas = [os.path.splitext(f)[0] for f in DS.imagens(a.ds)]
+    # A particao nao depende da semente da campanha: todas as repeticoes
+    # medem na mesma populacao de teste, e a diferenca pareada isola a selecao.
+    rng = np.random.default_rng(a.semente_particao)
+
+    # Pool e teste só com imagens que TÊM objeto. No Schisto 49% não têm, e
+    # nelas o Fβ é 1.0 por definição (vazio-vazio): a métrica ficaria dominada
+    # por acertos triviais e a curva não se moveria. Está declarado.
+    com_obj = [i for i in todas[:600] if _tem_objeto(a.ds, i)]
+    emb = rng.permutation(len(com_obj))
+    pool = sorted(com_obj[i] for i in emb[:a.n_pool])
+    test = sorted(com_obj[i] for i in emb[a.n_pool:a.n_pool + a.n_test])
+    # As imagens do artigo não podem estar no teste.
+    test = [t for t in test if t not in IMAGENS_ARTIGO]
+
+    n_enc = len(a.criterios) * len(a.ks) * len(a.sementes)
+    print(f"dataset {a.ds} · pool {len(pool)} · teste {len(test)}")
+    print(f"{len(a.criterios)} critérios × {len(a.ks)} K × "
+          f"{len(a.sementes)} sementes = {n_enc} encoders")
+    print(f"{n_enc * len(decoders)} avaliações de decoder")
+    print(f"seleção: {a.selecao}")
+    print(f"marker: sintético em TODOS os braços (mesmo gerador)\n")
+    print("critérios:", ", ".join(a.criterios))
+    print("K:", a.ks)
+    if a.plano:
+        print(f"\nestimativa: ~{n_enc * 40 / 60:.0f} min de treino + "
+              f"~{n_enc * len(DECODERS) * 8 / 60:.0f} min de avaliação")
+        print("--plano: nada executado.")
+        return 0
+
+    work = tempfile.mkdtemp(prefix="tabk_")
+    # Encoder inicial (medoide), ponto de partida dos critérios que precisam
+    # de um modelo para pontuar o pool.
+    mdir0 = os.path.join(work, "m0")
+    _markers(cfg, a.ds, [os.path.splitext(
+        imagem_medoide([_arquivo(cfg, i) for i in pool], cfg["orig"]))[0]],
+        mdir0, a.semente_particao)
+    enc0 = os.path.join(work, "e0.pth")
+    retrain_encoder(cfg["arch"], mdir0, cfg["orig"], cfg["label"], a.device, enc0)
+
+    # A identidade da campanha inclui em que conjunto se mediu. Sem isso, um
+    # smoke test com teste menor colide com a campanha completa no run_id e a
+    # substitui em silencio -- foi o que ocorreu na primeira execucao.
+    fonte = (f"{EXPERIMENTO}/pool{len(pool)}/teste{len(test)}"
+             f"/{a.selecao}")
+    print(f"fonte: {fonte}\n")
+
+    registros, falhas = [], []
+    for semente in a.sementes:
+        r_s, f_s = _uma_semente(a, semente, cfg, pool, test, work, enc0,
+                                fonte, decoders)
+        registros.extend(r_s)
+        falhas.extend(f_s)
+        print(f"  semente {semente}: {len(registros)} registrados no total",
+              flush=True)
 
     if registros:
         print(f"\nregistrados: {len(registros)} no total")

@@ -586,7 +586,8 @@ def tabela_k_por_modelo(recs=None, experimento: str = "tabela_k_por_modelo",
     vistas = {}
     for r in sub:
         vistas.setdefault(
-            (r["criterio"], r["orcamento"], r["decoder_paper"]), []).append(r)
+            (r["criterio"], r["orcamento"], r["decoder_paper"], r["seed"]),
+            []).append(r)
     ambiguas = {k: v for k, v in vistas.items() if len(v) > 1}
     if ambiguas:
         k, v = next(iter(ambiguas.items()))
@@ -598,20 +599,23 @@ def tabela_k_por_modelo(recs=None, experimento: str = "tabela_k_por_modelo",
     decs = [d for d in dict.fromkeys(
         r["decoder_paper"] for r in sub if r["decoder_paper"] != ev.UNKNOWN)]
 
-    # Fβ da referência por (K, decoder), para o Δ sair casado no orçamento.
-    ref = {}
+    # Fβ da referência por (K, decoder), média das sementes, para o Δ sair
+    # casado no orçamento.
+    acum = {}
     for r in sub:
         if r["criterio"] == base:
             v = ag._num(r.get("fb"))
             if v is not None:
-                ref[(r["orcamento"], r["decoder_paper"])] = v
+                acum.setdefault((r["orcamento"], r["decoder_paper"]),
+                                []).append(v)
+    ref = {k: sum(v) / len(v) for k, v in acum.items()}
 
     t = Tabela(
         "k_por_modelo",
         "Fβ por critério e orçamento, nos sete decoders, com custo",
-        ["critério", "K"] + decs + ["melhor", "Δ vs artigo", "treino (s)",
-                                    "teste (s)"],
-        alinhamento="ll" + "r" * (len(decs) + 4),
+        ["critério", "K", "n"] + decs + ["melhor", "Δ vs artigo",
+                                          "treino (s)", "teste (s)"],
+        alinhamento="ll" + "r" * (len(decs) + 5),
         nota=("Uma linha por (critério, K); cada coluna de decoder é o Fβ "
               f"naquele decoder. `{base}` é o braço do artigo — as imagens "
               "fixas que os autores escolheram, sem seleção automática. "
@@ -646,11 +650,14 @@ def tabela_k_por_modelo(recs=None, experimento: str = "tabela_k_por_modelo",
 
     for (crit, k) in sorted(grupos, key=lambda c: (c[0] != base, c[0], c[1])):
         linhas = grupos[(crit, k)]
-        por_dec = {}
+        # Média das sementes por decoder. Com uma semente é o próprio valor.
+        bruto = {}
         for r in linhas:
             v = ag._num(r.get("fb"))
             if v is not None:
-                por_dec[r["decoder_paper"]] = v
+                bruto.setdefault(r["decoder_paper"], []).append(v)
+        por_dec = {d: sum(v) / len(v) for d, v in bruto.items()}
+        n_sementes = len({r["seed"] for r in linhas})
 
         vals = [_fmt(por_dec.get(d)) for d in decs]
         melhor_dec = max(por_dec, key=por_dec.get) if por_dec else None
@@ -680,14 +687,113 @@ def tabela_k_por_modelo(recs=None, experimento: str = "tabela_k_por_modelo",
         segs = [x for x in (ag._num(r.get("segundos")) for r in linhas)
                 if x is not None]
         if tt and ta:
-            # O encoder é um só para os sete decoders: o treino não se soma.
-            treino, teste = _fmt(max(tt), 1), _fmt(sum(ta), 1)
+            # O encoder é um só para os decoders de uma semente: o treino não
+            # se soma entre eles, mas há um por semente — daí a média.
+            treino = _fmt(sum(tt) / len(tt), 1)
+            teste = _fmt(sum(ta) / max(1, n_sementes), 1)
         elif segs:
             treino = "~" + _fmt(min(segs), 1)
             teste = "~" + _fmt(sum(x - min(segs) for x in segs), 1)
         else:
             treino = teste = "—"
 
-        t.adicionar([crit, k] + vals + [melhor, delta, treino, teste],
+        t.adicionar([crit, k, n_sementes] + vals
+                    + [melhor, delta, treino, teste],
                     [r["run_id"] for r in linhas])
+    return t
+
+
+def tabela_al_vs_flim(recs=None, experimento: str = "tabela_k_por_modelo",
+                      base: str = "flim_paper", controle: str = "random",
+                      fonte=None) -> Tabela:
+    """
+    Houve melhora? Diferença pareada por semente, com n, IC95% e p.
+
+    Média não responde a pergunta: com uma amplitude de 0,10–0,22 no braço
+    aleatório deste projeto, duas médias podem diferir por 0,05 sem que exista
+    efeito. O que responde é a diferença PAREADA — dentro de cada semente os
+    dois braços compartilham a partição, o conjunto de teste e o gerador de
+    traços, então a diferença isola a seleção.
+
+    As duas referências aparecem juntas de propósito:
+
+    - contra o **artigo** (`flim_paper`), a pergunta é se a escolha automática
+      bate as imagens que os autores escolheram a mão;
+    - contra o **sorteio** (`random`), a pergunta é se o critério tem mérito
+      próprio.
+
+    Um critério que bate o artigo mas empata com o sorteio não demonstrou
+    seleção — demonstrou que as imagens do artigo não eram especiais.
+    """
+    recs = ev.carregar() if recs is None else recs
+    sub = [r for r in recs if r["experimento"] == experimento]
+    if not sub:
+        raise ValueError(f"nenhuma execução de {experimento}")
+
+    if fonte is None:
+        # Aqui a campanha melhor e a com MAIS REPETICOES, nao a mais larga.
+        # Uma campanha de cinco sementes e dois decoders responde "melhorou?";
+        # uma de uma semente e sete decoders nao responde, por mais celulas
+        # que tenha. Cobertura e recencia so desempatam.
+        cob, sem, ult = {}, {}, {}
+        for r in sub:
+            f = r["fonte"]
+            cob.setdefault(f, set()).add(
+                (r["criterio"], r["orcamento"], r["decoder_paper"], r["seed"]))
+            sem.setdefault(f, set()).add(r["seed"])
+            ult[f] = max(ult.get(f, ""), r["registrado_em"])
+        fonte = max(cob, key=lambda f: (len(sem[f]), len(cob[f]), ult[f]))
+    sub = [r for r in sub if r["fonte"] == fonte]
+
+    # (criterio, K, decoder, semente) -> Fbeta
+    valor = {}
+    for r in sub:
+        v = ag._num(r.get("fb"))
+        if v is not None:
+            valor[(r["criterio"], r["orcamento"], r["decoder_paper"],
+                   r["seed"])] = v
+    sementes = sorted({r["seed"] for r in sub})
+    criterios = [c for c in dict.fromkeys(r["criterio"] for r in sub)
+                 if c != base]
+    ks = sorted({r["orcamento"] for r in sub}, key=lambda x: int(x))
+    decs = list(dict.fromkeys(r["decoder_paper"] for r in sub))
+
+    t = Tabela(
+        "al_vs_flim",
+        "Melhora sobre o FLIM do artigo e sobre o sorteio, pareada por semente",
+        ["critério", "K", "decoder", "n", "Fβ médio", "Δ vs artigo", "IC95%",
+         "p", "Δ vs sorteio", "p "],
+        alinhamento="lllr" + "r" * 6,
+        nota=("Diferença pareada por semente: dentro de cada semente os braços "
+              "compartilham partição, conjunto de teste e gerador de traços, "
+              f"então a diferença isola a seleção. `{base}` é o braço do "
+              f"artigo; `{controle}` é o sorteio. Bater o artigo sem bater o "
+              "sorteio não demonstra seleção — demonstra que as imagens do "
+              "artigo não eram especiais. p vem de t pareado bicaudal; com "
+              "poucas sementes o teste tem pouco poder, e p alto significa "
+              "**não decidido**, não 'igual'. Uma única campanha "
+              f"(`{fonte}`)."))
+
+    for crit in criterios:
+        if crit == controle:
+            continue
+        for k in ks:
+            for d in decs:
+                a = [valor.get((crit, k, d, s)) for s in sementes]
+                b = [valor.get((base, k, d, s)) for s in sementes]
+                c = [valor.get((controle, k, d, s)) for s in sementes]
+                vs = [x for x in a if x is not None]
+                if not vs:
+                    continue
+                tb_ = ag.teste_pareado(a, b)
+                tc_ = ag.teste_pareado(a, c)
+                ic = (f"[{tb_['ic95'][0]:+.3f}, {tb_['ic95'][1]:+.3f}]"
+                      if tb_["ic95"] else "—")
+                ids = [r["run_id"] for r in sub
+                       if r["criterio"] == crit and r["orcamento"] == k
+                       and r["decoder_paper"] == d]
+                t.adicionar(
+                    [crit, k, d, len(vs), f"{sum(vs) / len(vs):.3f}",
+                     _fmt(tb_["delta"]), ic, _fmt(tb_["p"]),
+                     _fmt(tc_["delta"]), _fmt(tc_["p"])], ids)
     return t

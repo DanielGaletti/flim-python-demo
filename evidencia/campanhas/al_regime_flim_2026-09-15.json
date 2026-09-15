@@ -1,0 +1,42 @@
+{
+  "id": "al_regime_flim_2026-09-15",
+  "declarado_em": "2026-09-15T03:14:38+00:00",
+  "git_commit": "eb1c215",
+  "pergunta": "No regime do FLIM -- poucas imagens anotadas -- algum criterio de Active Learning escolhe melhor que as imagens fixas do artigo, e melhor que o sorteio?",
+  "fonte": "tabela_k_por_modelo/pool40/teste60/iterativa",
+  "criterios_declarados": [
+    "flim_paper",
+    "random",
+    "medoide",
+    "coreset",
+    "entropy",
+    "least_confidence"
+  ],
+  "orcamentos_K": [
+    3,
+    5
+  ],
+  "sementes": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "decoders": [
+    "labeled_marker",
+    "decoder_2"
+  ],
+  "pool": 40,
+  "teste": 60,
+  "particao": "fixa (semente_particao=0)",
+  "referencias": {
+    "artigo": "flim_paper",
+    "controle": "random"
+  },
+  "teste_estatistico": "t pareado por semente, alpha=0.05",
+  "por_que_estes_K": "3 e 5 sao o regime do artigo. K maior sai da premissa do FLIM e o braco do artigo nem tem referencia acima de 5 imagens.",
+  "por_que_dois_decoders": "FLIM_lm e FLIM_pb foram o melhor decoder em 35 de 35 linhas da campanha anterior. Declarado ANTES de rodar para nao virar escolha pos-hoc.",
+  "regra_de_parada": "Rodar as 60 celulas declaradas e reportar todas, inclusive as negativas. Nenhum criterio entra ou sai depois de ver resultado.",
+  "o_que_falsearia": "Se nenhum criterio bater o sorteio com p<0.05 em K=3 nem em K=5, a conclusao e que AL de selecao de imagem nao ajuda neste regime."
+}

@@ -6,7 +6,7 @@
 | final_comparison_v3 | 1029 | 4% | 100% |
 | benchmark_conjunctiva | 588 | 68% | 100% |
 | sel_cs_grande | 540 | 0% | 100% |
-| tabela_k_por_modelo | 504 | 0% | 0% |
+| tabela_k_por_modelo | 510 | 0% | 0% |
 | al_backprop_results | 492 | 20% | 100% |
 | paper_selection_pac2 | 432 | 0% | 100% |
 | paper_selection_POOL_COM_VAZAMENTO | 360 | 0% | 100% |
