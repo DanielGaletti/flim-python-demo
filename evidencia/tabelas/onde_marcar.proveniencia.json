@@ -1,0 +1,75 @@
+{
+  "tabela": "onde_marcar",
+  "titulo": "Onde anotar, com orçamento fixo em pixels: Fβ e as duas diferenças",
+  "gerado_em": "2026-09-15T06:15:24+00:00",
+  "gerado_por": "flim_al/tabelas.py",
+  "git_commit": "6d4a06cdff6a-sujo",
+  "registro": "evidencia/execucoes/execucoes.csv",
+  "input_latex": "\\input{generated/tables/onde_marcar.tex}",
+  "linhas": [
+    {
+      "linha": 1,
+      "rotulo": "regiao_incerteza",
+      "run_ids": [
+        "205703a662f4b122",
+        "8c27d747f4f09878"
+      ]
+    },
+    {
+      "linha": 2,
+      "rotulo": "regiao_incerteza",
+      "run_ids": [
+        "1c010119ec1956ea",
+        "8128627c4ae885cb"
+      ]
+    },
+    {
+      "linha": 3,
+      "rotulo": "regiao_aleatoria",
+      "run_ids": [
+        "65193f109bf77e98",
+        "b16bf3d79773a8b4"
+      ]
+    },
+    {
+      "linha": 4,
+      "rotulo": "regiao_aleatoria",
+      "run_ids": [
+        "5b795a2749eb4dbc",
+        "bef84e9e090ff283"
+      ]
+    },
+    {
+      "linha": 5,
+      "rotulo": "regiao_borda",
+      "run_ids": [
+        "734a993abce96d20",
+        "a4fa8597d9d55a03"
+      ]
+    },
+    {
+      "linha": 6,
+      "rotulo": "regiao_borda",
+      "run_ids": [
+        "129675ac88d34021",
+        "313fd06e0d2bbe99"
+      ]
+    },
+    {
+      "linha": 7,
+      "rotulo": "uniforme_balanceado",
+      "run_ids": [
+        "209f54db7090ff68",
+        "63eab177118af598"
+      ]
+    },
+    {
+      "linha": 8,
+      "rotulo": "uniforme_balanceado",
+      "run_ids": [
+        "4d0bed94eed5c03f",
+        "df38dfd97e33f06e"
+      ]
+    }
+  ]
+}

@@ -797,3 +797,102 @@ def tabela_al_vs_flim(recs=None, experimento: str = "tabela_k_por_modelo",
                      _fmt(tb_["delta"]), ic, _fmt(tb_["p"]),
                      _fmt(tc_["delta"]), _fmt(tc_["p"])], ids)
     return t
+
+
+def tabela_onde_marcar(recs=None, experimento: str = "onde_marcar",
+                       base: str = "uniforme",
+                       balanco: str = "uniforme_balanceado",
+                       fonte=None) -> Tabela:
+    """
+    Onde anotar, sob orçamento fixo de pixels: houve melhora, e de quê?
+
+    O orçamento é contado em pixels anotados por imagem, não em imagens,
+    porque o que limita o FLIM é a quantidade de pixels marcados — a mesma
+    imagem rende 54 kernels com traço esparso e 200 com traço denso. Todos os
+    braços gastam exatamente o mesmo número de pixels; o que muda é onde eles
+    caem.
+
+    Duas referências, e a segunda é a que decide:
+
+    - **`uniforme`** é o FLIM de hoje, traço espalhado. Bater ele diz que
+      anotar por região ajuda.
+    - **`uniforme_balanceado`** tem a mesma proporção objeto/fundo que a
+      incerteza produz, mas com os pixels sorteados. Bater ele diz que o ganho
+      veio de *onde* se anotou, e não de *quanto de cada classe* se anotou.
+
+    Sem a segunda coluna o resultado é ambíguo: escolher regiões incertas
+    escolhe, junto, muito mais foreground — ~73% contra ~16% do traço
+    uniforme, medido antes de rodar.
+
+    `regiao_borda` usa o gabarito para achar a fronteira. Não é método, é teto.
+    """
+    recs = ev.carregar() if recs is None else recs
+    sub = [r for r in recs if r["experimento"] == experimento]
+    if not sub:
+        raise ValueError(f"nenhuma execução de {experimento}")
+
+    if fonte is None:
+        cob, sem, ult = {}, {}, {}
+        for r in sub:
+            f = r["fonte"]
+            cob.setdefault(f, set()).add(
+                (r["criterio"], r["orcamento_px"], r["decoder_paper"],
+                 r["seed"]))
+            sem.setdefault(f, set()).add(r["seed"])
+            ult[f] = max(ult.get(f, ""), r["registrado_em"])
+        fonte = max(cob, key=lambda f: (len(sem[f]), len(cob[f]), ult[f]))
+    sub = [r for r in sub if r["fonte"] == fonte]
+
+    valor = {}
+    for r in sub:
+        v = ag._num(r.get("fb"))
+        if v is not None:
+            valor[(r["criterio"], r["orcamento_px"], r["decoder_paper"],
+                   r["seed"])] = v
+    sementes = sorted({r["seed"] for r in sub})
+    bracos = [b for b in dict.fromkeys(r["criterio"] for r in sub)
+              if b != base]
+    pxs = sorted({r["orcamento_px"] for r in sub},
+                 key=lambda x: int(x) if str(x).isdigit() else 0)
+    decs = list(dict.fromkeys(r["decoder_paper"] for r in sub))
+
+    t = Tabela(
+        "onde_marcar",
+        "Onde anotar, com orçamento fixo em pixels: Fβ e as duas diferenças",
+        ["braço", "px/imagem", "decoder", "n", "Fβ médio", "Δ vs uniforme",
+         "p", "Δ vs balanceado", "p "],
+        alinhamento="lllr" + "r" * 5,
+        nota=("Orçamento em **pixels anotados por imagem**, não em imagens: o "
+              "que limita o FLIM é a quantidade de pixels marcados — a mesma "
+              "imagem rende 54 kernels por camada com traço esparso e 200 com "
+              "traço denso. Todos os braços gastam exatamente o mesmo número "
+              "de pixels, nas MESMAS imagens (as do artigo); o que muda é "
+              f"onde eles caem. `{base}` é o FLIM de hoje. "
+              f"`{balanco}` tem a mesma proporção objeto/fundo que a "
+              "incerteza produz, com os pixels sorteados — é ele que separa "
+              "*onde se anotou* de *quanto de cada classe se anotou*, porque "
+              "escolher região incerta escolhe junto muito mais foreground "
+              "(~73% contra ~16%, medido antes de rodar). `regiao_borda` usa "
+              "o gabarito e é teto, não método. Diferenças pareadas por "
+              f"semente; p de t pareado bicaudal. Campanha `{fonte}`."))
+
+    for b in bracos:
+        for px in pxs:
+            for d in decs:
+                a = [valor.get((b, px, d, s)) for s in sementes]
+                u = [valor.get((base, px, d, s)) for s in sementes]
+                q = [valor.get((balanco, px, d, s)) for s in sementes]
+                vs = [x for x in a if x is not None]
+                if not vs:
+                    continue
+                tu = ag.teste_pareado(a, u)
+                tq = (ag.teste_pareado(a, q) if b != balanco
+                      else {"delta": None, "p": None})
+                ids = [r["run_id"] for r in sub
+                       if r["criterio"] == b and r["orcamento_px"] == px
+                       and r["decoder_paper"] == d]
+                t.adicionar(
+                    [b, px, d, len(vs), f"{sum(vs) / len(vs):.3f}",
+                     _fmt(tu["delta"]), _fmt(tu["p"]),
+                     _fmt(tq["delta"]), _fmt(tq["p"])], ids)
+    return t

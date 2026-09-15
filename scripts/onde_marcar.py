@@ -362,8 +362,12 @@ def main() -> int:
     ap.add_argument("--n_test", type=int, default=60)
     ap.add_argument("--n_segments", type=int, default=300)
     ap.add_argument("--device", default="cpu")
+    ap.add_argument("--registro", default=None,
+                    help="CSV alternativo; use para rodar em paralelo a outra "
+                         "campanha sem que as duas se atropelem no registro")
     ap.add_argument("--plano", action="store_true")
     a = ap.parse_args()
+    arquivo = a.registro or ev.ARQUIVO
 
     if "orcamento_px" not in ev.CAMPOS:
         print("ERRO: o registro ainda nao tem o campo `orcamento_px`.\n"
@@ -402,6 +406,7 @@ def main() -> int:
     fonte = (f"{EXPERIMENTO}/k{len(imagens)}/teste{len(test)}"
              f"/seg{a.n_segments}")
     print(f"fonte: {fonte}\n")
+    print(f"registro: {arquivo}")
 
     registros, falhas = [], []
     for semente in a.sementes:
@@ -458,7 +463,7 @@ def main() -> int:
                         fonte=fonte,
                     ))
                 if novos:
-                    res = ev.registrar(novos)
+                    res = ev.registrar(novos, arquivo=arquivo)
                     registros.extend(novos)
                     if res["divergentes"]:
                         print(f"\n  DIVERGENCIA em "
