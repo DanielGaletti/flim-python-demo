@@ -1,0 +1,23 @@
+{
+  "campanha": "20260916T020211Z",
+  "modo": "imagem",
+  "declarada_em": "2026-09-16T02:02:11+00:00",
+  "git_commit": "df6e96a228c5-sujo",
+  "criterios": [
+    "oracle",
+    "random",
+    "entropy",
+    "least_confidence",
+    "coreset",
+    "badge"
+  ],
+  "splits": [
+    1,
+    2,
+    3
+  ],
+  "seeds": 3,
+  "orcamento_max": 8,
+  "marker_origem": "real",
+  "observacao": "Lista fixada antes da primeira execução. Alterar depois de ver resultado invalida a comparação. Campanhas de modos diferentes NÃO se comparam entre si: a origem do marker difere."
+}

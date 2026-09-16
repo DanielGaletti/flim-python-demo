@@ -73,11 +73,26 @@ def extract_encoder_features(
     encoder.eval()
     features = []
 
+    # Quantas bandas o encoder espera.
+    #
+    # Converter sempre para RGB/LAB quebra em dataset monocromatico: o encoder
+    # do BraTS e treinado com 1 banda, seus parametros de normalizacao tem 1
+    # media, e a normalizacao estoura em "index 1 is out of bounds for axis 0
+    # with size 1" ao tentar a segunda banda. CoreSet e BADGE nunca rodaram no
+    # BraTS por causa disto. O proprio encoder diz de quantas bandas precisa.
+    np_ = encoder.layers[0].normalization_parameters
+    esperado = int(np.atleast_1d(np.asarray(np_["mean"])).shape[0])
+
     for path in image_paths:
-        img_rgb = np.array(Image.open(path).convert("RGB"), dtype=np.uint8)
-        # FIX: encoder FLIM treinado com LAB — converter antes de extrair features
-        img_lab = _rgb_uint8_to_lab01(img_rgb)
-        x = torch.tensor(img_lab.transpose(2, 0, 1)).unsqueeze(0).to(device)
+        if esperado == 1:
+            img = (np.array(Image.open(path).convert("L"),
+                            dtype=np.float32)[:, :, None] / 255.0)
+        else:
+            img_rgb = np.array(Image.open(path).convert("RGB"), dtype=np.uint8)
+            # FIX: encoder FLIM treinado com LAB — converter antes de extrair
+            img = _rgb_uint8_to_lab01(img_rgb)
+        x = torch.tensor(img.transpose(2, 0, 1).astype(np.float32)
+                         ).unsqueeze(0).to(device)
 
         for l in range(encoder.architecture.nlayers):
             if not encoder.use_bias:

@@ -1,0 +1,48 @@
+{
+  "id": "tabela_dissertacao_2026-09-15",
+  "declarado_em": "2026-09-16T02:05:37+00:00",
+  "git_commit": "df6e96a",
+  "substitui": "programa_completo_2026-09-15 — interrompido em 6 de 687 celulas a pedido do autor, que pediu esta tabela especifica. Os 6 registros ficam no registro como proveniencia.",
+  "pergunta": "Em cada dataset e em cada orcamento K, o FLIM puro (sorteio) perde para algum criterio de AL de imagem, ou para AL de regiao?",
+  "referencia": "random (FLIM puro: sorteia as imagens, como o artigo)",
+  "bracos": {
+    "random": "FLIM puro — sorteia as imagens",
+    "coreset": "escolhe QUAIS imagens, por cobertura no espaco de features",
+    "entropy": "escolhe QUAIS imagens, por entropia do mapa de saliencia",
+    "least_confidence": "escolhe QUAIS imagens, por 1-|p-0.5|*2",
+    "regiao_confusa": "mesmas imagens do sorteio; muda ONDE o traco cai — superpixels de maior entropia, com o MESMO numero de pixels que o traco uniforme gastaria"
+  },
+  "datasets": {
+    "schisto": "Parasitas (pool 40, teste 60)",
+    "brats": "BraTS (pool 40, teste 60)",
+    "conjunctiva": "Conjuntivite (pool 20, teste 40 — so ha 82 imagens com objeto)"
+  },
+  "orcamentos_K": [
+    2,
+    3,
+    5,
+    8
+  ],
+  "sementes": [
+    0,
+    1,
+    2
+  ],
+  "decoders": [
+    "labeled_marker (FLIM_lm)",
+    "decoder_2 (FLIM_pb)"
+  ],
+  "metricas": [
+    "fb",
+    "acuracia = 1 - MAE",
+    "iou",
+    "segundos_treino",
+    "segundos_aval"
+  ],
+  "nota_acuracia": "Acuracia de pixel fica acima de 0,97 em quase tudo porque o objeto ocupa fracao minima da imagem: acertar o fundo ja garante isso. Entra porque foi pedida, mas nao separa os bracos.",
+  "celulas": 180,
+  "registros_esperados": 360,
+  "teste_estatistico": "t pareado por semente contra o FLIM puro, no mesmo dataset e no mesmo K; Benjamini-Hochberg a q=0,05 sobre o conjunto de testes da tabela",
+  "regra_de_parada": "Rodar as 180 celulas declaradas e reportar todas.",
+  "o_que_falsearia": "Se nenhum braco bater o FLIM puro com p<0,05 apos correcao em nenhum dataset, a conclusao e que AL nao ajuda o FLIM nestes orcamentos."
+}

@@ -79,7 +79,12 @@ DECODERS = [
 IMAGENS_ARTIGO = ["000002", "000013", "000156", "000391", "000405"]
 
 CRITERIOS = ["flim_paper", "random", "medoide", "coreset", "entropy",
-             "least_confidence"]
+             "least_confidence", "regiao_confusa"]
+
+# Criterios que mudam ONDE se anota, e nao QUAIS imagens. Eles herdam a
+# selecao do braco `random` da mesma semente, para que a unica diferenca
+# contra o FLIM puro seja a posicao do traco.
+CRITERIOS_DE_REGIAO = {"regiao_confusa"}
 
 
 def _tem_objeto(ds_id, img) -> bool:
@@ -157,6 +162,106 @@ def _escolhe_uma(criterio, candidatos, sel, pool, cfg, enc) -> str:
     return max(pontos, key=lambda r: r[chave])["id"]
 
 
+def _markers_regiao(cfg, ds_id, sel, dest, semente, work, device,
+                    n_segments: int = 220, fracao_inicial: float = 0.25) -> int:
+    """
+    O mesmo orçamento de pixels do traço uniforme, gasto onde o modelo erra.
+
+    Primeiro descobre quanto o braço uniforme gastaria em cada imagem — é esse
+    o orçamento a igualar. Depois coloca um quarto dele como traço uniforme,
+    treina um encoder com isso, e derrama o resto nos superpixels de maior
+    entropia desse encoder, rotulando pelo gabarito.
+    """
+    import numpy as _np
+    from PIL import Image as _Image
+    from skimage.segmentation import slic
+    from flim_al.region_al import score_regions_by_entropy
+
+    # 1. o orçamento que o traço uniforme gastaria, imagem a imagem
+    ref = os.path.join(work, f"ref_{semente}_{len(sel)}")
+    _markers(cfg, ds_id, sel, ref, semente)
+    orcamento = {}
+    for img in sel:
+        f = os.path.join(ref, f"{img}-seeds.txt")
+        if os.path.isfile(f):
+            with open(f) as fh:
+                orcamento[img] = int(fh.readline().split()[0])
+    if not orcamento:
+        return 0
+
+    # 2. um quarto uniforme, para haver modelo antes de falar em incerteza
+    d0 = os.path.join(work, f"reg0_{semente}_{len(sel)}")
+    shutil.rmtree(d0, ignore_errors=True)
+    os.makedirs(d0, exist_ok=True)
+    inicial = {}
+    rng = np.random.default_rng(semente * 6271 + len(sel))
+    for img in sel:
+        if img not in orcamento:
+            continue
+        lp = DS.caminho_label(ds_id, img + ".png")
+        gt = _np.array(_Image.open(lp).convert("L")) > 127
+        d = generate_realistic_markers(lp, n_fg_dabs=6, n_bg_dabs=14,
+                                       seed=_semente_marker(img, semente))
+        fg = [tuple(int(v) for v in q) for q in d["fg_seeds"]]
+        bg = [tuple(int(v) for v in q) for q in d["bg_seeds"]]
+        alvo0 = max(1, int(orcamento[img] * fracao_inicial))
+        tot = len(fg) + len(bg)
+        if tot > alvo0:
+            nfg = max(1, round(alvo0 * len(fg) / tot)) if fg else 0
+            nbg = alvo0 - nfg
+            fg = [fg[i] for i in rng.permutation(len(fg))[:nfg]]
+            bg = [bg[i] for i in rng.permutation(len(bg))[:nbg]]
+        inicial[img] = (fg, bg, gt)
+        save_markers({"fg_seeds": fg, "bg_seeds": bg,
+                      "H": gt.shape[0], "W": gt.shape[1]},
+                     os.path.join(d0, f"{img}-seeds.txt"))
+
+    enc0 = os.path.join(work, f"reg0_{semente}_{len(sel)}.pth")
+    retrain_encoder(cfg["arch"], d0, cfg["orig"], cfg["label"], device, enc0)
+
+    from flim_app import server as SV
+    SV.S["ds"] = ds_id
+    SV.S["block"] = cfg["bloco"]
+    SV.S["decoder"] = "labeled_marker"
+    SV.S["encoder"] = enc0
+    modelo = SV._montar_modelo(enc0)
+
+    # 3. o resto nos superpixels mais incertos
+    shutil.rmtree(dest, ignore_errors=True)
+    os.makedirs(dest, exist_ok=True)
+    total = 0
+    for img, (fg0, bg0, gt) in inicial.items():
+        h, w = gt.shape
+        arr = _np.array(_Image.open(os.path.join(cfg["orig"],
+                                                 _arquivo(cfg, img))))
+        if arr.ndim == 2:
+            arr = _np.stack([arr] * 3, axis=2)
+        seg = slic(arr[:, :, :3], n_segments=n_segments, compactness=10.0,
+                   sigma=1.0, start_label=0, convert2lab=True).astype(_np.int32)
+        prob = SV._mapa_prob(modelo, img)
+        if prob.shape != (h, w):
+            prob = _np.array(_Image.fromarray((prob * 255).astype(_np.uint8))
+                             .resize((w, h), _Image.BILINEAR)) / 255.0
+        ordem = [r for r, _ in sorted(score_regions_by_entropy(seg, prob).items(),
+                                      key=lambda kv: -kv[1])]
+        falta = orcamento[img] - (len(fg0) + len(bg0))
+        fg, bg = list(fg0), list(bg0)
+        for r in ordem:
+            if falta <= 0:
+                break
+            ys, xs = _np.nonzero(seg == r)
+            for i in rng.permutation(len(ys)):
+                y, x = int(ys[i]), int(xs[i])
+                (fg if gt[y, x] else bg).append((x, y))
+                falta -= 1
+                if falta <= 0:
+                    break
+        save_markers({"fg_seeds": fg, "bg_seeds": bg, "H": h, "W": w},
+                     os.path.join(dest, f"{img}-seeds.txt"))
+        total += 1
+    return total
+
+
 def _seleciona(criterio, pool, k, cfg, enc0, rng, work, ds_id, device,
                semente, modo) -> list:
     """
@@ -173,7 +278,10 @@ def _seleciona(criterio, pool, k, cfg, enc0, rng, work, ds_id, device,
     """
     if criterio == "flim_paper":
         return IMAGENS_ARTIGO[:k]
-    if criterio == "random":
+    if criterio in CRITERIOS_DE_REGIAO or criterio == "random":
+        # O braco de regiao pega as MESMAS imagens do sorteio, com o mesmo
+        # gerador e a mesma semente. Se ele escolhesse outras, o Delta contra o
+        # FLIM puro misturaria selecao de imagem com posicao do traco.
         return [str(x) for x in rng.choice(pool, size=min(k, len(pool)),
                                            replace=False)]
     if criterio == "medoide":
@@ -236,7 +344,10 @@ def _uma_semente(a, semente, cfg, pool, test, work, enc0, fonte, decoders):
     registros, falhas = [], []
     for criterio in a.criterios:
         for k in a.ks:
-            if criterio == "flim_paper" and k > len(IMAGENS_ARTIGO):
+            if criterio == "flim_paper" and (k > len(IMAGENS_ARTIGO)
+                                             or a.ds != "schisto"):
+                # As cinco imagens fixas sao do artigo do Schisto. Em brats e
+                # conjunctiva esse braco nao existe; a referencia e o sorteio.
                 continue
             r = np.random.default_rng(semente * 1000 + k)
             try:
@@ -244,7 +355,12 @@ def _uma_semente(a, semente, cfg, pool, test, work, enc0, fonte, decoders):
                                  work, a.ds, a.device,
                                  semente, a.selecao)
                 mdir = os.path.join(work, f"m_{criterio}_{k}_{semente}")
-                if _markers(cfg, a.ds, sel, mdir, semente) == 0:
+                gerar = (_markers_regiao
+                         if criterio in CRITERIOS_DE_REGIAO else _markers)
+                n_mk = (gerar(cfg, a.ds, sel, mdir, semente, work, a.device)
+                        if criterio in CRITERIOS_DE_REGIAO
+                        else gerar(cfg, a.ds, sel, mdir, semente))
+                if n_mk == 0:
                     raise ValueError("nenhum marker gerado")
                 enc = os.path.join(work, f"e_{criterio}_{k}_{semente}.pth")
                 t0 = time.time()
@@ -303,6 +419,40 @@ def _uma_semente(a, semente, cfg, pool, test, work, enc0, fonte, decoders):
             print(f"  ·  {len(novos_aqui)} decoders", flush=True)
 
     return registros, falhas
+
+
+def _orig_em_png(cfg, ds_id, imagens, work) -> str:
+    """
+    Pasta de imagens em PNG, criada só quando o dataset não é PNG.
+
+    `retrain_encoder` fixa `orig_ext=".png"` lá dentro do FLIM, e a
+    conjuntivite tem as imagens em `.jpg` — qualquer execução nela morria em
+    `FileNotFoundError: conj_010.png`. Converter é recodificar os mesmos
+    pixels já decodificados, sem reamostragem e sem perda adicional; o JPEG
+    original é que carrega a perda, e ela é a mesma nos dois caminhos.
+
+    Devolve a pasta original quando ela já é PNG, para não copiar 3.753
+    imagens do BraTS à toa.
+    """
+    exts = {os.path.splitext(f)[1].lower() for f in os.listdir(cfg["orig"])}
+    if exts <= {".png", ""}:
+        return cfg["orig"]
+    dest = os.path.join(work, "orig_png")
+    os.makedirs(dest, exist_ok=True)
+    n = 0
+    for img in imagens:
+        alvo = os.path.join(dest, img + ".png")
+        if os.path.isfile(alvo):
+            continue
+        from PIL import Image as _Image
+        for ext in (".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"):
+            src = os.path.join(cfg["orig"], img + ext)
+            if os.path.isfile(src):
+                _Image.open(src).save(alvo)
+                n += 1
+                break
+    print(f"convertidas {n} imagens para PNG ({dest})")
+    return dest
 
 
 def main() -> int:
@@ -372,6 +522,9 @@ def main() -> int:
         return 0
 
     work = tempfile.mkdtemp(prefix="tabk_")
+    # Datasets que nao sao PNG precisam de copia; ver `_orig_em_png`.
+    cfg["orig"] = _orig_em_png(cfg, a.ds, set(pool) | set(test)
+                               | set(IMAGENS_ARTIGO), work)
     # Encoder inicial (medoide), ponto de partida dos critérios que precisam
     # de um modelo para pontuar o pool.
     mdir0 = os.path.join(work, "m0")

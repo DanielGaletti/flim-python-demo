@@ -896,3 +896,102 @@ def tabela_onde_marcar(recs=None, experimento: str = "onde_marcar",
                      _fmt(tu["delta"]), _fmt(tu["p"]),
                      _fmt(tq["delta"]), _fmt(tq["p"])], ids)
     return t
+
+
+NOME_DATASET = {"schisto": "Parasitas", "brats": "BraTS",
+                "conjunctiva": "Conjuntivite"}
+
+
+def tabela_dissertacao(recs=None, experimento: str = "tabela_k_por_modelo",
+                       rotulo: str = "dissertacao", base: str = "random",
+                       decoder: str = "FLIM_lm") -> Tabela:
+    """
+    FLIM puro contra cada critério de AL, nos três datasets e quatro orçamentos.
+
+    A referência é `random` — o FLIM puro, que sorteia as imagens como o artigo
+    faz na primeira rodada. Cada critério recebe o MESMO número de imagens.
+
+    `regiao_confusa` é o braço diferente dos outros três: ele usa exatamente as
+    imagens que o sorteio usaria naquela semente e muda só ONDE o traço cai,
+    gastando o mesmo número de pixels. Por isso o Δ dele mede posição de
+    anotação, enquanto o Δ dos outros mede escolha de imagem.
+
+    Sobre a coluna de acurácia
+        É `1 − MAE`, que para máscara binária é exatamente a fração de pixels
+        certos. Ela fica acima de 0,97 em quase toda a tabela porque o objeto
+        ocupa uma fração mínima da imagem: acertar todo o fundo já garante
+        isso. Está aqui porque foi pedida, mas não separa os braços — quem
+        separa é Fβ e IoU.
+    """
+    recs = ev.carregar() if recs is None else recs
+    sub = [r for r in recs
+           if r["experimento"] == experimento and rotulo in r["fonte"]
+           and r["decoder_paper"] == decoder]
+    if not sub:
+        raise ValueError(f"nenhuma execução de {experimento} com "
+                         f"rotulo={rotulo!r} e decoder={decoder!r}")
+
+    def _agr(rs, campo):
+        vs = [ag._num(r.get(campo)) for r in rs]
+        vs = [v for v in vs if v is not None]
+        return sum(vs) / len(vs) if vs else None
+
+    dss = sorted({r["dataset"] for r in sub},
+                 key=lambda d: list(NOME_DATASET).index(d)
+                 if d in NOME_DATASET else 99)
+    ks = sorted({r["orcamento"] for r in sub},
+                key=lambda x: int(x) if str(x).isdigit() else 0)
+    crits = [c for c in ("random", "coreset", "entropy", "least_confidence",
+                         "regiao_confusa")
+             if c in {r["criterio"] for r in sub}]
+
+    t = Tabela(
+        "dissertacao",
+        f"FLIM puro × Active Learning nos três datasets ({decoder})",
+        ["dataset", "K", "braço", "n", "Fβ", "acurácia", "IoU",
+         "treino (s)", "teste (s)", "Δ Fβ", "p"],
+        alinhamento="lll" + "r" * 8,
+        nota=("`random` é o FLIM puro: sorteia as imagens, como o artigo faz "
+              "na primeira rodada. Todos os braços recebem o MESMO número de "
+              "imagens (K) e são medidos no mesmo conjunto de teste. "
+              "**`regiao_confusa` é diferente dos outros três**: ele usa "
+              "exatamente as imagens que o sorteio usaria naquela semente e "
+              "muda só ONDE o traço cai, com o mesmo número de pixels — então "
+              "o Δ dele mede posição de anotação, e o dos outros mede escolha "
+              "de imagem. **Acurácia é `1 − MAE`**, a fração de pixels "
+              "certos; ela passa de 0,97 em quase tudo porque o objeto ocupa "
+              "uma fração mínima da imagem, e acertar o fundo já garante "
+              "isso — quem separa os braços é Fβ e IoU. Δ e p são pareados "
+              "por semente contra o FLIM puro, no mesmo dataset e no mesmo K; "
+              "com poucas sementes o teste tem pouco poder, e p alto "
+              f"significa **não decidido**, não 'igual'. Decoder {decoder}."))
+
+    for ds in dss:
+        for k in ks:
+            ref = [r for r in sub if r["dataset"] == ds
+                   and r["orcamento"] == k and r["criterio"] == base]
+            ref_por_seed = {r["seed"]: ag._num(r.get("fb")) for r in ref}
+            for c in crits:
+                rs = [r for r in sub if r["dataset"] == ds
+                      and r["orcamento"] == k and r["criterio"] == c]
+                if not rs:
+                    continue
+                sementes = sorted({r["seed"] for r in rs})
+                a = [ag._num(next((x for x in rs if x["seed"] == sd), {})
+                             .get("fb")) for sd in sementes]
+                b = [ref_por_seed.get(sd) for sd in sementes]
+                tp = ({"delta": None, "p": None} if c == base
+                      else ag.teste_pareado(a, b))
+                mae = _agr(rs, "mae")
+                t.adicionar(
+                    [NOME_DATASET.get(ds, ds), k,
+                     "FLIM puro" if c == base else c, len(sementes),
+                     _fmt(_agr(rs, "fb")),
+                     _fmt(None if mae is None else 1 - mae),
+                     _fmt(_agr(rs, "iou")),
+                     _fmt(_agr(rs, "segundos_treino"), 1),
+                     _fmt(_agr(rs, "segundos_aval"), 1),
+                     "—" if c == base else _fmt(tp["delta"]),
+                     "—" if c == base else _fmt(tp["p"])],
+                    [r["run_id"] for r in rs])
+    return t
