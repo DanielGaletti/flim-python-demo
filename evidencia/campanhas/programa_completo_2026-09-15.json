@@ -1,0 +1,67 @@
+{
+  "id": "programa_completo_2026-09-15",
+  "declarado_em": "2026-09-16T01:58:15+00:00",
+  "git_commit": "2734350",
+  "dispositivo": "cuda:0",
+  "nota_dispositivo": "CPU e GPU verificados identicos ate a sexta casa de Fbeta na mesma configuracao (0.357568 nos dois), porque o k-means do encoder e sklearn em ambos. Os numeros continuam comparaveis com o que ja existe.",
+  "por_que_tudo_de_uma_vez": "Rodar a lista INTEIRA declarada antes e o oposto de p-hacking. O que invalida e rodar ate uma configuracao dar positivo e reportar so ela. Aqui as quatro campanhas e todas as suas celulas estao fixadas antes da primeira execucao, e todas serao reportadas, inclusive as negativas.",
+  "correcao_multipla": "Benjamini-Hochberg a q=0.05 dentro de cada campanha, reportado junto com o p bruto.",
+  "campanhas": [
+    {
+      "ordem": 1,
+      "id": "confirmatorio_medoide",
+      "pergunta": "O ganho de `medoide` em K=3 no FLIM_lm (+0,154 contra o artigo, p=0,004) se sustenta em sementes novas?",
+      "porque": "Foi a unica celula positiva entre 32 testes da campanha exploratoria, e nao sobreviveu a correcao. Hipotese UNICA, sementes que nao geraram a hipotese, UM teste — sem correcao a aplicar porque ha um teste so.",
+      "comando": "scripts/tabela_k_por_modelo.py --ks 3 --criterios medoide flim_paper random --sementes 5 6 7 8 9 10 11 12 13 14 --decoders labeled_marker --rotulo confirmatorio",
+      "celulas": 30,
+      "falsearia": "p >= 0,05 contra o artigo nas sementes novas."
+    },
+    {
+      "ordem": 2,
+      "id": "teto_oracle",
+      "pergunta": "Quanta margem existe na escolha de imagens, e algum criterio a aproveita?",
+      "porque": "84 execucoes com `oracle` existem no registro, e TODAS estao em paper_selection_POOL_COM_VAZAMENTO. O teto nunca foi medido limpo. Sem ele, 'AL nao melhora' nao distingue criterio ruim de problema sem margem.",
+      "comando": "scripts/varrer_criterios.py --modo imagem --splits 1 2 3 --seeds 3 --max_images 8 --device cuda:0",
+      "criterios": [
+        "oracle",
+        "random",
+        "entropy",
+        "least_confidence",
+        "coreset",
+        "badge"
+      ],
+      "celulas": 432,
+      "falsearia": "Se o oracle ganhar muito do sorteio e nenhum criterio chegar perto, a conclusao muda de 'nao ha margem' para 'os criterios nao aproveitam a margem'."
+    },
+    {
+      "ordem": 3,
+      "id": "onde_marcar_completo",
+      "pergunta": "Sob orcamento fixo de pixels, escolher a regiao ganha? E o ganho e de localizacao ou de balanco de classes?",
+      "porque": "O preliminar tinha n=2 e o controle de balanco estava quebrado — espalhava pixels isolados e colapsava para Fbeta 0,000. Corrigido para toques coerentes: mesmo balanco (71/67/64% de objeto), treino de 5,8 s em vez de 812 s.",
+      "comando": "scripts/onde_marcar.py --px 2000 4000 8000 --sementes 0 1 2 3 4 --device cuda:0",
+      "bracos": [
+        "uniforme",
+        "regiao_incerteza",
+        "regiao_aleatoria",
+        "regiao_borda",
+        "uniforme_balanceado"
+      ],
+      "celulas": 75,
+      "falsearia": "Se regiao_incerteza nao bater uniforme_balanceado, o efeito era balanco e nao localizacao."
+    },
+    {
+      "ordem": 4,
+      "id": "curva_cold_start",
+      "pergunta": "A partir de que K a incerteza deixa de ser ruido?",
+      "porque": "Medido que em K=1 o encoder tem 54 kernels onde a arquitetura pede 200, e a incerteza que ele reporta e ruido. Falta a curva que diz onde isso vira utilizavel.",
+      "comando": "scripts/tabela_k_por_modelo.py --ks 1 2 3 5 8 12 --criterios flim_paper random entropy coreset medoide --sementes 0 1 2 3 4 --decoders labeled_marker decoder_2 --rotulo curva --device cuda:0",
+      "celulas": 150,
+      "falsearia": "Se o Delta de entropia contra sorteio nao subir com K, o problema nao e cold start."
+    }
+  ],
+  "o_que_nao_sera_feito": [
+    "Acrescentar criterio depois de ver resultado.",
+    "Citar numero da aplicacao interativa na dissertacao.",
+    "Reportar campanha incompleta como final."
+  ]
+}

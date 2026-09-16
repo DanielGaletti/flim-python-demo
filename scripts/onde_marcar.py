@@ -31,9 +31,11 @@ Os braços
     regiao_borda      superpixels que cruzam a borda do objeto no gabarito —
                       TETO, o que se ganharia sabendo onde está a fronteira
     uniforme_balanceado
-                      pixels espalhados ao acaso, mas com a MESMA proporção
+                      TOQUES espalhados ao acaso, com a MESMA proporção
                       objeto/fundo que a incerteza produziu — CONTROLE do
-                      balanço de classes
+                      balanço de classes. São toques, e não pixels soltos,
+                      porque pixel solto gera patch 3×3 único e o encoder
+                      colapsa: a primeira versão deu Fβ 0,000
 
 O confundidor que este desenho precisa isolar
     Medido antes de rodar, com 3.000 px por imagem: o traço uniforme rende
@@ -241,21 +243,48 @@ def _escrever(dest, por_imagem):
     return n
 
 
-def _amostra_balanceada(gt, n_alvo, n_fg_alvo, rng):
+def _amostra_balanceada(gt, n_alvo, n_fg_alvo, rng, raio: int = 5):
     """
-    `n_alvo` pixels ao acaso na imagem inteira, com `n_fg_alvo` deles no objeto.
+    `n_alvo` pixels com `n_fg_alvo` no objeto, em TOQUES e não em pixels soltos.
 
-    Nada de superpixel, nada de vizinhança: a posição é sorteada. É o que faz
-    deste braço um controle do balanço e não da localização.
+    A primeira versão sorteava pixels isolados pela imagem inteira, e colapsou:
+    Fβ 0,000 nos dois decoders, com o treino levando 812 s contra 9 s dos
+    braços de região. A causa é a mesma que explica todo este experimento —
+    pixel isolado gera um patch 3×3 que não repete em lugar nenhum, então o
+    k-means recebe milhares de patches únicos e nenhuma estrutura.
+
+    Como controle aquilo era pior que inútil: mudava o balanço de classes E a
+    coerência espacial ao mesmo tempo, então o Δ contra ele não media
+    localização. Aqui os toques são discos de raio `raio`, a mesma geometria do
+    pincel real — muda só ONDE caem, que é o que este braço existe para
+    controlar.
     """
-    ys_f, xs_f = np.nonzero(gt)
-    ys_b, xs_b = np.nonzero(~gt)
-    n_fg = min(n_fg_alvo, len(ys_f))
-    n_bg = min(n_alvo - n_fg, len(ys_b))
-    i_f = rng.permutation(len(ys_f))[:n_fg]
-    i_b = rng.permutation(len(ys_b))[:n_bg]
-    fg = [(int(xs_f[i]), int(ys_f[i])) for i in i_f]
-    bg = [(int(xs_b[i]), int(ys_b[i])) for i in i_b]
+    disco = [(dx, dy) for dy in range(-raio, raio + 1)
+             for dx in range(-raio, raio + 1) if dx * dx + dy * dy <= raio * raio]
+    H, W = gt.shape
+
+    def toques(mascara, alvo):
+        ys, xs = np.nonzero(mascara)
+        if not len(ys) or alvo <= 0:
+            return []
+        pontos, vistos = [], set()
+        for i in rng.permutation(len(ys)):
+            cy, cx = int(ys[i]), int(xs[i])
+            for dx, dy in disco:
+                x, y = cx + dx, cy + dy
+                # O rótulo do toque é o da classe que ele veio representar; um
+                # disco centrado no objeto pode encostar no fundo, e incluir
+                # esse pixel poria rótulo errado no marker.
+                if 0 <= x < W and 0 <= y < H and mascara[y, x] and (x, y) not in vistos:
+                    vistos.add((x, y))
+                    pontos.append((x, y))
+            if len(pontos) >= alvo:
+                break
+        return pontos[:alvo]
+
+    n_fg = min(n_fg_alvo, int(gt.sum()))
+    fg = toques(gt, n_fg)
+    bg = toques(~gt, n_alvo - len(fg))
     return fg, bg
 
 

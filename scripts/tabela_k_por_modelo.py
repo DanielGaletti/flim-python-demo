@@ -322,6 +322,11 @@ def main() -> int:
                          "de uma vez com o encoder inicial")
     ap.add_argument("--decoders", nargs="+", default=None,
                     help="nomes de codigo; padrao e os sete do artigo")
+    ap.add_argument("--rotulo", default=None,
+                    help="sufixo da fonte; separa uma campanha confirmatoria "
+                         "da exploratoria que a originou, para que o teste "
+                         "confirmatorio nao seja diluido nos dados que "
+                         "geraram a hipotese")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--plano", action="store_true")
     a = ap.parse_args()
@@ -380,7 +385,7 @@ def main() -> int:
     # smoke test com teste menor colide com a campanha completa no run_id e a
     # substitui em silencio -- foi o que ocorreu na primeira execucao.
     fonte = (f"{EXPERIMENTO}/pool{len(pool)}/teste{len(test)}"
-             f"/{a.selecao}")
+             f"/{a.selecao}" + (f"/{a.rotulo}" if a.rotulo else ""))
     print(f"fonte: {fonte}\n")
 
     registros, falhas = [], []
