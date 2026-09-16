@@ -1,0 +1,66 @@
+### FLIM puro × Active Learning nos três datasets (FLIM_pb)
+
+| dataset | K | braço | n | Fβ | acurácia | IoU | treino (s) | teste (s) | Δ Fβ | p |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Parasitas | 2 | FLIM puro | 3 | 0.641 | 0.980 | 0.491 | 3.7 | 30.4 | — | — |
+| Parasitas | 2 | coreset | 3 | 0.566 | 0.977 | 0.444 | 3.5 | 26.8 | -0.074 | 0.366 |
+| Parasitas | 2 | entropy | 3 | 0.530 | 0.969 | 0.406 | 3.7 | 34.4 | -0.111 | 0.034 |
+| Parasitas | 2 | least_confidence | 3 | 0.539 | 0.973 | 0.413 | 3.1 | 27.2 | -0.101 | 0.022 |
+| Parasitas | 2 | regiao_confusa | 3 | 0.456 | 0.976 | 0.303 | 5.3 | 30.9 | -0.185 | 0.045 |
+| Parasitas | 3 | FLIM puro | 3 | 0.608 | 0.977 | 0.472 | 10.4 | 39.9 | — | — |
+| Parasitas | 3 | coreset | 3 | 0.568 | 0.971 | 0.444 | 10.9 | 36.4 | -0.041 | 0.375 |
+| Parasitas | 3 | entropy | 3 | 0.590 | 0.971 | 0.457 | 6.4 | 47.7 | -0.018 | 0.769 |
+| Parasitas | 3 | least_confidence | 3 | 0.606 | 0.975 | 0.467 | 5.5 | 37.0 | -0.002 | 0.964 |
+| Parasitas | 3 | regiao_confusa | 3 | 0.556 | 0.975 | 0.396 | 9.3 | 48.8 | -0.052 | 0.188 |
+| Parasitas | 5 | FLIM puro | 3 | 0.673 | 0.979 | 0.510 | 40.4 | 48.7 | — | — |
+| Parasitas | 5 | coreset | 3 | 0.602 | 0.974 | 0.464 | 47.1 | 48.6 | -0.071 | 0.106 |
+| Parasitas | 5 | entropy | 3 | 0.619 | 0.976 | 0.475 | 61.3 | 53.7 | -0.054 | 0.144 |
+| Parasitas | 5 | least_confidence | 3 | 0.592 | 0.974 | 0.458 | 66.2 | 50.5 | -0.080 | 0.236 |
+| Parasitas | 5 | regiao_confusa | 3 | 0.551 | 0.970 | 0.406 | 79.6 | 63.1 | -0.122 | 0.079 |
+| Parasitas | 8 | FLIM puro | 3 | 0.646 | 0.976 | 0.498 | 87.6 | 48.7 | — | — |
+| Parasitas | 8 | coreset | 3 | 0.694 | 0.982 | 0.534 | 94.4 | 45.9 | 0.048 | 0.098 |
+| Parasitas | 8 | entropy | 3 | 0.658 | 0.978 | 0.502 | 97.1 | 46.9 | 0.012 | 0.697 |
+| Parasitas | 8 | least_confidence | 3 | 0.644 | 0.976 | 0.494 | 126.2 | 54.8 | -0.002 | 0.956 |
+| Parasitas | 8 | regiao_confusa | 3 | 0.609 | 0.975 | 0.454 | 117.6 | 74.8 | -0.037 | 0.584 |
+| BraTS | 2 | FLIM puro | 3 | 0.351 | 0.964 | 0.202 | 1.3 | 10.8 | — | — |
+| BraTS | 2 | coreset | 3 | 0.123 | 0.959 | 0.053 | 1.3 | 5.8 | -0.228 | 0.457 |
+| BraTS | 2 | entropy | 3 | 0.176 | 0.960 | 0.069 | 1.4 | 20.4 | -0.175 | 0.571 |
+| BraTS | 2 | least_confidence | 3 | 0.176 | 0.960 | 0.069 | 4.7 | 14.6 | -0.175 | 0.571 |
+| BraTS | 2 | regiao_confusa | 2 | 0.547 | 0.966 | 0.358 | 2.2 | 5.5 | 0.383 | 0.083 |
+| BraTS | 3 | FLIM puro | 3 | 0.070 | 0.915 | 0.036 | 3.5 | 13.2 | — | — |
+| BraTS | 3 | coreset | 3 | 0.188 | 0.958 | 0.077 | 1.9 | 5.9 | 0.118 | 0.401 |
+| BraTS | 3 | entropy | 3 | 0.119 | 0.958 | 0.046 | 7.9 | 5.9 | 0.049 | 0.321 |
+| BraTS | 3 | least_confidence | 3 | 0.119 | 0.958 | 0.046 | 2.9 | 14.2 | 0.049 | 0.321 |
+| BraTS | 3 | regiao_confusa | 3 | 0.268 | 0.963 | 0.164 | 4.5 | 10.9 | 0.198 | 0.450 |
+| BraTS | 5 | FLIM puro | 3 | 0.410 | 0.965 | 0.224 | 3.3 | 5.4 | — | — |
+| BraTS | 5 | coreset | 3 | 0.480 | 0.968 | 0.339 | 3.2 | 5.3 | 0.071 | 0.861 |
+| BraTS | 5 | entropy | 3 | 0.533 | 0.968 | 0.330 | 6.7 | 6.2 | 0.123 | 0.728 |
+| BraTS | 5 | least_confidence | 3 | 0.533 | 0.968 | 0.330 | 10.3 | 19.5 | 0.123 | 0.728 |
+| BraTS | 5 | regiao_confusa | 3 | 0.522 | 0.970 | 0.360 | 11.5 | 5.6 | 0.112 | 0.812 |
+| BraTS | 8 | FLIM puro | 3 | 0.378 | 0.956 | 0.174 | 8.3 | 5.7 | — | — |
+| BraTS | 8 | coreset | 3 | 0.346 | 0.959 | 0.244 | 9.1 | 13.7 | -0.032 | 0.893 |
+| BraTS | 8 | entropy | 3 | 0.064 | 0.958 | 0.021 | 5.5 | 8.0 | -0.314 | 0.122 |
+| BraTS | 8 | least_confidence | 3 | 0.094 | 0.958 | 0.032 | 13.1 | 5.9 | -0.285 | 0.174 |
+| BraTS | 8 | regiao_confusa | 3 | 0.635 | 0.972 | 0.418 | 9.4 | 5.7 | 0.257 | 0.090 |
+| Conjuntivite | 2 | FLIM puro | 3 | 0.020 | 0.868 | 0.007 | 22.3 | 105.1 | — | — |
+| Conjuntivite | 2 | coreset | 3 | 0.016 | 0.865 | 0.005 | 31.9 | 110.3 | -0.004 | 0.782 |
+| Conjuntivite | 2 | entropy | 3 | 0.030 | 0.867 | 0.011 | 27.4 | 113.6 | 0.010 | 0.549 |
+| Conjuntivite | 2 | least_confidence | 3 | 0.030 | 0.867 | 0.011 | 24.8 | 81.5 | 0.010 | 0.549 |
+| Conjuntivite | 2 | regiao_confusa | 3 | 0.092 | 0.867 | 0.035 | 30.4 | 113.8 | 0.072 | 0.153 |
+| Conjuntivite | 3 | FLIM puro | 3 | 0.014 | 0.860 | 0.005 | 30.3 | 111.6 | — | — |
+| Conjuntivite | 3 | coreset | 3 | 0.013 | 0.867 | 0.004 | 36.1 | 116.5 | -0.000 | 0.983 |
+| Conjuntivite | 3 | entropy | 3 | 0.028 | 0.865 | 0.009 | 28.5 | 114.6 | 0.014 | 0.573 |
+| Conjuntivite | 3 | least_confidence | 3 | 0.028 | 0.865 | 0.009 | 29.7 | 90.9 | 0.014 | 0.573 |
+| Conjuntivite | 3 | regiao_confusa | 3 | 0.019 | 0.863 | 0.006 | 52.4 | 73.6 | 0.006 | 0.249 |
+| Conjuntivite | 5 | FLIM puro | 3 | 0.008 | 0.863 | 0.002 | 53.0 | 121.0 | — | — |
+| Conjuntivite | 5 | coreset | 3 | 0.010 | 0.864 | 0.004 | 62.2 | 111.8 | 0.002 | 0.550 |
+| Conjuntivite | 5 | entropy | 3 | 0.025 | 0.872 | 0.008 | 48.6 | 124.9 | 0.017 | 0.337 |
+| Conjuntivite | 5 | least_confidence | 3 | 0.025 | 0.872 | 0.008 | 47.8 | 106.9 | 0.017 | 0.337 |
+| Conjuntivite | 5 | regiao_confusa | 3 | 0.008 | 0.865 | 0.002 | 75.8 | 93.5 | 0.000 | 0.895 |
+| Conjuntivite | 8 | FLIM puro | 3 | 0.006 | 0.867 | 0.002 | 78.8 | 106.3 | — | — |
+| Conjuntivite | 8 | coreset | 3 | 0.015 | 0.865 | 0.005 | 90.2 | 103.1 | 0.009 | 0.004 |
+| Conjuntivite | 8 | entropy | 3 | 0.012 | 0.868 | 0.004 | 83.0 | 110.4 | 0.006 | 0.241 |
+| Conjuntivite | 8 | least_confidence | 3 | 0.073 | 0.869 | 0.025 | 70.0 | 92.5 | 0.067 | 0.407 |
+| Conjuntivite | 8 | regiao_confusa | 3 | 0.053 | 0.869 | 0.021 | 127.1 | 112.7 | 0.047 | 0.286 |
+
+`random` é o FLIM puro: sorteia as imagens, como o artigo faz na primeira rodada. Todos os braços recebem o MESMO número de imagens (K) e são medidos no mesmo conjunto de teste. **`regiao_confusa` é diferente dos outros três**: ele usa exatamente as imagens que o sorteio usaria naquela semente e muda só ONDE o traço cai, com o mesmo número de pixels — então o Δ dele mede posição de anotação, e o dos outros mede escolha de imagem. **Acurácia é `1 − MAE`**, a fração de pixels certos; ela passa de 0,97 em quase tudo porque o objeto ocupa uma fração mínima da imagem, e acertar o fundo já garante isso — quem separa os braços é Fβ e IoU. Δ e p são pareados por semente contra o FLIM puro, no mesmo dataset e no mesmo K; com poucas sementes o teste tem pouco poder, e p alto significa **não decidido**, não 'igual'. Decoder FLIM_pb.

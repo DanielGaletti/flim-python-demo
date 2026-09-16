@@ -946,7 +946,9 @@ def tabela_dissertacao(recs=None, experimento: str = "tabela_k_por_modelo",
              if c in {r["criterio"] for r in sub}]
 
     t = Tabela(
-        "dissertacao",
+        # O nome leva o decoder: as duas variantes gravam arquivos diferentes.
+        # Sem isto a segunda sobrescrevia a primeira em dissertacao.tex.
+        f"dissertacao_{decoder.replace('FLIM_', '').replace('*', 'x')}",
         f"FLIM puro × Active Learning nos três datasets ({decoder})",
         ["dataset", "K", "braço", "n", "Fβ", "acurácia", "IoU",
          "treino (s)", "teste (s)", "Δ Fβ", "p"],

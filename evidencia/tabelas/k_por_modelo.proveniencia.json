@@ -1,9 +1,9 @@
 {
   "tabela": "k_por_modelo",
   "titulo": "Fβ por critério e orçamento, nos sete decoders, com custo",
-  "gerado_em": "2026-09-15T06:15:24+00:00",
+  "gerado_em": "2026-09-16T12:42:14+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "6d4a06cdff6a-sujo",
+  "git_commit": "9fdee4c79765-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/k_por_modelo.tex}",
   "linhas": [

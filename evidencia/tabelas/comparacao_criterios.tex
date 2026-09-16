@@ -1,5 +1,5 @@
 % Técnicas de Active Learning contra o sorteio
-% GERADO por flim_al/tabelas.py em 2026-09-15T06:15:24+00:00
+% GERADO por flim_al/tabelas.py em 2026-09-16T12:42:14+00:00
 % NAO EDITE A MAO: a proxima geracao sobrescreve, e o numero editado deixa de bater com evidencia/execucoes/.
 % Proveniencia: comparacao_criterios.proveniencia.json
 \begin{tabular}{lrrrrrrrrr}
@@ -7,9 +7,9 @@
 técnica & nível & Fβ (células pareadas) & n pares & Δ vs random & p & Δ vs FLIM (K=3) & p (FLIM) & Δ vs controle do nível & veredito \\
 \hline
 badge & imagem & 0.430 & 95 & \textbf{-0.019} & 0.0105 & — & — & — & suportado \\
-coreset & imagem & 0.447 & 152 & -0.014 & 0.1017 & — & — & — & sem suporte \\
-entropy & imagem & 0.450 & 269 & \textbf{0.023} & 0.0109 & — & — & — & suportado \\
-least\_confidence & imagem & 0.419 & 193 & 0.004 & 0.7226 & — & — & — & sem suporte \\
+coreset & imagem & 0.396 & 234 & -0.018 & 0.1027 & — & — & — & sem suporte \\
+entropy & imagem & 0.415 & 351 & 0.011 & 0.2076 & — & — & — & sem suporte \\
+least\_confidence & imagem & 0.365 & 249 & -0.003 & 0.7893 & — & — & — & sem suporte \\
 margin & imagem & 0.451 & 72 & 0.023 & 0.2110 & — & — & — & sem suporte \\
 random & imagem & — & — & — & — & — & — & — & piso \\
 oracle & imagem (usa GT) & 0.686 & 31 & 0.011 & 0.0889 & — & — & — & indicativo \\
@@ -17,10 +17,11 @@ flim\_3img & linha de base & — & 0 & — & — & — & — & — & sem pares s
 random\_region & região & 0.442 & 252 & \textbf{0.108} & 0.0000 & — & — & — & suportado \\
 region\_bald & região & 0.462 & 135 & \textbf{0.077} & 0.0000 & — & — & 0.050 & suportado \\
 region\_entropy & região & 0.437 & 66 & 0.014 & 0.4295 & — & — & — & sem suporte \\
-flim\_paper & ? & 0.473 & 51 & -0.002 & 0.8969 & — & — & — & sem suporte \\
-medoide & ? & 0.425 & 58 & \textbf{-0.059} & 0.0013 & — & — & — & suportado \\
+flim\_paper & ? & 0.467 & 69 & -0.015 & 0.4074 & — & — & — & sem suporte \\
+medoide & ? & 0.482 & 94 & \textbf{-0.043} & 0.0054 & — & — & — & suportado \\
 regiao\_aleatoria & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
 regiao\_borda & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
+regiao\_confusa & ? & 0.286 & 71 & -0.004 & 0.9134 & — & — & — & sem suporte \\
 regiao\_incerteza & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
 uniforme & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
 uniforme\_balanceado & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\

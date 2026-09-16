@@ -1,9 +1,9 @@
 {
   "tabela": "onde_marcar",
   "titulo": "Onde anotar, com orçamento fixo em pixels: Fβ e as duas diferenças",
-  "gerado_em": "2026-09-15T06:15:24+00:00",
+  "gerado_em": "2026-09-16T12:42:14+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "6d4a06cdff6a-sujo",
+  "git_commit": "9fdee4c79765-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/onde_marcar.tex}",
   "linhas": [
@@ -11,64 +11,264 @@
       "linha": 1,
       "rotulo": "regiao_incerteza",
       "run_ids": [
-        "205703a662f4b122",
-        "8c27d747f4f09878"
+        "26ca9e2fc2545b9a",
+        "2806a7ca53a6b0cc",
+        "6e81be811063d212",
+        "9230c8fda77fc6c0",
+        "c010cbee31bad6bf"
       ]
     },
     {
       "linha": 2,
       "rotulo": "regiao_incerteza",
       "run_ids": [
-        "1c010119ec1956ea",
-        "8128627c4ae885cb"
+        "210f0991dce335e7",
+        "59190b0f14575dca",
+        "77a6aac8edba5d17",
+        "ca5980af084e4d34",
+        "fa1b07355987f693"
       ]
     },
     {
       "linha": 3,
+      "rotulo": "regiao_incerteza",
+      "run_ids": [
+        "0a44cdc11e9095c3",
+        "205703a662f4b122",
+        "8c27d747f4f09878",
+        "b7799748a8404985",
+        "cd8b457bdaf3b401"
+      ]
+    },
+    {
+      "linha": 4,
+      "rotulo": "regiao_incerteza",
+      "run_ids": [
+        "1c010119ec1956ea",
+        "4123fe678e359ff5",
+        "8128627c4ae885cb",
+        "93541ff179fa2a85",
+        "d15b3ff6d4cea8f3"
+      ]
+    },
+    {
+      "linha": 5,
+      "rotulo": "regiao_incerteza",
+      "run_ids": [
+        "030a7642e9529936",
+        "1ef499e87c45c7c9",
+        "3ac799710bf67c88",
+        "7694f6329c5c7776",
+        "fe64191fe6de73df"
+      ]
+    },
+    {
+      "linha": 6,
+      "rotulo": "regiao_incerteza",
+      "run_ids": [
+        "12b596f08b96f264",
+        "22367195d37045c2",
+        "5bf48e04293e70dd",
+        "6901e7e10a81b1f9",
+        "6b4ae5db98814ae7"
+      ]
+    },
+    {
+      "linha": 7,
       "rotulo": "regiao_aleatoria",
       "run_ids": [
+        "25a6647a0de306d2",
+        "38eb1d3a9aed41a2",
+        "6dc4618687cae20c",
+        "ce0ccc8e5c4836bf",
+        "e59ea95cc4a5172a"
+      ]
+    },
+    {
+      "linha": 8,
+      "rotulo": "regiao_aleatoria",
+      "run_ids": [
+        "12706842cb3d4a4f",
+        "180a2bbeb23c26af",
+        "6746f938d1081dc7",
+        "7edbc4221b93acdf",
+        "8a134a1788641eed"
+      ]
+    },
+    {
+      "linha": 9,
+      "rotulo": "regiao_aleatoria",
+      "run_ids": [
+        "0b701d377e172b1f",
+        "4469833ff7f74a34",
+        "4904df785dc35e5f",
         "65193f109bf77e98",
         "b16bf3d79773a8b4"
       ]
     },
     {
-      "linha": 4,
+      "linha": 10,
       "rotulo": "regiao_aleatoria",
       "run_ids": [
+        "4e514e1eb3ca6323",
         "5b795a2749eb4dbc",
-        "bef84e9e090ff283"
+        "7a244b1034729583",
+        "bef84e9e090ff283",
+        "de4d979480302f36"
       ]
     },
     {
-      "linha": 5,
+      "linha": 11,
+      "rotulo": "regiao_aleatoria",
+      "run_ids": [
+        "14370d5f8f13e7a8",
+        "a92ce10397a924ee",
+        "e16d7eb4338b9698",
+        "e2e81360ff5bf59c",
+        "ec62ef816c1cb47c"
+      ]
+    },
+    {
+      "linha": 12,
+      "rotulo": "regiao_aleatoria",
+      "run_ids": [
+        "0dc9decc9df24aff",
+        "2db23465e423f0c1",
+        "897aff2d93020a03",
+        "b4daec2cd5e32298",
+        "cf9ed16545bf3437"
+      ]
+    },
+    {
+      "linha": 13,
       "rotulo": "regiao_borda",
       "run_ids": [
+        "0ca5ed5e81e2ce04",
+        "4e3900f512ff5e39",
+        "644e740ef90dddc4",
+        "874ba2d56fb61367",
+        "ecb0a5ffb4af53f8"
+      ]
+    },
+    {
+      "linha": 14,
+      "rotulo": "regiao_borda",
+      "run_ids": [
+        "249fa5efaa673adf",
+        "24d6c003cf666f17",
+        "2bc1dccc45bb85a0",
+        "941ccb9323b77230",
+        "db3fe7045fe222c1"
+      ]
+    },
+    {
+      "linha": 15,
+      "rotulo": "regiao_borda",
+      "run_ids": [
+        "64ac07a172745df9",
         "734a993abce96d20",
-        "a4fa8597d9d55a03"
+        "73d3254a43d1da37",
+        "a4fa8597d9d55a03",
+        "eb9f978c3bbc46fe"
       ]
     },
     {
-      "linha": 6,
+      "linha": 16,
       "rotulo": "regiao_borda",
       "run_ids": [
+        "05e235bb87adeb98",
         "129675ac88d34021",
-        "313fd06e0d2bbe99"
+        "313fd06e0d2bbe99",
+        "83a0d15e5ddb4910",
+        "ba23267be0b9db38"
       ]
     },
     {
-      "linha": 7,
+      "linha": 17,
+      "rotulo": "regiao_borda",
+      "run_ids": [
+        "3d1f00d0d32049d4",
+        "be528220a6ef71c9",
+        "d585ce188f6b1a51",
+        "e1515e4f75b98f53",
+        "f5f5fc3dd3fd7e39"
+      ]
+    },
+    {
+      "linha": 18,
+      "rotulo": "regiao_borda",
+      "run_ids": [
+        "1cb93e3fe63da62e",
+        "517a338759579e73",
+        "550e2161af927813",
+        "6df6f4f2c9194416",
+        "8dcaa11d552177b9"
+      ]
+    },
+    {
+      "linha": 19,
+      "rotulo": "uniforme_balanceado",
+      "run_ids": [
+        "253b87ee8623bb93",
+        "2b55f051b98da79d",
+        "2bebc738d1dcefbe",
+        "5df2cf9756bf4dbf",
+        "b586e5f02bd5d960"
+      ]
+    },
+    {
+      "linha": 20,
+      "rotulo": "uniforme_balanceado",
+      "run_ids": [
+        "29ee23d446f0d426",
+        "37b5ee4f2e0857a9",
+        "4edd5a6df78d0580",
+        "633222180ad7799b",
+        "c12cb5254c7ddfaf"
+      ]
+    },
+    {
+      "linha": 21,
       "rotulo": "uniforme_balanceado",
       "run_ids": [
         "209f54db7090ff68",
-        "63eab177118af598"
+        "5bfd3741adb50f6b",
+        "63eab177118af598",
+        "6d6444395bf48418",
+        "8a8305f16840c7ec"
       ]
     },
     {
-      "linha": 8,
+      "linha": 22,
       "rotulo": "uniforme_balanceado",
       "run_ids": [
         "4d0bed94eed5c03f",
-        "df38dfd97e33f06e"
+        "754dfd0ed8cc9a28",
+        "96bbadd29396c1ba",
+        "df38dfd97e33f06e",
+        "fbb872c3bb274792"
+      ]
+    },
+    {
+      "linha": 23,
+      "rotulo": "uniforme_balanceado",
+      "run_ids": [
+        "1cf1bc95cc3b2321",
+        "79d05fa66e0ac9f2",
+        "8484689463744f82",
+        "abafffea80d54c4f",
+        "f9b8c9cceadc30aa"
+      ]
+    },
+    {
+      "linha": 24,
+      "rotulo": "uniforme_balanceado",
+      "run_ids": [
+        "8c9b44b50b08adfe",
+        "9239d36ae700abd6",
+        "9e14b8e3ada569f2",
+        "cff73e62112f5f24",
+        "f3b1170acf0149ca"
       ]
     }
   ]

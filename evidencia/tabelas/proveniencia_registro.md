@@ -3,21 +3,22 @@
 | família | execuções | sem seed | sem commit |
 |---|---|---|---|
 | al_corrected_results | 2316 | 42% | 100% |
+| tabela_k_por_modelo | 1277 | 0% | 0% |
 | final_comparison_v3 | 1029 | 4% | 100% |
-| tabela_k_por_modelo | 628 | 0% | 0% |
 | benchmark_conjunctiva | 588 | 68% | 100% |
 | sel_cs_grande | 540 | 0% | 100% |
 | al_backprop_results | 492 | 20% | 100% |
 | paper_selection_pac2 | 432 | 0% | 100% |
 | paper_selection_POOL_COM_VAZAMENTO | 360 | 0% | 100% |
-| paper_selection_rand | 324 | 0% | 100% |
 | paper_selection_v2 | 324 | 0% | 100% |
 | paper_selection_v3 | 324 | 0% | 100% |
+| paper_selection_rand | 321 | 0% | 100% |
 | sel_degen | 216 | 0% | 100% |
 | sel_medoide | 216 | 0% | 100% |
 | sel_proposto | 216 | 0% | 100% |
 | final_comparison_v2 | 210 | 10% | 100% |
 | paper_selection_coreset | 162 | 0% | 100% |
+| onde_marcar | 150 | 0% | 0% |
 | final_comparison | 147 | 57% | 100% |
 | al_encoder_results_acq_comparison | 144 | 44% | 100% |
 | orcamento | 144 | 100% | 100% |
@@ -30,7 +31,6 @@
 | al_bald_results | 48 | 44% | 100% |
 | al_flim_curve | 42 | 100% | 100% |
 | curva | 24 | 100% | 100% |
-| onde_marcar | 20 | 0% | 0% |
 | al_region_results | 16 | 44% | 100% |
 
 Diagnóstico, não resultado. Linha com 100% sem seed não sustenta afirmação sobre variância entre execuções.

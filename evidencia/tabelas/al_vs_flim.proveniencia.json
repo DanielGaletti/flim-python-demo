@@ -1,186 +1,406 @@
 {
   "tabela": "al_vs_flim",
   "titulo": "Melhora sobre o FLIM do artigo e sobre o sorteio, pareada por semente",
-  "gerado_em": "2026-09-15T06:15:24+00:00",
+  "gerado_em": "2026-09-16T12:42:14+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "6d4a06cdff6a-sujo",
+  "git_commit": "9fdee4c79765-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/al_vs_flim.tex}",
   "linhas": [
     {
       "linha": 1,
-      "rotulo": "medoide",
+      "rotulo": "entropy",
       "run_ids": [
-        "257e267188fa4bc7",
-        "316e97242e5a51f8",
-        "a327ff6e62c90292",
-        "a45140a63d8ab96a",
-        "fe404d4a10df3e51"
+        "095449bac0eaa9d3",
+        "1710aeb9ffd5eb10",
+        "86a420d476f1c086",
+        "ea22e00f2350869c",
+        "f87ebc08784f4e3a"
       ]
     },
     {
       "linha": 2,
-      "rotulo": "medoide",
+      "rotulo": "entropy",
       "run_ids": [
-        "40a145099842f1ff",
-        "57a5acbf637a2f10",
-        "65b19b447c4dd0da",
-        "90ba4193d3fae19f",
-        "c49c874c8f09a227"
+        "62065d44bd1aa49d",
+        "7bdf103ba8e796ca",
+        "8025edd58f40d17c",
+        "82165ee602e2a113",
+        "e1f0ddf9b35484f2"
       ]
     },
     {
       "linha": 3,
-      "rotulo": "medoide",
+      "rotulo": "entropy",
       "run_ids": [
-        "2c62fd6b2dba2e12",
-        "7988d1e13b76e652",
-        "858d157e6aac2bbf",
-        "d739cb3ede458782",
-        "d78102503c97d4a5"
+        "4108c0480ffa9335",
+        "5082155261e96cc6",
+        "88ab82fbfd31e4d0",
+        "c15e35617bad748d",
+        "c5fefea554d41d03"
       ]
     },
     {
       "linha": 4,
-      "rotulo": "medoide",
+      "rotulo": "entropy",
       "run_ids": [
-        "23ded0c43bd858bf",
-        "64aca5bd7c11789c",
-        "67064a0ffe38da76",
-        "8a03a79107de8f66",
-        "a6158c14c0926cdd"
+        "1a72e82732ae7fab",
+        "5b529a00e1e0d195",
+        "8551e0529f49529f",
+        "ab6eff28a9b56da8",
+        "f32f4b1676c1cc08"
       ]
     },
     {
       "linha": 5,
-      "rotulo": "coreset",
+      "rotulo": "entropy",
       "run_ids": [
-        "62ef5005c8ec2810",
-        "a6696bba08c87c08",
-        "a953dadd31368907",
-        "cc432ddcc2c16aec",
-        "cf60ca716d8f7db2"
+        "0390cccd977ee227",
+        "3dd7582e6847d793",
+        "667b958d89a9905a",
+        "7467edd4a5c25055",
+        "b89bd3ccb7fbffa5"
       ]
     },
     {
       "linha": 6,
-      "rotulo": "coreset",
+      "rotulo": "entropy",
       "run_ids": [
-        "51145976bda53536",
-        "8dfc276242fe202d",
-        "9d3a393c057fd828",
-        "b31b0abd3dbd9bc7",
-        "b810897865b1986b"
+        "35febd03ab036291",
+        "850817c07b1a2595",
+        "99184c4e8a0b5330",
+        "b736fe8994b08ded",
+        "db863741e150555c"
       ]
     },
     {
       "linha": 7,
-      "rotulo": "coreset",
+      "rotulo": "entropy",
       "run_ids": [
-        "1db887f8d85b956c",
-        "3ab5d313c6e24886",
-        "db884d40b1baf2a1",
-        "e66bc5c653103a19",
-        "fb19a0859ec5c010"
+        "066eb99f16beeb32",
+        "3a4e958adae12fac",
+        "6ee501756bd4cb69",
+        "74b53a109dab313a",
+        "d0e60f4007532740"
       ]
     },
     {
       "linha": 8,
-      "rotulo": "coreset",
+      "rotulo": "entropy",
       "run_ids": [
-        "1363f312e53132c5",
-        "35de0bca604420e8",
-        "3d4675660a322f48",
-        "699bcf97d902f540",
-        "b4b1e286b7f7d064"
+        "131fe944e2093b8e",
+        "8a77634a712cd50c",
+        "a4c387eeebc6b4e3",
+        "c4906634e13e2c55",
+        "ca1f23512d4e2f8d"
       ]
     },
     {
       "linha": 9,
       "rotulo": "entropy",
       "run_ids": [
-        "13ca23c85ed74881",
-        "48d95dfe6b5e04cb",
-        "4fc24a2d6adb293e",
-        "a26831179d2f6261",
-        "d8d7a36177a82bd4"
+        "4bc05f46a34d2f60",
+        "a84786916da8c80d",
+        "b2b30cdf104d7853",
+        "e65f93a661733b91",
+        "f3c1311f0cc5a4da"
       ]
     },
     {
       "linha": 10,
       "rotulo": "entropy",
       "run_ids": [
-        "19984e4a44dc6093",
-        "20a50346f33cf57d",
-        "3b33cc78254298de",
-        "631137876518cb5b",
-        "6e27dcd551a118ec"
+        "2427290b95a5e07a",
+        "8e657708d13f2674",
+        "ba42656c1d146c43",
+        "d00e9f905675cc4f",
+        "ec8ba9a1339a4cc2"
       ]
     },
     {
       "linha": 11,
       "rotulo": "entropy",
       "run_ids": [
-        "025414b5d5842f16",
-        "0e4390b9894c6d54",
-        "88aa24c0f9585817",
-        "8fc8dff556cf251f",
-        "cb704cbee03f0bc2"
+        "46a9b88b355634ff",
+        "56b6784581abd700",
+        "cc4b249065901f9a",
+        "dc7cd53922793a41",
+        "eb00705e3aec2b4f"
       ]
     },
     {
       "linha": 12,
       "rotulo": "entropy",
       "run_ids": [
-        "054d5c716c476c2d",
-        "1eb503760ff6d5c4",
-        "7467e8d79254d116",
-        "d13a5370a7b1c27c",
-        "f99adbb3df11189f"
+        "2c487e3d442fb017",
+        "7156a4c5e30454af",
+        "80a2e72caf0acb30",
+        "be64d5df33b94572",
+        "bf6ae7171a2d7465"
       ]
     },
     {
       "linha": 13,
-      "rotulo": "least_confidence",
+      "rotulo": "coreset",
       "run_ids": [
-        "230f3408df94fcd8",
-        "6d5635550d0a2262",
-        "88e55a4ce84c9396",
-        "c953a30b7e93a2f3",
-        "f9203582ce6694d7"
+        "29989123519e4bc2",
+        "7f2c4bb5b7569360",
+        "837e9fb539696667",
+        "a3b5fb2d63918bbb",
+        "e14ce1ed975ae868"
       ]
     },
     {
       "linha": 14,
-      "rotulo": "least_confidence",
+      "rotulo": "coreset",
       "run_ids": [
-        "71b3fac4066126dd",
-        "e1327a3eb9d59eda",
-        "e72fdf0eac8b1066",
-        "f80355318e935c8a",
-        "fe3eac28c446d3e9"
+        "0ce2ed4053cb5bb1",
+        "105099c6e2963f13",
+        "5860c54050571160",
+        "8cc57523140545f7",
+        "9918fbf4ce34556e"
       ]
     },
     {
       "linha": 15,
-      "rotulo": "least_confidence",
+      "rotulo": "coreset",
       "run_ids": [
-        "229b9e19f3a0465a",
-        "2f144f7bfecb6fe2",
-        "7196ffd58828d35b",
-        "e357fd31c6d6c3e9",
-        "e3cf9667aa81f2c9"
+        "1c636c99845bbcd3",
+        "9290165118a5fa77",
+        "a0d495aa7760652e",
+        "a4c3992fa2081482",
+        "a6b5c129f3488763"
       ]
     },
     {
       "linha": 16,
-      "rotulo": "least_confidence",
+      "rotulo": "coreset",
       "run_ids": [
-        "0a8a44b1c983e08c",
-        "419dc46e06cd689f",
-        "9cc8fa91244be11e",
-        "c9ac058123275ea9",
-        "e79f7258d0031c54"
+        "6fdb1aac83155a06",
+        "7063cb70083acf91",
+        "912fffe6c3d9da68",
+        "92df0e66452f8375",
+        "f482da4080afb8a4"
+      ]
+    },
+    {
+      "linha": 17,
+      "rotulo": "coreset",
+      "run_ids": [
+        "367406239ee476ed",
+        "44b30d2d305d71e9",
+        "b31545a62ac404c1",
+        "b6eb9930e89bad36",
+        "fd77ad43d35e0811"
+      ]
+    },
+    {
+      "linha": 18,
+      "rotulo": "coreset",
+      "run_ids": [
+        "30344ad135a36850",
+        "3fa6720ec687a47b",
+        "a91556b9f9e29e06",
+        "bfeacbf3fd79eb55",
+        "da503d25ce752ae2"
+      ]
+    },
+    {
+      "linha": 19,
+      "rotulo": "coreset",
+      "run_ids": [
+        "5a82b11b7782d8c9",
+        "80105f4865a436e3",
+        "8fcd3b184bf00770",
+        "d3dbb6d465a81131",
+        "ff37bcbc1abed1dd"
+      ]
+    },
+    {
+      "linha": 20,
+      "rotulo": "coreset",
+      "run_ids": [
+        "152bd4978ae5b42d",
+        "4700bf3d4b067bba",
+        "b2d7de7c141eab74",
+        "b9026d6042be0565",
+        "eeba6b20807a3646"
+      ]
+    },
+    {
+      "linha": 21,
+      "rotulo": "coreset",
+      "run_ids": [
+        "065467c0ad566659",
+        "5f118a37ce0c6f4a",
+        "6f68c632542c2df6",
+        "dd017e5e755ae771",
+        "eb421b3d977dff52"
+      ]
+    },
+    {
+      "linha": 22,
+      "rotulo": "coreset",
+      "run_ids": [
+        "2d68c45209f697ca",
+        "576d5c26c64f1248",
+        "64084ea26b5df2f9",
+        "fe008d05bd86f466",
+        "ffe457952b757b6c"
+      ]
+    },
+    {
+      "linha": 23,
+      "rotulo": "coreset",
+      "run_ids": [
+        "755acd2d83f9a4eb",
+        "79e994ae94669131",
+        "b4caaa410ac7258f",
+        "ec435c1de9ff6803",
+        "f546023c43e45dee"
+      ]
+    },
+    {
+      "linha": 24,
+      "rotulo": "coreset",
+      "run_ids": [
+        "113d67aed1b9678a",
+        "a1455870d4e547e3",
+        "aaaac051f160b4fe",
+        "b01c73398e2f1451",
+        "fa94aaeec6400eff"
+      ]
+    },
+    {
+      "linha": 25,
+      "rotulo": "medoide",
+      "run_ids": [
+        "80e1072e3e66be9c",
+        "cc8b7b31b58690ce",
+        "d01766301bf62570",
+        "d0970451b0d802bb",
+        "e47d9febfd4b08c8"
+      ]
+    },
+    {
+      "linha": 26,
+      "rotulo": "medoide",
+      "run_ids": [
+        "2ecdcf5cce91b767",
+        "88eda29b3a1d34eb",
+        "9018d3b20b4de7ee",
+        "bcc7b3954b7bba4d",
+        "f1c4fda0e2c01eba"
+      ]
+    },
+    {
+      "linha": 27,
+      "rotulo": "medoide",
+      "run_ids": [
+        "596429fa96bc6faa",
+        "78dd4414d9761bca",
+        "c74c9ace9e64c811",
+        "d37a5992faea95e5",
+        "fa1f03da29ff6a10"
+      ]
+    },
+    {
+      "linha": 28,
+      "rotulo": "medoide",
+      "run_ids": [
+        "01a560b3b602baf2",
+        "0672aeece4f749f9",
+        "65534602704817c4",
+        "9e8e5cde69a934c7",
+        "dd9a95a1ec41c5e5"
+      ]
+    },
+    {
+      "linha": 29,
+      "rotulo": "medoide",
+      "run_ids": [
+        "0176f47b8d4dc25b",
+        "257dc5017cbda508",
+        "670eb19653158588",
+        "daee89aa87ae0e46",
+        "e98c787a40b2056f"
+      ]
+    },
+    {
+      "linha": 30,
+      "rotulo": "medoide",
+      "run_ids": [
+        "2a53e07de359def6",
+        "311f93cf6c476115",
+        "7b0c508e0ec7fc87",
+        "7f3e4d33bd13b75c",
+        "e74c3015cb5fd4d0"
+      ]
+    },
+    {
+      "linha": 31,
+      "rotulo": "medoide",
+      "run_ids": [
+        "2829d2666e18f122",
+        "71e73e96b5da6946",
+        "87177a2daf1233ef",
+        "b8534e5d355ca7e6",
+        "d5ac73b878b0f13e"
+      ]
+    },
+    {
+      "linha": 32,
+      "rotulo": "medoide",
+      "run_ids": [
+        "7dd456cff457a5a2",
+        "9e00fcc2c03aca77",
+        "a334e05d05a2154f",
+        "c7709550415c5706",
+        "d50a578315d0e1be"
+      ]
+    },
+    {
+      "linha": 33,
+      "rotulo": "medoide",
+      "run_ids": [
+        "4e6fe36ff6e5f84d",
+        "58bd08dbe0a12bda",
+        "6addc3fcf6a284c1",
+        "dfe7e9ab3c1123cd",
+        "e0966f12195ed3b3"
+      ]
+    },
+    {
+      "linha": 34,
+      "rotulo": "medoide",
+      "run_ids": [
+        "5425e1bd88460ddf",
+        "ade70168083594cf",
+        "be447db89027ecda",
+        "e45774b9577cd82b",
+        "e5e4263cfd1f080a"
+      ]
+    },
+    {
+      "linha": 35,
+      "rotulo": "medoide",
+      "run_ids": [
+        "8ab398838cb3631c",
+        "aa761a944eb029ba",
+        "ec3c0b9befe7d0b4",
+        "ee1e5a85ae471d66",
+        "f5f3b0e7222a5b15"
+      ]
+    },
+    {
+      "linha": 36,
+      "rotulo": "medoide",
+      "run_ids": [
+        "1b83ba6f33829986",
+        "5d64fdbfbf640ddf",
+        "665ac4961d2e096a",
+        "6e769ccc1d5ce77a",
+        "df4a1e8ca8a4fffc"
       ]
     }
   ]

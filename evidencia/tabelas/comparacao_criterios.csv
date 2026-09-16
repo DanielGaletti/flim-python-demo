@@ -1,8 +1,8 @@
 técnica,nível,Fβ (células pareadas),n pares,Δ vs random,p,Δ vs FLIM (K=3),p (FLIM),Δ vs controle do nível,veredito
 badge,imagem,0.430,95,-0.019,0.0105,—,—,—,suportado
-coreset,imagem,0.447,152,-0.014,0.1017,—,—,—,sem suporte
-entropy,imagem,0.450,269,0.023,0.0109,—,—,—,suportado
-least_confidence,imagem,0.419,193,0.004,0.7226,—,—,—,sem suporte
+coreset,imagem,0.396,234,-0.018,0.1027,—,—,—,sem suporte
+entropy,imagem,0.415,351,0.011,0.2076,—,—,—,sem suporte
+least_confidence,imagem,0.365,249,-0.003,0.7893,—,—,—,sem suporte
 margin,imagem,0.451,72,0.023,0.2110,—,—,—,sem suporte
 random,imagem,—,—,—,—,—,—,—,piso
 oracle,imagem (usa GT),0.686,31,0.011,0.0889,—,—,—,indicativo
@@ -10,10 +10,11 @@ flim_3img,linha de base,—,0,—,—,—,—,—,sem pares suficientes
 random_region,região,0.442,252,0.108,0.0000,—,—,—,suportado
 region_bald,região,0.462,135,0.077,0.0000,—,—,0.050,suportado
 region_entropy,região,0.437,66,0.014,0.4295,—,—,—,sem suporte
-flim_paper,?,0.473,51,-0.002,0.8969,—,—,—,sem suporte
-medoide,?,0.425,58,-0.059,0.0013,—,—,—,suportado
+flim_paper,?,0.467,69,-0.015,0.4074,—,—,—,sem suporte
+medoide,?,0.482,94,-0.043,0.0054,—,—,—,suportado
 regiao_aleatoria,?,—,0,—,—,—,—,—,sem pares suficientes
 regiao_borda,?,—,0,—,—,—,—,—,sem pares suficientes
+regiao_confusa,?,0.286,71,-0.004,0.9134,—,—,—,sem suporte
 regiao_incerteza,?,—,0,—,—,—,—,—,sem pares suficientes
 uniforme,?,—,0,—,—,—,—,—,sem pares suficientes
 uniforme_balanceado,?,—,0,—,—,—,—,—,sem pares suficientes

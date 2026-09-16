@@ -13,3 +13,24 @@ da remoção.
 .git/HEAD.lock (órfão de 2026-07-28 13:35, exatamente o horário do último
 commit) e .git/objects/maintenance.lock (órfão de 2026-06-29). Zero processos
 git em execução. Eram eles que impediam qualquer commit novo desde julho.
+
+## 2026-09-16 — dois fragmentos de linha truncada em evidencia/execucoes/execucoes.csv
+
+Removidos 2 de 10.148 registros. Nao eram medidas: eram os dois pedacos de uma
+UNICA linha partida no meio da escrita.
+
+  - um com `esquema_origem` cortado em 'split,crite'
+  - outro com `run_id` = 'KNOWN' (pedaco de UNKNOWN) e `experimento` = '3'
+
+Os dois tinham `fonte` e `registrado_em` vazios, e o `run_id` armazenado nao
+batia com o recalculado -- foi assim que `test_registro_do_projeto_e_valido`
+os pegou.
+
+Causa: o `paper_selection` da campanha `teto_oracle` foi interrompido a pedido
+do autor enquanto escrevia seu CSV, e o passo `arquivar_resultados.sh` +
+`migrar_evidencia.py` que vinha depois no mesmo script importou a ultima linha
+pela metade. Copia do arquivo antes do reparo em
+`evidencia/execucoes/execucoes.csv.antes_do_reparo` (fora do git, por tamanho).
+
+Licao: o script de campanha nao deve encadear a migracao logo apos uma etapa
+que pode ser interrompida sem verificar que ela terminou inteira.
