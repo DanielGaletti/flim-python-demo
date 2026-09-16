@@ -263,6 +263,36 @@
     </div>
 
     <div class="painel" style="margin-top:14px">
+      <h2>Onde anotar: você × modelo × Active Learning</h2>
+      <p class="dica">As <b>mesmas imagens</b> em todos os braços, o
+        <b>mesmo número de pixels marcados</b>, e a única diferença é
+        <b>quem escolhe o lugar</b>. É a pergunta que a outra comparação não
+        responde — lá a disputa é sobre <i>quais imagens</i> anotar.</p>
+      <ul class="dica" style="margin:6px 0 10px 18px">
+        <li><b>Você desenhou</b> — o traço que está na tela agora</li>
+        <li><b>O modelo propôs</b> — objeto na borda da predição dele, fundo
+          longe. É a pré-marcação</li>
+        <li><b>AL escolheu a região</b> — superpixels de maior entropia; o
+          rótulo vem do gabarito, simulando você respondendo</li>
+        <li><b>Região sorteada</b> — o controle. Sem ele não dá para saber se
+          o ganho veio de escolher bem a região ou apenas de anotar em blocos</li>
+      </ul>
+      <div class="barra">
+        <button id="bOnde" class="p">Comparar onde anotar</button>
+      </div>
+      <div id="oAviso" class="aviso" style="display:none"></div>
+      <table style="margin-top:10px"><thead><tr><th>quem escolheu o lugar</th>
+        <th>px marcados</th><th>Fβ</th><th>IoU</th><th>Δ vs você</th>
+        <th>treino</th></tr></thead>
+        <tbody id="tOnde"></tbody></table>
+      <div id="oMapas" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"></div>
+      <p class="dica" style="margin-top:8px"><b>Execução única.</b> Serve para
+        ver ONDE cada estratégia marca e ter intuição do efeito. O número da
+        dissertação vem de <code>scripts/onde_marcar.py</code>, com sementes e
+        teste pareado — nesta tela o acaso é maior que o efeito.</p>
+    </div>
+
+    <div class="painel" style="margin-top:14px">
       <h2>Pool disponível</h2>
       <table><thead><tr><th>imagem</th><th>entropia</th></tr></thead>
         <tbody id="tPool"></tbody></table>
@@ -855,6 +885,49 @@ $("#bRegiao").onclick = async () => {
 };
 const rResp = async v => rMostrar(await api("/api/regiao/responder",
                                             {resposta: v}));
+// ── onde anotar: quem escolhe o lugar ──────────────────────────────────────
+//
+// Os quatro bracos recebem o MESMO numero de pixels, cortado no menor entre
+// eles. Sem isso o braco que marca mais pixels ganharia por marcar mais, nao
+// por escolher melhor: medimos que o encoder sai de 54 para 200 kernels so
+// aumentando a densidade do traco.
+$("#bOnde").onclick = async () => {
+  const b = $("#bOnde"); b.disabled = true; b.textContent = "Rodando os quatro…";
+  $("#tOnde").innerHTML = ""; $("#oMapas").innerHTML = "";
+  $("#oAviso").style.display = "none";
+  const r = await api("/api/onde/comparar", {});
+  b.disabled = false; b.textContent = "Comparar onde anotar";
+  if (r.erro) { $("#oAviso").textContent = r.erro;
+                $("#oAviso").style.display = ""; return; }
+  $("#tOnde").innerHTML = (r.bracos || []).map(s => {
+    const d = s.delta == null ? "—"
+      : (s.delta > 0 ? "+" : "") + s.delta.toFixed(3);
+    const cor = s.delta > 0 ? "#1e9e4a" : (s.delta < 0 ? "#e8543f" : "inherit");
+    return `<tr${s.braco === r.melhor ? ' style="font-weight:600"' : ""}>`
+      + `<td>${s.rotulo}</td><td>${s.px ?? "—"}</td>`
+      + `<td>${s.erro ? "—" : s.fb.toFixed(3)}</td>`
+      + `<td>${s.erro ? "—" : s.iou.toFixed(3)}</td>`
+      + `<td style="color:${cor}">${d}</td>`
+      + `<td>${s.erro ? s.erro : s.t_treino + "s"}</td></tr>`;
+  }).join("");
+  // Os mapas sao o ponto da tela: da para VER que o AL concentra e o traco
+  // uniforme espalha.
+  $("#oMapas").innerHTML = (r.bracos || []).flatMap(s =>
+    Object.entries(s.overlays || {}).slice(0, 2).map(([img, src]) =>
+      `<figure style="margin:0;text-align:center">`
+      + `<div style="position:relative;width:150px;height:150px">`
+      + `<img src="/img/${img}.png" style="position:absolute;width:150px;height:150px">`
+      + `<img src="${src}" style="position:absolute;width:150px;height:150px">`
+      + `</div><figcaption class="dica">${s.rotulo}<br>${img}</figcaption></figure>`
+    )).join("");
+  if ((r.avisos || []).length) {
+    $("#oAviso").textContent = r.avisos.join(" · ");
+    $("#oAviso").style.display = "";
+  }
+  log(`onde anotar: melhor = ${r.melhor || "—"} `
+      + `(${r.n_val} imagens de validação)`, "#1e9e4a");
+};
+
 $("#bRFg").onclick = () => rResp("fg");
 $("#bRBg").onclick = () => rResp("bg");
 $("#bRPular").onclick = () => rResp("pular");

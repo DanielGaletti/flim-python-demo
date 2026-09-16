@@ -1490,7 +1490,8 @@ class H(BaseHTTPRequestHandler):
                      "/api/validar/responder", "/api/comp/iniciar",
                      "/api/comp/proxima", "/api/comp/treinar",
                      "/api/comp/prever", "/api/comp/premarcar",
-                     "/api/regiao/iniciar", "/api/regiao/responder"):
+                     "/api/regiao/iniciar", "/api/regiao/responder",
+                     "/api/onde/comparar"):
                 # A resposta é montada dentro do lock mas ENVIADA fora dele.
                 # Enviando dentro, o cliente recebe e dispara a requisição
                 # seguinte antes de o `finally` liberar a flag — e leva um 409
@@ -1512,6 +1513,20 @@ class H(BaseHTTPRequestHandler):
                                 int(body.get("sorteios", 3)))
                         elif p == "/api/comp/prever":
                             resultado = acao_comp_prever(body["id"])
+                        elif p == "/api/onde/comparar":
+                            # Compara ONDE anotar, nao QUAIS imagens anotar.
+                            # Roda varios treinos seguidos, por isso entra no
+                            # mesmo lock das acoes longas.
+                            from flim_app import onde as ONDE
+                            # `sys.modules[__name__]` e o modulo VIVO deste
+                            # servidor, que roda como __main__. Passar o nome
+                            # em vez de deixar o `onde` importar evita que ele
+                            # receba uma copia nova, de estado vazio.
+                            resultado = ONDE.comparar(
+                                sys.modules[__name__],
+                                body.get("bracos"),
+                                int(body.get("n_segments", 220)),
+                                int(body.get("semente", 0)))
                         elif p == "/api/regiao/iniciar":
                             resultado = acao_regiao_iniciar(
                                 body.get("id"), int(body.get("k", 6)))
