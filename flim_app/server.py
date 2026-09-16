@@ -834,7 +834,8 @@ def acao_comp_iniciar(k: int, criterios: list) -> dict:
               "fila_i": 0, "sugestor": None,
               "ordem": list(base),
               "bracos": {i: dict(v, imgs=[], enc=None, alvo=None, motivo="",
-                                 evento="") for i, v in base.items()}})
+                                 evento="", gratis=[])
+                         for i, v in base.items()}})
     return acao_comp_proxima()
 
 
@@ -863,6 +864,8 @@ def _resumo_bracos() -> list:
              "evento": D["bracos"][b].get("evento", ""),
              "compartilha_com": [n for n in junto.get(D["bracos"][b]["alvo"], [])
                                  if n != D["bracos"][b]["nome"]],
+             "gratis": list(D["bracos"][b].get("gratis", [])),
+             "concluido": len(D["bracos"][b]["imgs"]) >= D["k"],
              "imgs": list(D["bracos"][b]["imgs"])} for b in D["ordem"]]
 
 
@@ -987,6 +990,13 @@ def acao_comp_proxima() -> dict:
             b["alvo"], b["motivo"] = alvo, motivo
             b["evento"] = f"pediu {alvo}"
             break
+        # Registro PERSISTENTE do que veio pronto.
+        #
+        # `evento` e da rodada e some na seguinte. Sem um acumulado, um braco
+        # que completou o orcamento reaproveitando imagens aparece nas rodadas
+        # seguintes so como "orcamento concluido" -- e quem olha a tela le que
+        # ele "sumiu", em vez de ler que ele terminou antes.
+        b.setdefault("gratis", []).extend(reaproveitadas)
         if reaproveitadas:
             # Esta linha existe porque sem ela o braço parecia ter "sumido" da
             # rodada: o critério dele escolheu uma imagem que outro braço já

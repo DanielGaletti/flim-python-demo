@@ -1463,9 +1463,22 @@ function paineisBracos() {
     const compart = (b.compartilha_com || []).length
       ? ` <span class="dica">(mesma imagem de ${b.compartilha_com.join(", ")})</span>`
       : "";
+    // Um braço que terminou antes precisa DIZER que terminou, e por quê.
+    // Mostrar só "—" na coluna "próxima" faz parecer que ele sumiu da
+    // comparação — foi exatamente assim que a tela confundiu na rodada 7.
+    const gratis = (b.gratis || []).length;
+    const prox = b.concluido
+      ? `<b style="color:#1e9e4a">concluído</b>`
+      : (b.alvo || "—") + compart;
+    const nota = b.concluido
+      ? `orçamento fechado com ${b.imgs.length} imagens`
+        + (gratis ? ` — ${gratis} vieram prontas do outro braço `
+                    + `(${b.gratis.join(", ")}), por isso ele terminou antes`
+                  : "")
+      : (b.evento || "—");
     return `<tr><td><b>${b.nome}</b></td><td${cor}>${b.imgs.length}</td>`
-      + `<td>${b.alvo || "—"}${compart}</td>`
-      + `<td class="dica">${b.evento || "—"}</td></tr>`;
+      + `<td>${prox}</td>`
+      + `<td class="dica">${nota}</td></tr>`;
   };
   $("#cBracos").innerHTML = `<table style="margin:10px 0"><thead><tr>
     <th>braço</th><th>imgs</th><th>próxima</th><th>nesta rodada</th>
