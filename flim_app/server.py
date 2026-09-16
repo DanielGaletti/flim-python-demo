@@ -1195,6 +1195,79 @@ def _pontos_propostos(img_id: str, enc_path: str) -> dict:
             "centros_bg": [list(c) for c in centros_bg]}
 
 
+def acao_comp_dica(img_id: str, k: int = 5) -> dict:
+    """
+    As regiões onde o modelo de AL está mais confuso nesta imagem.
+
+    Devolve UM overlay com as `k` regiões mais incertas, a mais incerta com o
+    preenchimento mais forte. Não grava marcador nenhum: a decisão de traçar
+    ali continua sendo de quem anota.
+
+    O modelo consultado é o do braço de AL que pediu esta imagem. Se mais de um
+    pediu, o primeiro da ordem — os critérios divergem justamente em onde
+    acham incerteza, e misturar dois mapas mostraria uma incerteza que nenhum
+    modelo tem.
+    """
+    if not D["ativo"]:
+        return {"erro": "a comparação não está em andamento"}
+
+    candidatos = [b for bid, b in D["bracos"].items()
+                  if bid != "puro" and b.get("enc")]
+    if not candidatos:
+        return {"erro": "nenhum braço de AL tem modelo ainda — na rodada 1 a "
+                        "imagem é comum a todos e escolhida direto nos "
+                        "pixels, então não há incerteza para apontar. "
+                        "Anote esta rodada e a dica aparece na próxima."}
+    dono = next((b for b in candidatos if b.get("alvo") == img_id),
+                candidatos[0])
+
+    from flim_al.region_al import compute_superpixels, score_regions_by_entropy
+
+    arr = np.array(Image.open(os.path.join(_orig(), _arquivo(img_id))))
+    if arr.ndim == 2:
+        arr = np.stack([arr] * 3, axis=2)
+    arr = arr[:, :, :3]
+    h, w = arr.shape[:2]
+
+    modelo = _montar_modelo(dono["enc"])
+    prob = _mapa_prob(modelo, img_id)
+    if prob.shape != (h, w):
+        prob = np.array(Image.fromarray((prob * 255).astype(np.uint8))
+                        .resize((w, h), Image.BILINEAR)) / 255.0
+
+    sp = compute_superpixels(arr, n_segments=220)
+    scores = score_regions_by_entropy(sp, prob)
+    ordem = sorted(scores.items(), key=lambda kv: -kv[1])[:max(1, k)]
+    if not ordem:
+        return {"erro": "nenhuma região calculada"}
+
+    # Um modelo confiante em toda a imagem produz um ranking que ordena ruido.
+    # Dizer isso e melhor que pintar cinco regioes quaisquer e deixar a pessoa
+    # gastar o traco nelas.
+    maxima = float(ordem[0][1])
+    degenerado = maxima < 1e-4
+
+    rgba = np.zeros((h, w, 4), dtype=np.uint8)
+    for pos, (rid, _) in enumerate(ordem):
+        m = sp == rid
+        # A mais incerta aparece mais forte: a ordem tem que ser visivel, senao
+        # as cinco regioes parecem equivalentes.
+        alfa = int(95 - pos * (55 / max(1, len(ordem) - 1))) if len(ordem) > 1 else 95
+        rgba[m] = (255, 214, 0, max(28, alfa))
+        borda = m & ~(np.roll(m, 1, 0) & np.roll(m, -1, 0)
+                      & np.roll(m, 1, 1) & np.roll(m, -1, 1))
+        rgba[borda] = (255, 150, 0, 255)
+
+    return {
+        "img": img_id, "overlay": _png(rgba),
+        "braco": dono["nome"], "criterio": dono["criterio"],
+        "n_regioes": len(ordem),
+        "px": int(sum(int((sp == rid).sum()) for rid, _ in ordem)),
+        "entropia_maxima": round(maxima, 5),
+        "degenerado": bool(degenerado),
+    }
+
+
 def acao_comp_premarcar(img: str) -> dict:
     """
     Propõe os pontos e já os grava como marcadores da imagem.
@@ -1491,7 +1564,7 @@ class H(BaseHTTPRequestHandler):
                      "/api/comp/proxima", "/api/comp/treinar",
                      "/api/comp/prever", "/api/comp/premarcar",
                      "/api/regiao/iniciar", "/api/regiao/responder",
-                     "/api/onde/comparar"):
+                     "/api/onde/comparar", "/api/comp/dica"):
                 # A resposta é montada dentro do lock mas ENVIADA fora dele.
                 # Enviando dentro, o cliente recebe e dispara a requisição
                 # seguinte antes de o `finally` liberar a flag — e leva um 409
@@ -1506,6 +1579,9 @@ class H(BaseHTTPRequestHandler):
                                 body.get("criterios") or ["coreset"])
                         elif p == "/api/comp/proxima":
                             resultado = acao_comp_proxima()
+                        elif p == "/api/comp/dica":
+                            resultado = acao_comp_dica(
+                                body["id"], int(body.get("k", 5)))
                         elif p == "/api/comp/premarcar":
                             resultado = acao_comp_premarcar(body["id"])
                         elif p == "/api/comp/treinar":

@@ -352,6 +352,7 @@
       <button id="dBg">Pincel <span class="bg">fundo</span></button>
       <button id="dLimpar">Corrigir (apaga tudo)</button>
       <button id="dPre">Pré-marcar com o modelo</button>
+      <button id="dDica">Onde o modelo está confuso</button>
     </div>
 
     <div class="passo" id="cImgInfo"><b>—</b>
@@ -360,8 +361,10 @@
 
     <div id="palcoC" class="palco">
       <img id="cBase" alt="">
+      <img id="cDica" class="ov" style="display:none" alt="">
       <canvas id="cDes"></canvas>
     </div>
+    <div id="cDicaInfo" class="res"></div>
 
     <div class="barra" style="margin-top:10px">
       <button id="cConfirmar" class="p">Confirmar esta imagem</button>
@@ -1223,6 +1226,10 @@ function chipsCrit() {
 // ── canvas ──────────────────────────────────────────────────────────────────
 function cCarregar(id, centros) {
   cAlvo = id;
+  // A dica vale para UMA imagem. Deixa-la aparecendo na proxima mostraria a
+  // incerteza da imagem anterior sobre a imagem nova -- e a pessoa tracaria
+  // no lugar errado confiando nela.
+  $("#cDica").style.display = "none"; $("#cDicaInfo").textContent = "";
   const img = $("#cBase"), cv = $("#cDes");
   img.onload = () => {
     cv.width = img.naturalWidth; cv.height = img.naturalHeight;
@@ -1522,6 +1529,40 @@ $("#dLimpar").onclick = async () => {
        px: {fg: 0, bg: 0}} : f);
   cListaFila();
   dlog(`${cAlvo}: ${r.aviso}`, "#8a6d2b");
+};
+
+// ── dica de regiao: a maquina aponta, voce decide ──────────────────────────
+//
+// Nao e pre-marcacao. A pre-marcacao POE os pontos e o rotulo, e aceitar e o
+// caminho de menor esforco; a dica pinta a regiao e devolve a decisao. A
+// diferenca importa: medimos que a maquina acerta ONDE olhar e erra o ROTULO
+// -- seeds inteiramente automaticos custaram -0.214 de Fbeta contra os markers
+// do especialista. Entao ela aponta, e quem rotula e voce.
+$("#dDica").onclick = async () => {
+  if (!cAlvo) return;
+  const ov = $("#cDica"), b = $("#dDica");
+  if (ov.style.display !== "none") {          // segundo clique esconde
+    ov.style.display = "none"; $("#cDicaInfo").textContent = "";
+    b.textContent = "Onde o modelo está confuso"; return;
+  }
+  b.disabled = true; b.textContent = "Calculando…";
+  const r = await api("/api/comp/dica", {id: cAlvo, k: 5});
+  b.disabled = false; b.textContent = "Onde o modelo está confuso";
+  if (r.erro) { $("#cDicaInfo").textContent = r.erro;
+                dlog("dica: " + r.erro, "#e8543f"); return; }
+  ov.src = r.overlay; ov.style.display = "";
+  b.textContent = "Esconder a dica";
+  $("#cDicaInfo").innerHTML = r.degenerado
+    ? `<span style="color:#e8543f"><b>O modelo está confiante em toda a `
+      + `imagem</b> (entropia máxima ${r.entropia_maxima}). O ranking existe, `
+      + `mas está ordenando ruído — traçar aqui gasta o seu tempo sem `
+      + `informar o modelo.</span>`
+    : `<b>${r.n_regioes} regiões</b> onde <b>${r.braco}</b> está mais `
+      + `incerto (${r.px} px, entropia máxima ${r.entropia_maxima}). `
+      + `A mais forte é a mais incerta. Você decide se traça ali — a dica não `
+      + `marca nada sozinha.`;
+  dlog(`${cAlvo}: ${r.braco} está mais confuso em ${r.n_regioes} regiões`,
+       r.degenerado ? "#e8543f" : "#c98f00");
 };
 
 $("#dPre").onclick = async () => {
