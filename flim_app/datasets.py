@@ -55,9 +55,19 @@ REGISTRO: dict[str, dict] = {
         "orig": "data/conjunctiva/images",
         "label": "data/conjunctiva/labels",
         "arch": "arch_conjunctiva.json",
-        "area": [1000, 9000],
+        # Faixa de area do filtro pos-processamento, em PIXELS.
+        #
+        # Estava [1000, 9000], copiada do Schisto. Medido nas 39 primeiras
+        # mascaras: a imagem e 763x954 (o Schisto e 400x400) e o objeto tem
+        # area minima 17.408, mediana 89.426 e maxima 187.043 pixels. NENHUM
+        # dos 39 objetos cabia na faixa antiga, entao o filtro apagava toda
+        # componente prevista e o Fbeta ficava em 0,01 -- a tabela media o
+        # filtro, nao o metodo.
+        #
+        # A faixa nova cobre o menor objeto com folga e o maior com margem.
+        "area": [5000, 300000],
         "bloco": 2,
-        "descricao": "83 imagens 1079x863 RGB.",
+        "descricao": "83 imagens 763x954 RGB.",
     },
 }
 

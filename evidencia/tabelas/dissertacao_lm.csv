@@ -39,23 +39,23 @@ BraTS,8,coreset,3,0.230,0.956,0.202,9.1,1.8,-0.071,0.801
 BraTS,8,entropy,3,0.000,0.958,0.000,5.5,8.7,-0.300,0.191
 BraTS,8,least_confidence,3,0.000,0.958,0.000,13.1,4.2,-0.300,0.191
 BraTS,8,regiao_confusa,3,0.525,0.971,0.376,9.4,2.2,0.225,0.212
-Conjuntivite,2,FLIM puro,3,0.040,0.872,0.012,22.3,52.7,—,—
-Conjuntivite,2,coreset,3,0.038,0.872,0.013,31.9,57.6,-0.001,0.964
-Conjuntivite,2,entropy,3,0.070,0.873,0.024,27.4,65.2,0.030,0.108
-Conjuntivite,2,least_confidence,3,0.070,0.873,0.024,24.8,46.3,0.030,0.108
-Conjuntivite,2,regiao_confusa,3,0.082,0.875,0.028,30.4,46.3,0.042,0.070
-Conjuntivite,3,FLIM puro,3,0.010,0.868,0.003,30.3,43.9,—,—
-Conjuntivite,3,coreset,3,0.075,0.874,0.025,36.1,54.9,0.065,0.087
-Conjuntivite,3,entropy,3,0.055,0.873,0.019,28.5,58.3,0.044,0.191
-Conjuntivite,3,least_confidence,3,0.055,0.873,0.019,29.7,41.7,0.044,0.191
-Conjuntivite,3,regiao_confusa,3,0.026,0.868,0.009,52.4,34.1,0.016,0.624
-Conjuntivite,5,FLIM puro,3,0.030,0.870,0.011,53.0,53.9,—,—
-Conjuntivite,5,coreset,3,0.038,0.873,0.015,62.2,48.9,0.008,0.734
-Conjuntivite,5,entropy,3,0.044,0.874,0.015,48.6,65.2,0.014,0.726
-Conjuntivite,5,least_confidence,3,0.044,0.874,0.015,47.8,52.9,0.014,0.726
-Conjuntivite,5,regiao_confusa,3,0.054,0.872,0.019,75.8,36.1,0.024,0.695
-Conjuntivite,8,FLIM puro,3,0.010,0.872,0.003,78.8,56.9,—,—
-Conjuntivite,8,coreset,3,0.045,0.874,0.014,90.2,48.8,0.035,0.204
-Conjuntivite,8,entropy,3,0.051,0.873,0.017,83.0,49.5,0.041,0.126
-Conjuntivite,8,least_confidence,3,0.089,0.875,0.030,70.0,53.1,0.080,0.074
-Conjuntivite,8,regiao_confusa,3,0.068,0.872,0.025,127.1,44.6,0.059,0.192
+Conjuntivite,2,FLIM puro,3,0.582,0.907,0.379,13.4,29.3,—,—
+Conjuntivite,2,coreset,3,0.642,0.916,0.448,16.3,28.0,0.060,0.673
+Conjuntivite,2,entropy,3,0.635,0.916,0.415,16.3,27.7,0.053,0.638
+Conjuntivite,2,least_confidence,3,0.635,0.916,0.415,16.4,27.9,0.053,0.638
+Conjuntivite,2,regiao_confusa,3,0.442,0.900,0.241,22.9,28.1,-0.139,0.236
+Conjuntivite,3,FLIM puro,3,0.550,0.857,0.422,24.0,29.9,—,—
+Conjuntivite,3,coreset,3,0.587,0.909,0.332,25.5,27.6,0.037,0.723
+Conjuntivite,3,entropy,3,0.591,0.911,0.363,18.5,27.7,0.041,0.827
+Conjuntivite,3,least_confidence,3,0.591,0.911,0.363,18.3,27.5,0.041,0.827
+Conjuntivite,3,regiao_confusa,3,0.443,0.864,0.306,39.4,28.2,-0.107,0.556
+Conjuntivite,5,FLIM puro,3,0.648,0.903,0.462,29.8,28.4,—,—
+Conjuntivite,5,coreset,3,0.748,0.933,0.530,38.0,29.3,0.100,0.057
+Conjuntivite,5,entropy,3,0.667,0.923,0.433,29.9,27.6,0.018,0.770
+Conjuntivite,5,least_confidence,3,0.667,0.923,0.433,30.1,27.3,0.018,0.770
+Conjuntivite,5,regiao_confusa,3,0.261,0.883,0.169,57.2,27.6,-0.387,0.158
+Conjuntivite,8,FLIM puro,3,0.781,0.940,0.611,50.5,27.8,—,—
+Conjuntivite,8,coreset,3,0.636,0.920,0.422,54.3,28.3,-0.144,0.157
+Conjuntivite,8,entropy,3,0.604,0.910,0.391,49.8,28.0,-0.176,0.076
+Conjuntivite,8,least_confidence,3,0.441,0.898,0.278,48.6,27.6,-0.340,0.133
+Conjuntivite,8,regiao_confusa,3,0.308,0.876,0.187,98.5,28.0,-0.473,0.093

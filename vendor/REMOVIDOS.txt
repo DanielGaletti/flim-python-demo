@@ -34,3 +34,23 @@ pela metade. Copia do arquivo antes do reparo em
 
 Licao: o script de campanha nao deve encadear a migracao logo apos uma etapa
 que pode ser interrompida sem verificar que ela terminou inteira.
+
+## 2026-09-19 — 120 execucoes de conjuntivite medidas com filtro de area errado
+
+Tiradas do registro ativo e preservadas em
+`evidencia/execucoes/descartados_filtro_conjuntivite.csv`. Nao foram apagadas.
+
+Elas sao execucoes validas de uma CONFIGURACAO invalida. O filtro de area do
+pos-processamento da conjuntivite estava em [1000, 9000] pixels, copiado do
+Schisto. Medido nas 39 primeiras mascaras: a imagem da conjuntivite e 763x954
+(o Schisto e 400x400) e o objeto tem area minima 17.408, mediana 89.426 e
+maxima 187.043 pixels. NENHUM dos 39 objetos cabia na faixa, entao o filtro
+descartava toda componente prevista e o Fbeta ficava entre 0,006 e 0,092 em
+todos os bracos e todos os K.
+
+A tabela estava medindo o filtro, nao o metodo. Como `run_id` nao inclui a
+faixa de area, deixa-las no registro faria a reexecucao ser rejeitada como
+duplicata do mesmo id -- por isso a separacao, e nao so uma anotacao.
+
+Faixa corrigida para [5000, 300000] em flim_app/datasets.py, com a medicao
+registrada no proprio comentario.
