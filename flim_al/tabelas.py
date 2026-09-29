@@ -942,7 +942,7 @@ def tabela_dissertacao(recs=None, experimento: str = "tabela_k_por_modelo",
     ks = sorted({r["orcamento"] for r in sub},
                 key=lambda x: int(x) if str(x).isdigit() else 0)
     crits = [c for c in ("random", "coreset", "entropy", "least_confidence",
-                         "regiao_confusa")
+                         "regiao_confusa", "oracle")
              if c in {r["criterio"] for r in sub}]
 
     t = Tabela(

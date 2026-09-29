@@ -1,0 +1,63 @@
+{
+  "id": "melhoria_2026-09-29",
+  "declarado_em": "2026-09-29T05:30:25+00:00",
+  "git_commit": "f4cb3fc",
+  "pergunta": "Existe alguma melhoria defensavel sobre o FLIM puro?",
+  "nota": "Rodar a lista inteira declarada antes e o oposto de p-hacking. As duas campanhas e todas as suas celulas estao fixadas aqui antes da primeira execucao; todas serao reportadas, inclusive negativas.",
+  "correcao": "Benjamini-Hochberg q=0,05 sobre o conjunto de testes de cada campanha",
+  "campanhas": [
+    {
+      "id": "densidade",
+      "pergunta": "Com orcamento FIXO de pixels, anotar menos imagens mais densamente entrega mais que espalhar por oito?",
+      "porque": "Medido antes: uma imagem com 4.037 px marcados rende 54 kernels por camada e com 23.095 px rende 200/200/183/183; oito imagens esparsas rendem 200/200/200/200 gastando 32 mil px. Isso e indicio de que concentrar entrega a mesma capacidade por menos trabalho -- mas mediu CAPACIDADE, nao Fbeta. Esta campanha mede Fbeta.",
+      "bracos": "1, 2, 3, 5 e 8 imagens recebendo o mesmo total de pixels",
+      "referencia": "8 imagens (o extremo espalhado)",
+      "orcamentos_px_total": [
+        8000,
+        24000
+      ],
+      "sementes": [
+        0,
+        1,
+        2
+      ],
+      "datasets": [
+        "schisto",
+        "brats",
+        "conjunctiva"
+      ],
+      "decoders": [
+        "labeled_marker",
+        "decoder_2"
+      ],
+      "celulas": 90,
+      "sinal_contrario_ja_visto": "No smoke com 24.000 px no Schisto, 1 imagem deu Fbeta 0,000 contra 0,711 de 8 imagens. Uma imagem so pode nao cobrir a variedade do dataset. A campanha completa dira se ha ponto otimo em 2, 3 ou 5.",
+      "o_que_falsearia": "Se nenhum braco de poucas imagens superar o de oito, concentrar nao compensa e a hipotese morre."
+    },
+    {
+      "id": "teto_oracle",
+      "pergunta": "Quanta margem existe na escolha de imagens?",
+      "porque": "84 execucoes com oracle existem no registro e TODAS estao em paper_selection_POOL_COM_VAZAMENTO. O teto nunca foi medido limpo. Sem ele, 'AL nao melhora' nao distingue criterio ruim de problema sem margem.",
+      "braco": "oracle = passo 7 do Algoritmo 1: a cada rodada escolhe a imagem onde o modelo atual vai PIOR, medido contra o gabarito. Usa GT, entao nao e metodo -- e teto.",
+      "referencia": "random (FLIM puro) da campanha `dissertacao`, mesma particao e sementes",
+      "orcamentos_K": [
+        2,
+        3,
+        5,
+        8
+      ],
+      "sementes": [
+        0,
+        1,
+        2
+      ],
+      "datasets": [
+        "schisto",
+        "brats",
+        "conjunctiva"
+      ],
+      "celulas": 36,
+      "o_que_falsearia": "Se o oracle nao se afastar do sorteio, nenhum criterio poderia, e a conclusao vira: a escolha de imagens tem pouca margem neste regime. Se ele se afastar muito, a conclusao vira: ha margem e os criterios nao a aproveitam."
+    }
+  ]
+}

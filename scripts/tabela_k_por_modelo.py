@@ -79,7 +79,7 @@ DECODERS = [
 IMAGENS_ARTIGO = ["000002", "000013", "000156", "000391", "000405"]
 
 CRITERIOS = ["flim_paper", "random", "medoide", "coreset", "entropy",
-             "least_confidence", "regiao_confusa"]
+             "least_confidence", "regiao_confusa", "oracle"]
 
 # Criterios que mudam ONDE se anota, e nao QUAIS imagens. Eles herdam a
 # selecao do braco `random` da mesma semente, para que a unica diferenca
@@ -136,8 +136,29 @@ def _markers(cfg, ds_id, sel, dest, semente) -> int:
     return n
 
 
-def _escolhe_uma(criterio, candidatos, sel, pool, cfg, enc) -> str:
+def _escolhe_uma(criterio, candidatos, sel, pool, cfg, enc, device="cpu") -> str:
     """A próxima imagem, segundo o encoder ATUAL."""
+    if criterio == "oracle":
+        # Passo 7 do Algoritmo 1 do artigo: escolhe a imagem em que o modelo
+        # ATUAL vai pior, medida contra o gabarito.
+        #
+        # Usa GT do pool inteiro, entao NAO e um metodo -- e o TETO. Ele
+        # responde a pergunta que nenhum criterio responde sozinho: existe
+        # margem a ganhar escolhendo imagem? Se nem o oracle se afasta do
+        # sorteio, nenhum criterio poderia, e "AL nao ajuda" deixa de ser
+        # falha dos criterios e passa a ser propriedade do problema.
+        pior, alvo = None, candidatos[0]
+        for img in candidatos:
+            try:
+                m = evaluate_decoder(enc, "labeled_marker", cfg["bloco"],
+                                     [_arquivo(cfg, img)], cfg["orig"],
+                                     cfg["label"], device,
+                                     area_range=tuple(cfg["area"]))
+            except Exception:                                 # noqa: BLE001
+                continue
+            if pior is None or m["fb"] < pior:
+                pior, alvo = m["fb"], img
+        return alvo
     if criterio == "coreset":
         from flim_al.coreset_badge import (coreset_select,
                                            extract_encoder_features)
@@ -318,7 +339,7 @@ def _seleciona(criterio, pool, k, cfg, enc0, rng, work, ds_id, device,
     sel, enc = [], enc0
     for rodada in range(min(k, len(pool))):
         cand = [x for x in pool if x not in sel]
-        sel.append(_escolhe_uma(criterio, cand, sel, pool, cfg, enc))
+        sel.append(_escolhe_uma(criterio, cand, sel, pool, cfg, enc, device))
         if len(sel) >= k:
             break
         # Retreina com o que já está anotado. É este passo que torna o laço
