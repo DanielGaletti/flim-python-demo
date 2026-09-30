@@ -1,0 +1,137 @@
+{
+  "tabela": "artigo_vs_regiao",
+  "titulo": "Tabela do artigo reproduzida × os mesmos cliques realocados por AL de região",
+  "gerado_em": "2026-09-30T16:45:21+00:00",
+  "gerado_por": "flim_al/tabelas.py",
+  "git_commit": "97c2421c4e19-sujo",
+  "registro": "evidencia/execucoes/execucoes.csv",
+  "input_latex": "\\input{generated/tables/artigo_vs_regiao.tex}",
+  "linhas": [
+    {
+      "linha": 1,
+      "rotulo": "FLIM_lm",
+      "run_ids": [
+        "0317f08973dba95e",
+        "0ef0ff6accf359e5",
+        "2d808cdc20d5a26e",
+        "32706e0303d35711",
+        "4608ef62586e7eb3",
+        "7275a789beaeacd6",
+        "8263d412fd93b9ef",
+        "8b25893e1581a68b",
+        "9210c7c61dee3ecc",
+        "cc3cbab0b186ad4e",
+        "e1b14dce6259f12f",
+        "e3d49cf4ef30b7ef"
+      ]
+    },
+    {
+      "linha": 2,
+      "rotulo": "FLIM_pb",
+      "run_ids": [
+        "06493c786b68d659",
+        "1726910aeaee4118",
+        "1e3a3d71b28829fc",
+        "388e30ee636fac50",
+        "4f4835bd9781107c",
+        "55a51a24642918e3",
+        "81d650eb2bb48cc7",
+        "971a6d50be56073c",
+        "b243e30f3ea47bcb",
+        "b31740d9fda62bc3",
+        "df6ff00b3493fcb9",
+        "f78d74f9bd027b43"
+      ]
+    },
+    {
+      "linha": 3,
+      "rotulo": "FLIM_mb",
+      "run_ids": [
+        "050b194967a2ca3e",
+        "0caee83552b4d67e",
+        "1cd38f700f193618",
+        "265ba633b6562960",
+        "296add953c8e3816",
+        "36ccfdc574c463f0",
+        "4a17b42611a33158",
+        "6da45f91821b99e7",
+        "89368e96f82ad735",
+        "c4a4b48695d1b8c2",
+        "f8dd4153e39a8739",
+        "fd4b0fe4912431e6"
+      ]
+    },
+    {
+      "linha": 4,
+      "rotulo": "FLIM_at",
+      "run_ids": [
+        "151c8cd0d953dd1a",
+        "2e4b0c79dd01ee33",
+        "2fa304889032cdd3",
+        "3b357729cc6e7cc0",
+        "455c94afef308f88",
+        "7e9e483bc649e669",
+        "91aa703f7f1721e4",
+        "bc5e3af3ab35aef9",
+        "c0f3f8984a641134",
+        "ce84b8e0bd6be92c",
+        "e4907f804aa431df",
+        "f73c947218fca859"
+      ]
+    },
+    {
+      "linha": 5,
+      "rotulo": "FLIM_ts",
+      "run_ids": [
+        "13838668e5ba9cab",
+        "269a954077f58188",
+        "50e1fd40458ad985",
+        "57286750fd6bf02c",
+        "59ef456ae4f99945",
+        "661adef8edc58606",
+        "72aedd6ace8a7d5e",
+        "7a708264634f0186",
+        "a67df130eb86b6f9",
+        "b91ff042674ca361",
+        "f34c378da925ece0",
+        "fec7450bd9740a85"
+      ]
+    },
+    {
+      "linha": 6,
+      "rotulo": "FLIM_lt",
+      "run_ids": [
+        "1aa0fdbc512d8f7a",
+        "2e724fb16b2810c5",
+        "59d104eea1cd40e5",
+        "623893376503a569",
+        "a28b798536994a55",
+        "aab15b6c6fd027ce",
+        "b18bf605d8195013",
+        "bfff398b83b04933",
+        "e46e9d074a5165ed",
+        "e70600ed54968b16",
+        "e7c6fe0806c96f09",
+        "fe34cafda3e53bb4"
+      ]
+    },
+    {
+      "linha": 7,
+      "rotulo": "FLIM_ts*",
+      "run_ids": [
+        "186af60cc99060c7",
+        "3694a62606ae1797",
+        "3bea6249c039e82a",
+        "410b13fcf1cc7edf",
+        "449b53c6575af791",
+        "4a949419437fd102",
+        "549e3bf82ab15cfc",
+        "5ad426760c8d707a",
+        "6e93d98060dcefac",
+        "7ef6f49369c37704",
+        "9fbbb45964d6e769",
+        "f5a42aa165e8dd97"
+      ]
+    }
+  ]
+}

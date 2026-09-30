@@ -1,0 +1,44 @@
+{
+  "id": "artigo_vs_regiao_2026-09-30",
+  "declarado_em": "2026-09-30T14:08:11+00:00",
+  "git_commit": "97c2421",
+  "pergunta": "A tabela do artigo muda se o Active Learning escolher ONDE os mesmos cliques do especialista caem dentro das mesmas imagens?",
+  "e_selecao_de_REGIAO": "Em nenhum dos dois bracos ha escolha de imagem. As imagens sao as que os usuarios A e B de fato anotaram: 3 por split.",
+  "bracos": {
+    "artigo": "os tracos REAIS, intactos — a reproducao da tabela do artigo",
+    "al_regiao": "mesmas imagens, traco de FUNDO copiado identico, cliques de objeto realocados para os superpixels de maior incerteza, dentro do objeto, com a MESMA contagem de pixels"
+  },
+  "o_que_varia": "Somente a posicao dos cliques de objeto. Verificado no smoke: fg=1716 e bg=1782 identicos nos dois bracos.",
+  "marker_origem": {
+    "artigo": "real",
+    "al_regiao": "real_realocado",
+    "por_que": "A quantidade e as imagens vem do especialista; a posicao vem da maquina. Registrar a distincao importa: este projeto ja produziu conclusao falsa comparando traco real com sintetico sem perceber."
+  },
+  "diferencas_conhecidas_contra_o_artigo": [
+    "Sem Dynamic Trees: o binario iftSMansoniDelineation e ELF de Linux e nao executa nesta maquina. Pos-processamento Otsu + filtro de area, igual nos dois bracos. Por isso os valores ABSOLUTOS nao reproduzem a Tabela III — no smoke, FLIM_lm deu 0,758 contra 0,860 do artigo.",
+    "Avaliacao em amostra declarada de 250 das 848 imagens de Z1\\T, a MESMA em todos os bracos e splits. As 848 inteiras x 7 decoders x 12 combinacoes levariam ~10 h."
+  ],
+  "o_que_este_experimento_mede": "A DIFERENCA entre os dois bracos, que e valida mesmo com os absolutos deslocados.",
+  "usuarios": [
+    "A",
+    "B"
+  ],
+  "splits": [
+    1,
+    2,
+    3
+  ],
+  "decoders": [
+    "FLIM_lm",
+    "FLIM_pb",
+    "FLIM_mb",
+    "FLIM_at",
+    "FLIM_ts",
+    "FLIM_lt",
+    "FLIM_ts*"
+  ],
+  "celulas": 12,
+  "avaliacoes": 84,
+  "teste": "t pareado por (usuario, split) contra o braco do artigo, por decoder; Benjamini-Hochberg q=0,05 sobre os 7 testes",
+  "o_que_falsearia": "Se nenhum decoder mostrar diferenca, a posicao do clique dentro do objeto nao muda a tabela do artigo."
+}

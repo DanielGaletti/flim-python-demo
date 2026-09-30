@@ -1,9 +1,9 @@
 {
   "tabela": "proveniencia_registro",
   "titulo": "Proveniência disponível por família de experimento",
-  "gerado_em": "2026-09-30T05:24:24+00:00",
+  "gerado_em": "2026-09-30T16:45:22+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "0cef6f10b254-sujo",
+  "git_commit": "97c2421c4e19-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/proveniencia_registro.tex}",
   "linhas": [
@@ -10269,6 +10269,100 @@
     },
     {
       "linha": 23,
+      "rotulo": "artigo_vs_regiao",
+      "run_ids": [
+        "0317f08973dba95e",
+        "050b194967a2ca3e",
+        "06493c786b68d659",
+        "0caee83552b4d67e",
+        "0ef0ff6accf359e5",
+        "13838668e5ba9cab",
+        "151c8cd0d953dd1a",
+        "1726910aeaee4118",
+        "186af60cc99060c7",
+        "1aa0fdbc512d8f7a",
+        "1cd38f700f193618",
+        "1e3a3d71b28829fc",
+        "265ba633b6562960",
+        "269a954077f58188",
+        "296add953c8e3816",
+        "2d808cdc20d5a26e",
+        "2e4b0c79dd01ee33",
+        "2e724fb16b2810c5",
+        "2fa304889032cdd3",
+        "32706e0303d35711",
+        "3694a62606ae1797",
+        "36ccfdc574c463f0",
+        "388e30ee636fac50",
+        "3b357729cc6e7cc0",
+        "3bea6249c039e82a",
+        "410b13fcf1cc7edf",
+        "449b53c6575af791",
+        "455c94afef308f88",
+        "4608ef62586e7eb3",
+        "4a17b42611a33158",
+        "4a949419437fd102",
+        "4f4835bd9781107c",
+        "50e1fd40458ad985",
+        "5129c38b2dae3efd",
+        "549e3bf82ab15cfc",
+        "55a51a24642918e3",
+        "57286750fd6bf02c",
+        "59d104eea1cd40e5",
+        "59ef456ae4f99945",
+        "5ad426760c8d707a",
+        "623893376503a569",
+        "661adef8edc58606",
+        "6da45f91821b99e7",
+        "6e93d98060dcefac",
+        "7275a789beaeacd6",
+        "72aedd6ace8a7d5e",
+        "7a708264634f0186",
+        "7e9e483bc649e669",
+        "7ef6f49369c37704",
+        "81d650eb2bb48cc7",
+        "8263d412fd93b9ef",
+        "89368e96f82ad735",
+        "8b25893e1581a68b",
+        "8efbaafea00661b8",
+        "91aa703f7f1721e4",
+        "9210c7c61dee3ecc",
+        "971a6d50be56073c",
+        "9fbbb45964d6e769",
+        "a28b798536994a55",
+        "a67df130eb86b6f9",
+        "aab15b6c6fd027ce",
+        "b18bf605d8195013",
+        "b243e30f3ea47bcb",
+        "b31740d9fda62bc3",
+        "b91ff042674ca361",
+        "bc5e3af3ab35aef9",
+        "bfff398b83b04933",
+        "c0f3f8984a641134",
+        "c4a4b48695d1b8c2",
+        "c764f7e95c145840",
+        "cc3cbab0b186ad4e",
+        "ce84b8e0bd6be92c",
+        "df6ff00b3493fcb9",
+        "e1b14dce6259f12f",
+        "e3d49cf4ef30b7ef",
+        "e46e9d074a5165ed",
+        "e4907f804aa431df",
+        "e70600ed54968b16",
+        "e7c6fe0806c96f09",
+        "f03dcfc0c7438399",
+        "f34c378da925ece0",
+        "f5a42aa165e8dd97",
+        "f73c947218fca859",
+        "f78d74f9bd027b43",
+        "f8dd4153e39a8739",
+        "fd4b0fe4912431e6",
+        "fe34cafda3e53bb4",
+        "fec7450bd9740a85"
+      ]
+    },
+    {
+      "linha": 24,
       "rotulo": "al_curve",
       "run_ids": [
         "024545e90de4912e",
@@ -10358,7 +10452,7 @@
       ]
     },
     {
-      "linha": 24,
+      "linha": 25,
       "rotulo": "brats",
       "run_ids": [
         "0093a0900f22c556",
@@ -10448,7 +10542,7 @@
       ]
     },
     {
-      "linha": 25,
+      "linha": 26,
       "rotulo": "al_encoder_results",
       "run_ids": [
         "0350a4e9f268cf66",
@@ -10524,7 +10618,7 @@
       ]
     },
     {
-      "linha": 26,
+      "linha": 27,
       "rotulo": "al_encoder_results_dt",
       "run_ids": [
         "09fc0985d965b982",
@@ -10592,7 +10686,7 @@
       ]
     },
     {
-      "linha": 27,
+      "linha": 28,
       "rotulo": "paper_selection_brats",
       "run_ids": [
         "0e8fb489cd91e5e4",
@@ -10652,7 +10746,7 @@
       ]
     },
     {
-      "linha": 28,
+      "linha": 29,
       "rotulo": "paper_selection_uB_POOL_COM_VAZAMENTO",
       "run_ids": [
         "0247add47a345f9a",
@@ -10712,7 +10806,7 @@
       ]
     },
     {
-      "linha": 29,
+      "linha": 30,
       "rotulo": "al_bald_results",
       "run_ids": [
         "0308d9aebf0b85b5",
@@ -10766,7 +10860,7 @@
       ]
     },
     {
-      "linha": 30,
+      "linha": 31,
       "rotulo": "al_flim_curve",
       "run_ids": [
         "006165115bc3bf33",
@@ -10814,7 +10908,7 @@
       ]
     },
     {
-      "linha": 31,
+      "linha": 32,
       "rotulo": "curva",
       "run_ids": [
         "0a414af5eb53ff22",
@@ -10844,7 +10938,7 @@
       ]
     },
     {
-      "linha": 32,
+      "linha": 33,
       "rotulo": "al_region_results",
       "run_ids": [
         "031d731670fb61e3",

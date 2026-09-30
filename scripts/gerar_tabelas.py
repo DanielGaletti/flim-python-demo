@@ -46,6 +46,7 @@ CATALOGO = [
     ("k_por_modelo", lambda recs: tb.tabela_k_por_modelo(recs)),
     ("al_vs_flim", lambda recs: tb.tabela_al_vs_flim(recs)),
     ("onde_marcar", lambda recs: tb.tabela_onde_marcar(recs)),
+    ("artigo_vs_regiao", lambda recs: tb.tabela_artigo_vs_regiao(recs)),
     ("dissertacao_lm", lambda recs: tb.tabela_dissertacao(recs,
                                                           decoder="FLIM_lm")),
     ("dissertacao_pb", lambda recs: tb.tabela_dissertacao(recs,
