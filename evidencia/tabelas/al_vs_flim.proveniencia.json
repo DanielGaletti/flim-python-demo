@@ -1,9 +1,9 @@
 {
   "tabela": "al_vs_flim",
   "titulo": "Melhora sobre o FLIM do artigo e sobre o sorteio, pareada por semente",
-  "gerado_em": "2026-09-29T08:58:49+00:00",
+  "gerado_em": "2026-09-30T05:24:23+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "dd5dca7095ff-sujo",
+  "git_commit": "0cef6f10b254-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/al_vs_flim.tex}",
   "linhas": [

@@ -1,0 +1,38 @@
+{
+  "id": "clique_2026-09-30",
+  "declarado_em": "2026-09-30T03:09:07+00:00",
+  "git_commit": "0cef6f1",
+  "pergunta": "Mesmas imagens, mesmo numero de cliques, mesmo traco de fundo. Muda so ONDE os cliques de objeto caem. Isso muda o Fbeta?",
+  "por_que_este_desenho": "Isola UMA variavel. Nos experimentos anteriores a comparacao mudava duas ou tres coisas ao mesmo tempo (quais imagens, quantos pixels, o balanco entre objeto e fundo) e cada uma exigiu um braco de controle proprio. Aqui o fundo e COPIADO, nao regerado, e a contagem de pixels e identica -- verificado no smoke: fg=1468 e bg=9769 nos tres.",
+  "bracos": {
+    "flim_puro": "clique na BORDA do objeto — o que o artigo faz, sem AL",
+    "al_regiao": "clique onde o modelo esta mais incerto, dentro do objeto",
+    "aleatorio_objeto": "clique em posicao sorteada dentro do objeto — CONTROLE: separa 'o AL escolheu bem' de 'qualquer lugar dentro do objeto serve'"
+  },
+  "todos_dentro_do_objeto": "Os tres braços clicam sempre DENTRO do objeto, entao o rotulo e sempre correto. So a posicao difere.",
+  "de_onde_vem_a_incerteza": "De um encoder treinado no braco flim_puro das MESMAS imagens. Ordem natural: o especialista anota como sempre, treina, e so entao o modelo tem opiniao sobre onde faltou informacao.",
+  "datasets": [
+    "schisto",
+    "brats",
+    "conjunctiva"
+  ],
+  "orcamentos_K": [
+    3,
+    5
+  ],
+  "sementes": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "decoders": [
+    "labeled_marker (FLIM_lm)",
+    "decoder_2 (FLIM_pb)"
+  ],
+  "celulas": 90,
+  "teste": "t pareado por semente contra flim_puro, Benjamini-Hochberg q=0,05",
+  "regra_de_parada": "Rodar as 90 celulas e reportar todas.",
+  "o_que_falsearia": "Se al_regiao nao diferir de flim_puro, a posicao do clique dentro do objeto nao importa. Se diferir mas empatar com aleatorio_objeto, o que importa e clicar no interior em vez da borda, e nao a escolha do AL."
+}
