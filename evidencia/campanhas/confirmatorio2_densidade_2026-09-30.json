@@ -1,0 +1,39 @@
+{
+  "id": "confirmatorio2_densidade_lm_2026-09-30",
+  "declarado_em": "2026-09-30T03:04:04+00:00",
+  "git_commit": "dd5dca7",
+  "tipo": "CONFIRMATORIO — hipotese unica, sementes ineditas, UM teste",
+  "hipotese": "Na conjuntivite, com 8.000 pixels de orcamento total e decoder FLIM_lm, concentrar em 2 imagens da Fbeta MAIOR que espalhar por 8.",
+  "historico_honesto": [
+    {
+      "etapa": "exploratoria (melhoria_2026-09-29), sementes 0-2",
+      "achado": "7 das 8 celulas de conjuntivite positivas, maior Delta +0,371, nenhuma significativa"
+    },
+    {
+      "etapa": "confirmatorio 1 (sementes 3-12)",
+      "primario_declarado": "FLIM_pb: Delta +0,147, p=0,072 — NAO confirmado",
+      "secundario_descritivo": "FLIM_lm: Delta +0,300, p=0,0016, 9/10 sementes positivas"
+    },
+    {
+      "etapa": "este confirmatorio 2 (sementes 13-22)",
+      "por_que": "O FLIM_lm nao era o teste declarado no confirmatorio 1. Promove-lo a resultado depois de ver o p seria trocar de teste apos o fato — exatamente o que o pre-registro impede. Entao ele vira hipotese primaria AQUI, e e testado em sementes que nenhuma etapa anterior usou."
+    }
+  ],
+  "teste_primario": "decoder FLIM_lm, 2 imagens contra 8, conjuntivite, total 8.000 px, t pareado bicaudal, alpha=0,05",
+  "sementes": [
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+  ],
+  "sem_correcao_multipla": "Um unico teste declarado; nao ha escolha a corrigir.",
+  "o_que_falsearia": "p >= 0,05.",
+  "se_confirmar": "Sera a primeira melhoria estabelecida do trabalho: sob orcamento fixo de pixels anotados, concentrar em poucas imagens supera espalhar — em dataset homogeneo. E preserva a premissa do FLIM melhor que o Active Learning, porque usa MENOS imagens, nao mais.",
+  "limite_declarado": "Vale para a conjuntivite. No Parasitas o efeito e oposto e significativo (-0,685, p=0,0003): concentrar piora. A explicacao candidata e a homogeneidade do dataset, e ela ainda NAO foi testada."
+}

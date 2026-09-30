@@ -1,9 +1,9 @@
 {
   "tabela": "dissertacao_lm",
   "titulo": "FLIM puro × Active Learning nos três datasets (FLIM_lm)",
-  "gerado_em": "2026-09-28T19:06:34+00:00",
+  "gerado_em": "2026-09-29T08:58:49+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "46785b3af728-sujo",
+  "git_commit": "dd5dca7095ff-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/dissertacao_lm.tex}",
   "linhas": [
@@ -56,13 +56,22 @@
       "linha": 6,
       "rotulo": "Parasitas",
       "run_ids": [
+        "506551484ad8eca8",
+        "90ceb0c21b2cb2d6",
+        "dfce4e6635fa2dfe"
+      ]
+    },
+    {
+      "linha": 7,
+      "rotulo": "Parasitas",
+      "run_ids": [
         "90bd9b43bb006d1b",
         "c5ff5b3327665b1e",
         "d52aa54b87c8827b"
       ]
     },
     {
-      "linha": 7,
+      "linha": 8,
       "rotulo": "Parasitas",
       "run_ids": [
         "0a13413dd2ea1d57",
@@ -71,7 +80,7 @@
       ]
     },
     {
-      "linha": 8,
+      "linha": 9,
       "rotulo": "Parasitas",
       "run_ids": [
         "5387bc128d2a5acc",
@@ -80,7 +89,7 @@
       ]
     },
     {
-      "linha": 9,
+      "linha": 10,
       "rotulo": "Parasitas",
       "run_ids": [
         "8394ba94cc800194",
@@ -89,7 +98,7 @@
       ]
     },
     {
-      "linha": 10,
+      "linha": 11,
       "rotulo": "Parasitas",
       "run_ids": [
         "07a6ed67670084af",
@@ -98,7 +107,16 @@
       ]
     },
     {
-      "linha": 11,
+      "linha": 12,
+      "rotulo": "Parasitas",
+      "run_ids": [
+        "0dc72a0eb369c022",
+        "4c6d54ad8033e716",
+        "52848c5341e24178"
+      ]
+    },
+    {
+      "linha": 13,
       "rotulo": "Parasitas",
       "run_ids": [
         "2d1bbd0df10f3532",
@@ -107,7 +125,7 @@
       ]
     },
     {
-      "linha": 12,
+      "linha": 14,
       "rotulo": "Parasitas",
       "run_ids": [
         "695682e131051ca3",
@@ -116,7 +134,7 @@
       ]
     },
     {
-      "linha": 13,
+      "linha": 15,
       "rotulo": "Parasitas",
       "run_ids": [
         "5f25f4c5599d6991",
@@ -125,7 +143,7 @@
       ]
     },
     {
-      "linha": 14,
+      "linha": 16,
       "rotulo": "Parasitas",
       "run_ids": [
         "782cad7dff2f0140",
@@ -134,7 +152,7 @@
       ]
     },
     {
-      "linha": 15,
+      "linha": 17,
       "rotulo": "Parasitas",
       "run_ids": [
         "1123fecf58a24c5b",
@@ -143,7 +161,16 @@
       ]
     },
     {
-      "linha": 16,
+      "linha": 18,
+      "rotulo": "Parasitas",
+      "run_ids": [
+        "30dd7f0f11a3f731",
+        "9dc78b62067b0256",
+        "c09ed3a207a197be"
+      ]
+    },
+    {
+      "linha": 19,
       "rotulo": "Parasitas",
       "run_ids": [
         "b3479f8f99526aa5",
@@ -152,7 +179,7 @@
       ]
     },
     {
-      "linha": 17,
+      "linha": 20,
       "rotulo": "Parasitas",
       "run_ids": [
         "0ffad3b266f00f9e",
@@ -161,7 +188,7 @@
       ]
     },
     {
-      "linha": 18,
+      "linha": 21,
       "rotulo": "Parasitas",
       "run_ids": [
         "1e52f65da4068ad9",
@@ -170,7 +197,7 @@
       ]
     },
     {
-      "linha": 19,
+      "linha": 22,
       "rotulo": "Parasitas",
       "run_ids": [
         "15ebe920942801c3",
@@ -179,7 +206,7 @@
       ]
     },
     {
-      "linha": 20,
+      "linha": 23,
       "rotulo": "Parasitas",
       "run_ids": [
         "2d8ea44b3528b630",
@@ -188,7 +215,16 @@
       ]
     },
     {
-      "linha": 21,
+      "linha": 24,
+      "rotulo": "Parasitas",
+      "run_ids": [
+        "50e997e115c86baa",
+        "85f1e4ee164e3d62",
+        "f165519d9c0cf495"
+      ]
+    },
+    {
+      "linha": 25,
       "rotulo": "BraTS",
       "run_ids": [
         "55ca26a9d13f0147",
@@ -197,7 +233,7 @@
       ]
     },
     {
-      "linha": 22,
+      "linha": 26,
       "rotulo": "BraTS",
       "run_ids": [
         "2617f58c10365378",
@@ -206,7 +242,7 @@
       ]
     },
     {
-      "linha": 23,
+      "linha": 27,
       "rotulo": "BraTS",
       "run_ids": [
         "3324c200fe549995",
@@ -215,7 +251,7 @@
       ]
     },
     {
-      "linha": 24,
+      "linha": 28,
       "rotulo": "BraTS",
       "run_ids": [
         "4f5ff8cc1e87140b",
@@ -224,7 +260,7 @@
       ]
     },
     {
-      "linha": 25,
+      "linha": 29,
       "rotulo": "BraTS",
       "run_ids": [
         "52af7f396c151ad2",
@@ -233,7 +269,16 @@
       ]
     },
     {
-      "linha": 26,
+      "linha": 30,
+      "rotulo": "BraTS",
+      "run_ids": [
+        "0a0578f1f4f7725e",
+        "25ccbcf4cc074431",
+        "ad8868d457b1e20b"
+      ]
+    },
+    {
+      "linha": 31,
       "rotulo": "BraTS",
       "run_ids": [
         "3dedf4d85a1ee1c0",
@@ -242,7 +287,7 @@
       ]
     },
     {
-      "linha": 27,
+      "linha": 32,
       "rotulo": "BraTS",
       "run_ids": [
         "35a02f9aec1376eb",
@@ -251,7 +296,7 @@
       ]
     },
     {
-      "linha": 28,
+      "linha": 33,
       "rotulo": "BraTS",
       "run_ids": [
         "1457c1707856896f",
@@ -260,7 +305,7 @@
       ]
     },
     {
-      "linha": 29,
+      "linha": 34,
       "rotulo": "BraTS",
       "run_ids": [
         "569c66060f9aaae7",
@@ -269,7 +314,7 @@
       ]
     },
     {
-      "linha": 30,
+      "linha": 35,
       "rotulo": "BraTS",
       "run_ids": [
         "0c958db917bfe5c0",
@@ -278,7 +323,16 @@
       ]
     },
     {
-      "linha": 31,
+      "linha": 36,
+      "rotulo": "BraTS",
+      "run_ids": [
+        "17e6ce1d943358a6",
+        "300fb3a96bda464c",
+        "5ffc071766800a95"
+      ]
+    },
+    {
+      "linha": 37,
       "rotulo": "BraTS",
       "run_ids": [
         "0678123c5a62ef7e",
@@ -287,7 +341,7 @@
       ]
     },
     {
-      "linha": 32,
+      "linha": 38,
       "rotulo": "BraTS",
       "run_ids": [
         "6e9c345785f77a5c",
@@ -296,7 +350,7 @@
       ]
     },
     {
-      "linha": 33,
+      "linha": 39,
       "rotulo": "BraTS",
       "run_ids": [
         "34d3f3fd621a89d6",
@@ -305,7 +359,7 @@
       ]
     },
     {
-      "linha": 34,
+      "linha": 40,
       "rotulo": "BraTS",
       "run_ids": [
         "55497421b1a42717",
@@ -314,7 +368,7 @@
       ]
     },
     {
-      "linha": 35,
+      "linha": 41,
       "rotulo": "BraTS",
       "run_ids": [
         "3742c2d5b9036872",
@@ -323,7 +377,16 @@
       ]
     },
     {
-      "linha": 36,
+      "linha": 42,
+      "rotulo": "BraTS",
+      "run_ids": [
+        "2fa5219c48d6d68a",
+        "abdedcec3d15b2e4",
+        "b19e220fa85101c9"
+      ]
+    },
+    {
+      "linha": 43,
       "rotulo": "BraTS",
       "run_ids": [
         "74c987e5f08a179e",
@@ -332,7 +395,7 @@
       ]
     },
     {
-      "linha": 37,
+      "linha": 44,
       "rotulo": "BraTS",
       "run_ids": [
         "b57201062da7cef5",
@@ -341,7 +404,7 @@
       ]
     },
     {
-      "linha": 38,
+      "linha": 45,
       "rotulo": "BraTS",
       "run_ids": [
         "a1e16514a24a3911",
@@ -350,7 +413,7 @@
       ]
     },
     {
-      "linha": 39,
+      "linha": 46,
       "rotulo": "BraTS",
       "run_ids": [
         "17c065fbdc4b5348",
@@ -359,7 +422,7 @@
       ]
     },
     {
-      "linha": 40,
+      "linha": 47,
       "rotulo": "BraTS",
       "run_ids": [
         "21c31bc2ac602e53",
@@ -368,7 +431,16 @@
       ]
     },
     {
-      "linha": 41,
+      "linha": 48,
+      "rotulo": "BraTS",
+      "run_ids": [
+        "762e4d85402be9b3",
+        "bd5e5037280e362e",
+        "cda2a8eeffe63e04"
+      ]
+    },
+    {
+      "linha": 49,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "110e762e311f4d0a",
@@ -377,7 +449,7 @@
       ]
     },
     {
-      "linha": 42,
+      "linha": 50,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "2d4183f8d8f42a81",
@@ -386,7 +458,7 @@
       ]
     },
     {
-      "linha": 43,
+      "linha": 51,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "7489417de7edbcab",
@@ -395,7 +467,7 @@
       ]
     },
     {
-      "linha": 44,
+      "linha": 52,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "cd6cf89bef73859e",
@@ -404,7 +476,7 @@
       ]
     },
     {
-      "linha": 45,
+      "linha": 53,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "059db64dd0b1b9ef",
@@ -413,7 +485,16 @@
       ]
     },
     {
-      "linha": 46,
+      "linha": 54,
+      "rotulo": "Conjuntivite",
+      "run_ids": [
+        "3f70703d9306d824",
+        "6da0e0f236f7d6bc",
+        "af549e76597a1549"
+      ]
+    },
+    {
+      "linha": 55,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "27cc133855544a74",
@@ -422,7 +503,7 @@
       ]
     },
     {
-      "linha": 47,
+      "linha": 56,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "3594941e211c6118",
@@ -431,7 +512,7 @@
       ]
     },
     {
-      "linha": 48,
+      "linha": 57,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "420847fc34b5ef0b",
@@ -440,7 +521,7 @@
       ]
     },
     {
-      "linha": 49,
+      "linha": 58,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "19dfbbae974a2bee",
@@ -449,7 +530,7 @@
       ]
     },
     {
-      "linha": 50,
+      "linha": 59,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "79cd5b4f6264919e",
@@ -458,7 +539,16 @@
       ]
     },
     {
-      "linha": 51,
+      "linha": 60,
+      "rotulo": "Conjuntivite",
+      "run_ids": [
+        "6e75a10429a184fd",
+        "cf9a4437ed90eefb",
+        "e7e591ec98d8f465"
+      ]
+    },
+    {
+      "linha": 61,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "96cd100376599153",
@@ -467,7 +557,7 @@
       ]
     },
     {
-      "linha": 52,
+      "linha": 62,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "2cc2c9511f440dd1",
@@ -476,7 +566,7 @@
       ]
     },
     {
-      "linha": 53,
+      "linha": 63,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "167c95e6e86022fa",
@@ -485,7 +575,7 @@
       ]
     },
     {
-      "linha": 54,
+      "linha": 64,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "0431019100d52d8a",
@@ -494,7 +584,7 @@
       ]
     },
     {
-      "linha": 55,
+      "linha": 65,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "0b77d37c4d2b79a8",
@@ -503,7 +593,16 @@
       ]
     },
     {
-      "linha": 56,
+      "linha": 66,
+      "rotulo": "Conjuntivite",
+      "run_ids": [
+        "3d6ad27e3a1c3a88",
+        "81a63167e5a0da58",
+        "baae1239605365d8"
+      ]
+    },
+    {
+      "linha": 67,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "1ce19ca5b64aa77a",
@@ -512,7 +611,7 @@
       ]
     },
     {
-      "linha": 57,
+      "linha": 68,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "28caa2a805ba3ab3",
@@ -521,7 +620,7 @@
       ]
     },
     {
-      "linha": 58,
+      "linha": 69,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "4756f8da1b5bec75",
@@ -530,7 +629,7 @@
       ]
     },
     {
-      "linha": 59,
+      "linha": 70,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "038b074534d0c6ba",
@@ -539,12 +638,21 @@
       ]
     },
     {
-      "linha": 60,
+      "linha": 71,
       "rotulo": "Conjuntivite",
       "run_ids": [
         "6c55b5a0eb0a6ac9",
         "6e87a6c359510ee7",
         "f8c7418b9764b67d"
+      ]
+    },
+    {
+      "linha": 72,
+      "rotulo": "Conjuntivite",
+      "run_ids": [
+        "26e62ac8cb466a1a",
+        "b9618a65cc411215",
+        "ef2752f4c2451f73"
       ]
     }
   ]

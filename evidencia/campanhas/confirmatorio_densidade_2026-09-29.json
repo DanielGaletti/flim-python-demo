@@ -1,0 +1,26 @@
+{
+  "id": "confirmatorio_densidade_conjuntivite_2026-09-29",
+  "declarado_em": "2026-09-29T09:01:29+00:00",
+  "git_commit": "dd5dca7",
+  "tipo": "CONFIRMATORIO — hipotese unica, sementes novas, UM teste",
+  "hipotese": "Na conjuntivite, com orcamento total de 8.000 pixels anotados, concentrar em 2 imagens da Fbeta MAIOR que espalhar por 8.",
+  "de_onde_veio": "Campanha exploratoria melhoria_2026-09-29: 7 das 8 celulas de conjuntivite tiveram Delta positivo ao concentrar, com o maior em +0,371. Nenhuma foi significativa com n=3 -- o IC95 da maior ia de -0,290 a +1,032.",
+  "teste_primario": "decoder FLIM_pb, 2 imagens contra 8, total 8.000 px, t pareado bicaudal, alpha=0,05",
+  "secundario_so_descritivo": "FLIM_lm, mesma configuracao",
+  "sementes": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "por_que_sementes_novas": "As sementes 0, 1 e 2 GERARAM a hipotese. Testar nelas de novo e re-analisar os mesmos dados, nao confirmar.",
+  "sem_correcao_multipla": "Ha UM teste primario declarado. Correcao existe para corrigir escolha entre muitos; aqui nao ha escolha.",
+  "o_que_falsearia": "p >= 0,05 no teste primario.",
+  "por_que_importa": "Se sobreviver, e a unica melhoria estabelecida do trabalho -- e ela preserva a premissa do FLIM melhor que o Active Learning, porque usa MENOS imagens anotadas, nao mais."
+}

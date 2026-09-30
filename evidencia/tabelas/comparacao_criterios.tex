@@ -1,5 +1,5 @@
 % Técnicas de Active Learning contra o sorteio
-% GERADO por flim_al/tabelas.py em 2026-09-28T19:06:33+00:00
+% GERADO por flim_al/tabelas.py em 2026-09-29T08:58:48+00:00
 % NAO EDITE A MAO: a proxima geracao sobrescreve, e o numero editado deixa de bater com evidencia/execucoes/.
 % Proveniencia: comparacao_criterios.proveniencia.json
 \begin{tabular}{lrrrrrrrrr}
@@ -7,21 +7,26 @@
 técnica & nível & Fβ (células pareadas) & n pares & Δ vs random & p & Δ vs FLIM (K=3) & p (FLIM) & Δ vs controle do nível & veredito \\
 \hline
 badge & imagem & 0.430 & 95 & \textbf{-0.019} & 0.0105 & — & — & — & suportado \\
-coreset & imagem & 0.458 & 234 & -0.014 & 0.2284 & — & — & — & sem suporte \\
-entropy & imagem & 0.457 & 351 & 0.014 & 0.1322 & — & — & — & sem suporte \\
-least\_confidence & imagem & 0.419 & 249 & -0.003 & 0.8006 & — & — & — & sem suporte \\
+coreset & imagem & 0.458 & 234 & -0.011 & 0.3354 & — & — & — & sem suporte \\
+entropy & imagem & 0.457 & 351 & 0.016 & 0.0728 & — & — & — & indicativo \\
+least\_confidence & imagem & 0.419 & 249 & -0.000 & 0.9991 & — & — & — & sem suporte \\
 margin & imagem & 0.451 & 72 & 0.023 & 0.2110 & — & — & — & sem suporte \\
 random & imagem & — & — & — & — & — & — & — & piso \\
-oracle & imagem (usa GT) & 0.686 & 31 & 0.011 & 0.0889 & — & — & — & indicativo \\
+oracle & imagem (usa GT) & 0.514 & 103 & -0.020 & 0.4456 & — & — & — & sem suporte \\
 flim\_3img & linha de base & — & 0 & — & — & — & — & — & sem pares suficientes \\
 random\_region & região & 0.442 & 252 & \textbf{0.108} & 0.0000 & — & — & — & suportado \\
 region\_bald & região & 0.462 & 135 & \textbf{0.077} & 0.0000 & — & — & 0.050 & suportado \\
 region\_entropy & região & 0.437 & 66 & 0.014 & 0.4295 & — & — & — & sem suporte \\
+1\_imagens & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
+2\_imagens & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
+3\_imagens & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
+5\_imagens & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
+8\_imagens & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
 flim\_paper & ? & 0.467 & 69 & -0.015 & 0.4074 & — & — & — & sem suporte \\
 medoide & ? & 0.482 & 94 & \textbf{-0.043} & 0.0054 & — & — & — & suportado \\
 regiao\_aleatoria & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
 regiao\_borda & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
-regiao\_confusa & ? & 0.396 & 71 & \textbf{-0.085} & 0.0489 & — & — & — & suportado \\
+regiao\_confusa & ? & 0.396 & 71 & -0.075 & 0.0766 & — & — & — & indicativo \\
 regiao\_incerteza & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
 uniforme & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
 uniforme\_balanceado & ? & — & 0 & — & — & — & — & — & sem pares suficientes \\
