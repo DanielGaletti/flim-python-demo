@@ -1057,7 +1057,7 @@ def tabela_artigo_vs_regiao(recs=None, experimento: str = "artigo_vs_regiao",
               "publicado (A)` vem da Tabela III do artigo e **não** é "
               "comparável com a coluna reproduzida: o artigo aplica Dynamic "
               "Trees, cujo binário não executa nesta máquina. Avaliação em "
-              "250 imagens de Z₁\T, as mesmas em todos os braços."))
+              "250 imagens de Z₁\\T, as mesmas em todos os braços."))
 
     for d in decs:
         def cel(c, campo="fb"):
