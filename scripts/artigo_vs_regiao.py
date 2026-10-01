@@ -154,13 +154,13 @@ def main() -> int:
     decoders = DECODERS if not a.decoders else [
         d for d in DECODERS if d[0] in a.decoders]
 
-    n_cel = len(a.usuarios) * len(a.splits) * 2
+    n_cel = len(a.usuarios) * len(a.splits) * 3
     print(f"{len(a.usuarios)} usuários × {len(a.splits)} splits × 2 braços "
           f"= {n_cel} encoders")
     print(f"{n_cel * len(decoders)} avaliações de decoder, "
           f"em {a.n_val} imagens de Z1\\T")
-    print("braços: artigo (traço real intacto) · al_regiao (cliques "
-          "realocados)")
+    print("braços: artigo (traço real intacto) · al_regiao (realocado por "
+          "incerteza) · aleatorio (realocado ao acaso — CONTROLE)")
     if a.plano:
         print("\n--plano: nada executado.")
         return 0
@@ -222,12 +222,21 @@ def main() -> int:
             except Exception as e:                            # noqa: BLE001
                 falhas.append(f"encoder base {usuario}{split}: {e}")
 
-            for braco in ("artigo", "al_regiao"):
+            # `aleatorio` e o controle que separa DUAS coisas que o desenho
+            # anterior media juntas: realocar o clique (borda -> interior) e
+            # a ESCOLHA do AL. Sem ele, um Delta negativo nao diz qual das
+            # duas causou.
+            for braco in ("artigo", "al_regiao", "aleatorio"):
                 por_img = {}
                 try:
                     for img, (fg0, bg0, H, W, gt) in base.items():
                         if braco == "artigo":
                             fg = fg0
+                        elif braco == "aleatorio":
+                            rr = np.random.default_rng(
+                                abs(hash((usuario, split, img))) % (2**31))
+                            fg = CLQ._cliques_em(
+                                CLQ._centros_aleatorios(gt, rr), gt, len(fg0))
                         else:
                             if modelo is None:
                                 raise RuntimeError("sem encoder base")
@@ -291,6 +300,7 @@ def main() -> int:
                         seed=split, imagens=treino,
                         marker_origem=("real" if braco == "artigo"
                                        else "real_realocado"),
+                        hipotese="H-regiao-vs-acaso",
                         fb=m["fb"], dice=m["dice"], iou=m.get("iou"),
                         mae=m["mae"], segundos=round(t_treino + t_aval, 2),
                         segundos_treino=round(t_treino, 2),

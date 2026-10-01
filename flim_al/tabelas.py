@@ -1007,20 +1007,26 @@ TABELA_III_A = {"FLIM_lm": 0.860, "FLIM_pb": 0.857, "FLIM_mb": 0.843,
 def tabela_artigo_vs_regiao(recs=None, experimento: str = "artigo_vs_regiao",
                             base: str = "artigo") -> Tabela:
     """
-    A tabela do artigo, e a mesma tabela com os cliques realocados por AL.
+    A tabela do artigo, e os mesmos cliques realocados — por AL e ao acaso.
 
-    Os dois braços usam as MESMAS imagens — as que os especialistas A e B
-    anotaram — e o mesmo número de cliques. O traço de fundo é copiado, não
-    regerado. A única diferença é para onde os cliques de objeto vão: onde o
-    especialista os pôs, ou onde o modelo está mais incerto.
+    Os três braços usam as MESMAS imagens (as que os especialistas A e B
+    anotaram), o MESMO número de cliques e o MESMO traço de fundo, copiado e
+    não regerado. Só muda para onde vão os cliques de objeto.
 
-    Não há seleção de imagem em nenhum dos dois braços. É seleção de região.
+    As três diferenças decompõem o efeito, e é por isso que o braço
+    `aleatorio` não é opcional:
 
-    A coluna `artigo (paper)` traz o Fβ publicado do usuário A, transcrito.
-    Ela **não** é comparável aos números reproduzidos: o artigo aplica Dynamic
-    Trees no pós-processamento e o binário é ELF de Linux, que não executa
-    nesta máquina. Está ali para situar a ordem de grandeza, não para medir
-    fidelidade.
+        AL − artigo        realocar o clique E escolher onde, juntos
+        aleatorio − artigo **só** realocar (sai da borda, vai para o interior)
+        AL − aleatorio     **só** a escolha do Active Learning
+
+    Sem a terceira coluna, um Δ negativo na primeira seria atribuído ao AL
+    quando pode ser inteiramente da segunda. Esta tabela existiu uma versão
+    sem ela, e a leitura estava errada.
+
+    A coluna `Fβ publicado (A)` é a Tabela III do artigo, transcrita. Ela
+    **não** é comparável com a reproduzida: o artigo aplica Dynamic Trees e o
+    binário é ELF de Linux, que não executa nesta máquina.
     """
     recs = ev.carregar() if recs is None else recs
     sub = [r for r in recs if r["experimento"] == experimento
@@ -1031,47 +1037,48 @@ def tabela_artigo_vs_regiao(recs=None, experimento: str = "artigo_vs_regiao",
     ordem = ["FLIM_lm", "FLIM_pb", "FLIM_mb", "FLIM_at", "FLIM_ts",
              "FLIM_lt", "FLIM_ts*"]
     decs = [d for d in ordem if d in {r["decoder_paper"] for r in sub}]
-    outro = next((c for c in {r["criterio"] for r in sub} if c != base), None)
 
     t = Tabela(
         "artigo_vs_regiao",
-        "Tabela do artigo reproduzida × os mesmos cliques realocados por AL "
-        "de região",
-        ["decoder", "n", "Fβ artigo", "Fβ AL região", "Δ Fβ", "p",
-         "MAE artigo", "MAE AL região", "Fβ publicado (A)"],
-        alinhamento="lr" + "r" * 7,
-        nota=("Mesmas imagens — as que os especialistas A e B anotaram — e o "
-              "MESMO número de cliques nos dois braços; o traço de fundo é "
-              "copiado, não regerado. A única diferença é a posição dos "
-              "cliques de objeto: onde o especialista os pôs, ou onde o "
-              "modelo está mais incerto. **Não há seleção de imagem**: é "
-              "seleção de região. Cada célula é um par (usuário, split), "
-              "n = 6. Δ e p são pareados por esse par. `Fβ publicado (A)` é "
-              "o valor da Tabela III do artigo para o usuário A, transcrito — "
-              "ele **não** é comparável com a coluna reproduzida, porque o "
-              "artigo aplica Dynamic Trees e o binário não executa nesta "
-              "máquina; está ali só para situar a ordem de grandeza. A "
-              "avaliação usa 250 imagens de Z₁\T, as mesmas em todos os "
-              "braços e splits.")) 
+        "Tabela do artigo × cliques realocados por AL × realocados ao acaso",
+        ["decoder", "n", "Fβ artigo", "Fβ AL região", "Fβ aleatório",
+         "Δ AL−artigo", "p", "Δ aleat−artigo", "p ", "Δ AL−aleat", "p  ",
+         "Fβ publicado (A)"],
+        alinhamento="lr" + "r" * 10,
+        nota=("Mesmas imagens — as que os especialistas A e B anotaram —, "
+              "mesmo número de cliques e mesmo traço de fundo (copiado, não "
+              "regerado) nos três braços. Só muda para onde vão os cliques de "
+              "objeto. **Não há seleção de imagem: é seleção de região.** As "
+              "três diferenças decompõem o efeito — `aleat−artigo` isola o "
+              "ato de tirar o clique da borda, e `AL−aleat` isola a escolha "
+              "do Active Learning. Sem a terceira, um Δ negativo na primeira "
+              "seria creditado ao AL quando pode ser todo da segunda. Cada "
+              "célula é um par (usuário, split), n = 6, pareado. `Fβ "
+              "publicado (A)` vem da Tabela III do artigo e **não** é "
+              "comparável com a coluna reproduzida: o artigo aplica Dynamic "
+              "Trees, cujo binário não executa nesta máquina. Avaliação em "
+              "250 imagens de Z₁\T, as mesmas em todos os braços."))
 
     for d in decs:
-        def cel(c, campo):
+        def cel(c, campo="fb"):
             return {(r["usuario"], r["split"]): ag._num(r.get(campo))
                     for r in sub if r["criterio"] == c
                     and r["decoder_paper"] == d}
-        fa, fb_ = cel(base, "fb"), cel(outro, "fb")
-        ks = sorted(set(fa) & set(fb_))
+        a, al, ale = cel(base), cel("al_regiao"), cel("aleatorio")
+        ks = sorted(set(a) & set(al) & set(ale))
         if not ks:
             continue
-        tp = ag.teste_pareado([fb_[k] for k in ks], [fa[k] for k in ks])
-        ma, mb = cel(base, "mae"), cel(outro, "mae")
+        t1 = ag.teste_pareado([al[k] for k in ks], [a[k] for k in ks])
+        t2 = ag.teste_pareado([ale[k] for k in ks], [a[k] for k in ks])
+        t3 = ag.teste_pareado([al[k] for k in ks], [ale[k] for k in ks])
         pub = TABELA_III_A.get(d)
         ids = [r["run_id"] for r in sub if r["decoder_paper"] == d]
         t.adicionar([d, len(ks),
-                     _fmt(sum(fa[k] for k in ks) / len(ks)),
-                     _fmt(sum(fb_[k] for k in ks) / len(ks)),
-                     _fmt(tp["delta"]), _fmt(tp["p"], 4),
-                     _fmt(sum(ma[k] for k in ks) / len(ks), 4),
-                     _fmt(sum(mb[k] for k in ks) / len(ks), 4),
+                     _fmt(sum(a[k] for k in ks) / len(ks)),
+                     _fmt(sum(al[k] for k in ks) / len(ks)),
+                     _fmt(sum(ale[k] for k in ks) / len(ks)),
+                     _fmt(t1["delta"]), _fmt(t1["p"], 4),
+                     _fmt(t2["delta"]), _fmt(t2["p"], 4),
+                     _fmt(t3["delta"]), _fmt(t3["p"], 4),
                      _fmt(pub) if pub else "—"], ids)
     return t

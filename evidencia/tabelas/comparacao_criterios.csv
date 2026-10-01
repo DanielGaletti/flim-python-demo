@@ -15,7 +15,7 @@ region_entropy,região,0.437,66,0.014,0.4295,—,—,—,sem suporte
 3_imagens,?,—,0,—,—,—,—,—,sem pares suficientes
 5_imagens,?,—,0,—,—,—,—,—,sem pares suficientes
 8_imagens,?,—,0,—,—,—,—,—,sem pares suficientes
-al_regiao,?,—,0,—,—,—,—,—,sem pares suficientes
+al_regiao,?,0.456,28,-0.032,0.0439,—,—,—,suportado
 aleatorio_objeto,?,—,0,—,—,—,—,—,sem pares suficientes
 artigo,?,—,0,—,—,—,—,—,sem pares suficientes
 flim_paper,?,0.467,69,-0.015,0.4074,—,—,—,sem suporte
