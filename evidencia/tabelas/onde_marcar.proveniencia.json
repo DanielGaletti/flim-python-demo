@@ -1,9 +1,9 @@
 {
   "tabela": "onde_marcar",
   "titulo": "Onde anotar, com orçamento fixo em pixels: Fβ e as duas diferenças",
-  "gerado_em": "2026-10-01T01:34:57+00:00",
+  "gerado_em": "2026-10-01T13:31:53+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "89ce4b8a98bb-sujo",
+  "git_commit": "e8d111f61108-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/onde_marcar.tex}",
   "linhas": [

@@ -1082,3 +1082,101 @@ def tabela_artigo_vs_regiao(recs=None, experimento: str = "artigo_vs_regiao",
                      _fmt(t3["delta"]), _fmt(t3["p"], 4),
                      _fmt(pub) if pub else "—"], ids)
     return t
+
+NOME_CRIT = {"random": "FLIM puro (sorteio)", "coreset": "CoreSet (imagem)",
+             "entropy": "Entropia (imagem)",
+             "least_confidence": "Least confidence (imagem)",
+             "medoide": "Medoide (imagem)", "oracle": "Oracle (usa GT)",
+             "regiao_confusa": "AL de REGIAO"}
+
+
+def tabela_geral_al(recs=None, experimento: str = "tabela_k_por_modelo",
+                    rotulo: str = "dissertacao", base: str = "random",
+                    decoder: str = "FLIM_pb") -> Tabela:
+    """
+    Todos os critérios de AL, todos os K, os três datasets — uma linha cada.
+
+    É a tabela de defesa: ela responde "o Active Learning ajuda o FLIM?" numa
+    página, e a resposta está nas colunas de Δ.
+
+    Os critérios de IMAGEM (CoreSet, entropia, least confidence, medoide)
+    escolhem QUAIS imagens anotar. `AL de REGIAO` usa exatamente as imagens
+    que o sorteio usaria e muda só ONDE o traço cai, com a mesma contagem de
+    pixels — por isso o Δ dele mede posição de anotação, e o dos outros mede
+    escolha de imagem.
+
+    `Oracle` usa o gabarito para escolher a imagem em que o modelo atual vai
+    pior: é o passo 7 do Algoritmo 1 do artigo. Não é método, é referência —
+    e o fato de ele também não se destacar é o resultado mais informativo
+    desta tabela.
+
+    Todos os braços recebem o MESMO número de imagens e são medidos no mesmo
+    conjunto de teste, dentro de cada dataset e cada K.
+    """
+    recs = ev.carregar() if recs is None else recs
+    sub = [r for r in recs
+           if r["experimento"] == experimento and rotulo in r["fonte"]
+           and r["decoder_paper"] == decoder]
+    if not sub:
+        raise ValueError(f"nenhuma execução de {experimento}/{rotulo}")
+
+    dss = [d for d in ("schisto", "brats", "conjunctiva")
+           if d in {r["dataset"] for r in sub}]
+    ks = sorted({r["orcamento"] for r in sub},
+                key=lambda x: int(x) if str(x).isdigit() else 0)
+    crits = [c for c in ("random", "coreset", "entropy", "least_confidence",
+                         "medoide", "regiao_confusa", "oracle")
+             if c in {r["criterio"] for r in sub}]
+
+    cols = ["critério", "K"]
+    for d in dss:
+        cols += [NOME_DATASET.get(d, d)]
+    cols += ["Δ médio vs sorteio", "p", "vence o sorteio em"]
+
+    t = Tabela(
+        f"geral_al_{decoder.replace('FLIM_','').replace('*','x')}",
+        f"Active Learning no FLIM: todos os critérios, todos os K ({decoder})",
+        cols, alinhamento="ll" + "r" * (len(dss) + 3),
+        nota=("Uma linha por (critério, K). As colunas de dataset são o Fβ "
+              "médio sobre as sementes. **`FLIM puro (sorteio)` é a "
+              "referência**: todos os braços recebem o MESMO número de "
+              "imagens e são medidos no mesmo conjunto de teste. Os critérios "
+              "de IMAGEM escolhem quais imagens anotar; **`AL de REGIÃO` usa "
+              "as mesmas imagens do sorteio e muda só ONDE o traço cai**, com "
+              "a mesma contagem de pixels — o Δ dele mede posição de "
+              "anotação, não escolha de imagem. **`Oracle` usa o gabarito** "
+              "para escolher a imagem em que o modelo vai pior (passo 7 do "
+              "Algoritmo 1 do artigo): não é método, é referência, e o fato "
+              "de ele também não se destacar é o achado mais informativo "
+              "daqui. Δ e p são pareados por semente dentro de cada dataset e "
+              "K, depois agregados. `vence o sorteio em` conta as células "
+              f"(dataset × semente) favoráveis. Decoder {decoder}."))
+
+    for c in crits:
+        if c == base:
+            continue
+        for k in ks:
+            linha, difs, vit, tot = [NOME_CRIT.get(c, c), k], [], 0, 0
+            for d in dss:
+                def v(cc):
+                    return {r["seed"]: ag._num(r.get("fb")) for r in sub
+                            if r["dataset"] == d and r["orcamento"] == k
+                            and r["criterio"] == cc}
+                a, b = v(c), v(base)
+                sem = sorted(set(a) & set(b))
+                if not sem:
+                    linha.append("—")
+                    continue
+                linha.append(_fmt(sum(a[s] for s in sem) / len(sem)))
+                for s in sem:
+                    difs.append(a[s] - b[s])
+                    tot += 1
+                    vit += 1 if a[s] > b[s] else 0
+            if not difs:
+                continue
+            tp = ag.teste_pareado(difs, [0] * len(difs))
+            ids = [r["run_id"] for r in sub
+                   if r["criterio"] == c and r["orcamento"] == k]
+            t.adicionar(linha + [_fmt(tp["delta"]), _fmt(tp["p"], 4),
+                                 f"{vit} de {tot}"], ids)
+    return t

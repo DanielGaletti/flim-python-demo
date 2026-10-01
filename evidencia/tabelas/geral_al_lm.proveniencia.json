@@ -1,0 +1,311 @@
+{
+  "tabela": "geral_al_lm",
+  "titulo": "Active Learning no FLIM: todos os critérios, todos os K (FLIM_lm)",
+  "gerado_em": "2026-10-01T13:31:54+00:00",
+  "gerado_por": "flim_al/tabelas.py",
+  "git_commit": "e8d111f61108-sujo",
+  "registro": "evidencia/execucoes/execucoes.csv",
+  "input_latex": "\\input{generated/tables/geral_al_lm.tex}",
+  "linhas": [
+    {
+      "linha": 1,
+      "rotulo": "CoreSet (imagem)",
+      "run_ids": [
+        "2617f58c10365378",
+        "2d4183f8d8f42a81",
+        "497ec6120bfaa4b1",
+        "4ac32085962d4931",
+        "89c83c2ca451902d",
+        "a1deedf73a1ffff6",
+        "b57991e5406ad1d9",
+        "f749392aa1bc16a0",
+        "f908dc346fe6d9e1"
+      ]
+    },
+    {
+      "linha": 2,
+      "rotulo": "CoreSet (imagem)",
+      "run_ids": [
+        "0a13413dd2ea1d57",
+        "3594941e211c6118",
+        "35a02f9aec1376eb",
+        "3a56c212db30991a",
+        "3e961c6e5dee562b",
+        "6155a58134b09fc1",
+        "818e9a15ebcc39d8",
+        "929c71282dad8a8d",
+        "b64c23ebc0bd488e"
+      ]
+    },
+    {
+      "linha": 3,
+      "rotulo": "CoreSet (imagem)",
+      "run_ids": [
+        "2cc2c9511f440dd1",
+        "695682e131051ca3",
+        "6e9c345785f77a5c",
+        "744837a74ae4abdb",
+        "89ddc4b6301a6802",
+        "8eecd13e6775c91d",
+        "b28190432f8386b3",
+        "b9702329ce057441",
+        "fe92b09a5c14848e"
+      ]
+    },
+    {
+      "linha": 4,
+      "rotulo": "CoreSet (imagem)",
+      "run_ids": [
+        "0ffad3b266f00f9e",
+        "28caa2a805ba3ab3",
+        "28d512ec1f25ee17",
+        "3e31d3bbd860efd3",
+        "5e8f435d97ceb96c",
+        "b57201062da7cef5",
+        "e579e60d8148de96",
+        "ed66b068bf0c140e",
+        "f2740ff7d593f7f2"
+      ]
+    },
+    {
+      "linha": 5,
+      "rotulo": "Entropia (imagem)",
+      "run_ids": [
+        "0c3aa3ee0d4349b6",
+        "3324c200fe549995",
+        "3443458daee49fd5",
+        "7489417de7edbcab",
+        "7d93ae72e981fd53",
+        "8cf9872bb29cfc71",
+        "b0d78a40a64698cc",
+        "df194f260ea6b0fa",
+        "ecc2b30655e53771"
+      ]
+    },
+    {
+      "linha": 6,
+      "rotulo": "Entropia (imagem)",
+      "run_ids": [
+        "1457c1707856896f",
+        "420847fc34b5ef0b",
+        "5387bc128d2a5acc",
+        "5839ae8839761661",
+        "7acab1458bfa0c04",
+        "8278b9b9b4fec3cf",
+        "ba9ab962906fe8e3",
+        "ec3ef56ad54e8655",
+        "ed5d4b7e735f787e"
+      ]
+    },
+    {
+      "linha": 7,
+      "rotulo": "Entropia (imagem)",
+      "run_ids": [
+        "167c95e6e86022fa",
+        "34d3f3fd621a89d6",
+        "5c8958a74888c917",
+        "5f25f4c5599d6991",
+        "6b38aee04449c21a",
+        "d00de19f0a1860b6",
+        "da0e48377a9a53bb",
+        "e7ad9da3ea7e688c",
+        "fc9eb92719c3c944"
+      ]
+    },
+    {
+      "linha": 8,
+      "rotulo": "Entropia (imagem)",
+      "run_ids": [
+        "1e52f65da4068ad9",
+        "23a6054e8afb1aa2",
+        "4756f8da1b5bec75",
+        "85996a718c8534df",
+        "9fc0eb9b3aece52b",
+        "a1e16514a24a3911",
+        "ba04aa736422339e",
+        "cd1e3bf3a879c20b",
+        "e9b62d30bac49d0e"
+      ]
+    },
+    {
+      "linha": 9,
+      "rotulo": "Least confidence (imagem)",
+      "run_ids": [
+        "4f5ff8cc1e87140b",
+        "84fcfb59389ce93a",
+        "a102e1c489eb7cdf",
+        "a248a9b43d35097a",
+        "cd6cf89bef73859e",
+        "d4085f0d386986e1",
+        "df8a469f4129cdf7",
+        "ebf66daa37993fe1",
+        "ee3b03416c6a9baf"
+      ]
+    },
+    {
+      "linha": 10,
+      "rotulo": "Least confidence (imagem)",
+      "run_ids": [
+        "19dfbbae974a2bee",
+        "1afe5432d134a77c",
+        "2a157f427df7727a",
+        "569c66060f9aaae7",
+        "8394ba94cc800194",
+        "8caf4ddb79e0903f",
+        "b259597524fd3d0e",
+        "eb85f0296f1438fd",
+        "f52c98d893dcd1b8"
+      ]
+    },
+    {
+      "linha": 11,
+      "rotulo": "Least confidence (imagem)",
+      "run_ids": [
+        "0431019100d52d8a",
+        "1ea78c640d312fb2",
+        "3b642ba846f30ea8",
+        "55497421b1a42717",
+        "5ee77b1164513f66",
+        "782cad7dff2f0140",
+        "7fe29172a4c868d2",
+        "be54c1ba2cb38274",
+        "c9689e9cf32ebd32"
+      ]
+    },
+    {
+      "linha": 12,
+      "rotulo": "Least confidence (imagem)",
+      "run_ids": [
+        "038b074534d0c6ba",
+        "15ebe920942801c3",
+        "17c065fbdc4b5348",
+        "31f5b4958871cf86",
+        "54d6d9fac72f2b23",
+        "76fcca558aa370f9",
+        "8ee53434e0b74934",
+        "b3019c77802499ee",
+        "e3399310a451b0d2"
+      ]
+    },
+    {
+      "linha": 13,
+      "rotulo": "AL de REGIAO",
+      "run_ids": [
+        "059db64dd0b1b9ef",
+        "153487a85b674090",
+        "409c1a81a969722e",
+        "501a6d7db95fd9d3",
+        "52af7f396c151ad2",
+        "7a43aa247b158ded",
+        "909103ee8001492f",
+        "a265e4d8e067ce13",
+        "d77b33eab0d5e52a"
+      ]
+    },
+    {
+      "linha": 14,
+      "rotulo": "AL de REGIAO",
+      "run_ids": [
+        "07a6ed67670084af",
+        "0c958db917bfe5c0",
+        "2abaeaedf021f23b",
+        "35077deda8f8d080",
+        "51c7be0c43493f69",
+        "79cd5b4f6264919e",
+        "957e5603705dd3bb",
+        "dba6dc410a8de5a7",
+        "de65933961f863e2"
+      ]
+    },
+    {
+      "linha": 15,
+      "rotulo": "AL de REGIAO",
+      "run_ids": [
+        "0b77d37c4d2b79a8",
+        "1123fecf58a24c5b",
+        "3742c2d5b9036872",
+        "670a2e056f45dd88",
+        "6c2c608166057982",
+        "841eff8fd847c7cc",
+        "a4a4fac77511a020",
+        "adc61891b62948df",
+        "c1ad1e817585f44e"
+      ]
+    },
+    {
+      "linha": 16,
+      "rotulo": "AL de REGIAO",
+      "run_ids": [
+        "21c31bc2ac602e53",
+        "2d8ea44b3528b630",
+        "6c55b5a0eb0a6ac9",
+        "6d01ff7d46f3d348",
+        "6e87a6c359510ee7",
+        "9ca887649009324e",
+        "d183be72069ac64b",
+        "ee1110bb1551225b",
+        "f8c7418b9764b67d"
+      ]
+    },
+    {
+      "linha": 17,
+      "rotulo": "Oracle (usa GT)",
+      "run_ids": [
+        "0a0578f1f4f7725e",
+        "25ccbcf4cc074431",
+        "3f70703d9306d824",
+        "506551484ad8eca8",
+        "6da0e0f236f7d6bc",
+        "90ceb0c21b2cb2d6",
+        "ad8868d457b1e20b",
+        "af549e76597a1549",
+        "dfce4e6635fa2dfe"
+      ]
+    },
+    {
+      "linha": 18,
+      "rotulo": "Oracle (usa GT)",
+      "run_ids": [
+        "0dc72a0eb369c022",
+        "17e6ce1d943358a6",
+        "300fb3a96bda464c",
+        "4c6d54ad8033e716",
+        "52848c5341e24178",
+        "5ffc071766800a95",
+        "6e75a10429a184fd",
+        "cf9a4437ed90eefb",
+        "e7e591ec98d8f465"
+      ]
+    },
+    {
+      "linha": 19,
+      "rotulo": "Oracle (usa GT)",
+      "run_ids": [
+        "2fa5219c48d6d68a",
+        "30dd7f0f11a3f731",
+        "3d6ad27e3a1c3a88",
+        "81a63167e5a0da58",
+        "9dc78b62067b0256",
+        "abdedcec3d15b2e4",
+        "b19e220fa85101c9",
+        "baae1239605365d8",
+        "c09ed3a207a197be"
+      ]
+    },
+    {
+      "linha": 20,
+      "rotulo": "Oracle (usa GT)",
+      "run_ids": [
+        "26e62ac8cb466a1a",
+        "50e997e115c86baa",
+        "762e4d85402be9b3",
+        "85f1e4ee164e3d62",
+        "b9618a65cc411215",
+        "bd5e5037280e362e",
+        "cda2a8eeffe63e04",
+        "ef2752f4c2451f73",
+        "f165519d9c0cf495"
+      ]
+    }
+  ]
+}

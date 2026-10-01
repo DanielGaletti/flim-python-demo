@@ -1,0 +1,46 @@
+{
+  "id": "confirmatorio_estabilidade_2026-10-01",
+  "declarado_em": "2026-10-01T13:31:09+00:00",
+  "git_commit": "e8d111f",
+  "tipo": "CONFIRMATORIO — hipotese unica, sementes ineditas, UM teste",
+  "hipotese": "A selecao por entropia produz Fbeta MENOS disperso entre sorteios de anotacao que a selecao aleatoria, com a mesma media.",
+  "de_onde_veio": "Analise post-hoc da campanha `dissertacao`: pareado por celula (dataset, K, decoder), entropy teve desvio -0,046 contra o sorteio, p=0,082, e least_confidence -0,046, p=0,098. Nenhum sobreviveu a correcao. E hipotese GERADA pelos dados, nao testada neles.",
+  "por_que_importa": "E a ultima candidata a vantagem defensavel. No regime do FLIM o usuario anota 3 imagens UMA vez e nao pode re-sortear: um metodo com a mesma media e menos dispersao entrega previsibilidade, que e valor real em campo. E preserva a essencia do FLIM — mesmo K, mesmo esforco de anotacao.",
+  "teste_primario": "desvio-padrao do Fbeta entre sementes, entropy contra random, pareado por celula (dataset, K, decoder), t pareado bicaudal, alpha=0,05",
+  "secundario_descritivo": "least_confidence e coreset, mesma analise",
+  "sementes": [
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29
+  ],
+  "por_que_10_sementes": "Com 3 sementes o desvio por celula e uma estimativa muito ruidosa; 10 tornam a comparacao de dispersao informativa.",
+  "datasets": [
+    "schisto",
+    "brats",
+    "conjunctiva"
+  ],
+  "orcamentos_K": [
+    3,
+    5
+  ],
+  "criterios": [
+    "random",
+    "entropy",
+    "least_confidence",
+    "coreset"
+  ],
+  "decoders": [
+    "labeled_marker",
+    "decoder_2"
+  ],
+  "celulas": 240,
+  "o_que_falsearia": "p >= 0,05 no teste primario.",
+  "se_falhar": "Entao nao ha nenhuma vantagem mensuravel do Active Learning sobre o sorteio no FLIM, em media nem em dispersao, e a dissertacao defende o resultado negativo com o mecanismo que o explica."
+}

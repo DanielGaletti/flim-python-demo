@@ -1,0 +1,21 @@
+critério,K,Parasitas,BraTS,Conjuntivite,Δ médio vs sorteio,p,vence o sorteio em
+CoreSet (imagem),2,0.566,0.123,0.601,-0.113,0.2353,4 de 9
+CoreSet (imagem),3,0.568,0.188,0.649,0.126,0.0961,6 de 9
+CoreSet (imagem),5,0.602,0.480,0.600,0.034,0.7564,5 de 9
+CoreSet (imagem),8,0.694,0.346,0.624,0.009,0.8928,6 de 9
+Entropia (imagem),2,0.530,0.176,0.622,-0.101,0.2609,2 de 9
+Entropia (imagem),3,0.590,0.119,0.649,0.111,0.0844,6 de 9
+Entropia (imagem),5,0.619,0.533,0.717,0.097,0.3569,4 de 9
+Entropia (imagem),8,0.658,0.064,0.673,-0.081,0.3030,4 de 9
+Least confidence (imagem),2,0.539,0.176,0.622,-0.098,0.2741,2 de 9
+Least confidence (imagem),3,0.606,0.119,0.649,0.116,0.0637,6 de 9
+Least confidence (imagem),5,0.592,0.533,0.717,0.088,0.4110,4 de 9
+Least confidence (imagem),8,0.644,0.094,0.609,-0.097,0.1636,4 de 9
+AL de REGIAO,2,0.456,0.547,0.381,-0.070,0.5111,2 de 8
+AL de REGIAO,3,0.556,0.268,0.446,0.081,0.3708,3 de 9
+AL de REGIAO,5,0.551,0.522,0.367,-0.046,0.7520,4 de 9
+AL de REGIAO,8,0.609,0.635,0.346,-0.016,0.8806,5 de 9
+Oracle (usa GT),2,0.654,0.252,0.291,-0.144,0.2065,3 de 9
+Oracle (usa GT),3,0.613,0.448,0.465,0.166,0.0727,9 de 9
+Oracle (usa GT),5,0.603,0.592,0.477,0.031,0.7610,4 de 9
+Oracle (usa GT),8,0.718,0.260,0.564,-0.032,0.6838,5 de 9
