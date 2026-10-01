@@ -33,12 +33,15 @@ Uso
 """
 from __future__ import annotations
 
+import contextlib
 import csv
 import hashlib
 import json
 import os
+import random
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -260,7 +263,7 @@ def validar(rec: dict) -> None:
 
 # ── leitura e escrita ───────────────────────────────────────────────────────
 
-def carregar(arquivo: str = ARQUIVO) -> list:
+def carregar(arquivo: str = None) -> list:
     """
     Le o registro, completando campos que o arquivo ainda nao tem.
 
@@ -272,6 +275,7 @@ def carregar(arquivo: str = ARQUIVO) -> list:
     Vazio e o valor certo para isso: diz "nao foi medido", que e diferente de
     UNKNOWN ("mediram, nao sabemos qual") e diferente de zero.
     """
+    arquivo = arquivo or ARQUIVO
     if not os.path.isfile(arquivo):
         return []
     with open(arquivo, encoding="utf-8", newline="") as fh:
@@ -282,7 +286,74 @@ def carregar(arquivo: str = ARQUIVO) -> list:
     return linhas
 
 
-def registrar(recs, arquivo: str = ARQUIVO, substituir: bool = False) -> dict:
+@contextlib.contextmanager
+def _trava(arquivo: str, espera: float = 180.0):
+    """
+    Trava entre processos para o registro.
+
+    `registrar` le o arquivo inteiro e o reescreve inteiro. Com duas campanhas
+    rodando ao mesmo tempo — o que e o normal neste projeto, uma na GPU e uma
+    na CPU — duas leituras podem intercalar e a segunda escrita apaga as
+    linhas que a primeira acabou de gravar. Pior: uma escrita interrompida no
+    meio deixa CSV truncado. As duas coisas ja aconteceram aqui (ver
+    `vendor/REMOVIDOS.txt`: dois fragmentos corrompidos de `paper_selection`).
+
+    Um arquivo `.lock` criado com O_EXCL e atomico em NTFS e em POSIX, o que
+    basta: o custo e de milissegundos e a alternativa e perder evidencia.
+
+    Trava orfa (processo morto antes de liberar) e removida apos `espera`.
+    """
+    lock = arquivo + ".lock"
+    pasta = os.path.dirname(arquivo)
+    if pasta:
+        os.makedirs(pasta, exist_ok=True)
+    t0 = time.time()
+    fd = None
+    while True:
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            break
+        except FileExistsError:
+            try:
+                if time.time() - os.path.getmtime(lock) > espera:
+                    os.unlink(lock)          # orfa
+                    continue
+            except OSError:
+                pass                          # outro processo venceu a corrida
+            if time.time() - t0 > espera:
+                raise TimeoutError(
+                    f"a trava de {lock} nao liberou em {espera:.0f}s. Se nenhum "
+                    f"processo esta escrevendo, apague o arquivo a mao.")
+            time.sleep(0.05 + random.random() * 0.05)
+    try:
+        os.write(fd, str(os.getpid()).encode())
+        os.close(fd)
+        fd = None
+        yield
+    finally:
+        if fd is not None:
+            os.close(fd)
+        with contextlib.suppress(OSError):
+            os.unlink(lock)
+
+
+def _escrever_atomico(arquivo: str, linhas: list) -> None:
+    """
+    Grava num temporario ao lado e troca por `os.replace`, que e atomico.
+
+    Escrever direto no destino deixa o arquivo truncado se o processo morrer no
+    meio — e o registro inteiro da dissertacao esta neste CSV.
+    """
+    tmp = f"{arquivo}.tmp{os.getpid()}"
+    with open(tmp, "w", encoding="utf-8", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=CAMPOS, lineterminator="\n")
+        w.writeheader()
+        for r in linhas:
+            w.writerow({c: r.get(c, "") for c in CAMPOS})
+    os.replace(tmp, arquivo)
+
+
+def registrar(recs, arquivo: str = None, substituir: bool = False) -> dict:
     """
     Acrescenta registros, validando cada um e detectando duplicata por run_id.
 
@@ -292,38 +363,39 @@ def registrar(recs, arquivo: str = ARQUIVO, substituir: bool = False) -> dict:
     versao de biblioteca, dado, ordem de execucao. Agregar as duas como se
     fossem repeticoes independentes seria errado.
     """
+    arquivo = arquivo or ARQUIVO
     recs = list(recs)
     for r in recs:
         validar(r)
 
-    existentes = [] if substituir else carregar(arquivo)
-    vistos = {r["run_id"]: r for r in existentes}
+    # A leitura e a escrita ficam na MESMA trava. Separa-las reintroduz
+    # exatamente a corrida que a trava existe para impedir: dois processos
+    # leriam o mesmo estado e o segundo apagaria as linhas do primeiro.
+    with _trava(arquivo):
+        existentes = [] if substituir else carregar(arquivo)
+        vistos = {r["run_id"]: r for r in existentes}
 
-    novos, duplicados, divergentes = [], [], []
-    for r in recs:
-        anterior = vistos.get(r["run_id"])
-        if anterior is None:
-            novos.append(r)
-            vistos[r["run_id"]] = r
-            continue
-        duplicados.append(r["run_id"])
-        if any(anterior.get(c, "") != r.get(c, "") for c in NUMERICOS):
-            divergentes.append(r["run_id"])
+        novos, duplicados, divergentes = [], [], []
+        for r in recs:
+            anterior = vistos.get(r["run_id"])
+            if anterior is None:
+                novos.append(r)
+                vistos[r["run_id"]] = r
+                continue
+            duplicados.append(r["run_id"])
+            if any(anterior.get(c, "") != r.get(c, "") for c in NUMERICOS):
+                divergentes.append(r["run_id"])
 
-    os.makedirs(os.path.dirname(arquivo), exist_ok=True)
-    linhas = existentes + novos
-    with open(arquivo, "w", encoding="utf-8", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=CAMPOS, lineterminator="\n")
-        w.writeheader()
-        for r in linhas:
-            w.writerow({c: r.get(c, "") for c in CAMPOS})
+        linhas = existentes + novos
+        _escrever_atomico(arquivo, linhas)
 
     return {"novos": len(novos), "duplicados": len(duplicados),
             "divergentes": divergentes, "total": len(linhas)}
 
 
-def resumo(arquivo: str = ARQUIVO) -> str:
+def resumo(arquivo: str = None) -> str:
     """Uma visao rapida do que esta registrado, e de quanto e UNKNOWN."""
+    arquivo = arquivo or ARQUIVO
     recs = carregar(arquivo)
     if not recs:
         return "nenhum registro"

@@ -1,0 +1,2 @@
+run_id,experimento,hipotese,dataset,usuario,split,braco,variante,criterio,decoder,decoder_paper,bloco,orcamento,seed,imagens,marker_origem,fb,dice,iou,mae,fb_val,colapsou,segundos,git_commit,config_hash,esquema_origem,fonte,linha_origem,registrado_em,segundos_treino,segundos_aval,orcamento_px
+NOWN,,UNKNOWN,UNKNOWN,"user,split,arm,decoder,paper_name,block,n_train,train_ids,fb,dice,mae,iou,fb_val",final_comparison_v3/per_model_coreset_s1.csv,11,2026-09-16T02:03:09+00:00,,,UNKNOWN,,,,,,,,,,,,,,,,,,,,,

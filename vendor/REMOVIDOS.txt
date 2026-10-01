@@ -54,3 +54,130 @@ duplicata do mesmo id -- por isso a separacao, e nao so uma anotacao.
 
 Faixa corrigida para [5000, 300000] em flim_app/datasets.py, com a medicao
 registrada no proprio comentario.
+
+
+## 2026-10-01 — 293 execucoes perdidas por escrita concorrente, e recuperadas
+
+Nada foi apagado de proposito: isto registra uma PERDA acidental e o reparo.
+
+O que aconteceu
+    `evidencia.registrar` lia o CSV inteiro com `carregar()` e o reescrevia
+    inteiro com `open(arquivo, "w")`, sem trava e sem escrita atomica. Duas
+    campanhas rodavam ao mesmo tempo -- `tabela_k_por_modelo` (estabilidade, na
+    GPU) e `ganho_marginal` (diagnostico, na CPU). A leitura de uma intercalou
+    com a escrita da outra, e a segunda gravou um estado que nao continha as
+    linhas que a primeira acabara de acrescentar.
+
+    O processo do `ganho_marginal` acabou morrendo com
+    `OSError: [Errno 22] Invalid argument` ao abrir o proprio CSV, depois de
+    234 candidatos avaliados.
+
+O dano, medido contra uma copia feita as 2026-10-01T12:20Z
+    293 run_ids existiam na copia e nao no arquivo:
+        168  ganho_marginal/pool40/val40/diagnostico
+         94  tabela_k_por_modelo/pool40/teste60/iterativa/estabilidade
+         17  artigo_vs_regiao/val250/artigo_vs_regiao   <- campanha CONCLUIDA
+         14  ganho_marginal/pool40/val20/piloto
+
+    1 run_id (03ccd88b377db9c1, artigo_vs_regiao) estava TRUNCADO no meio de um
+    campo: `segundos_treino` gravado como "2." em vez de "2.02", e
+    `segundos_aval` e `orcamento_px` vazios. As METRICAS (fb, dice, iou, mae)
+    estavam intactas -- o corte caiu no metadado de tempo.
+
+O reparo
+    Uniao por run_id com a copia, por `scripts/reparar_registro.py`. A uniao
+    nao inventa dado: run_id deriva dos campos identificadores e o treino e
+    deterministico (verificado em 2026-10-01: tres treinos com os mesmos
+    markers dao Fbeta 0.4376998524 identico ate a decima casa). Resultado:
+    10.894 -> 11.187 execucoes, todos os run_id unicos.
+
+    O estado danificado foi preservado em
+    `evidencia/execucoes/execucoes.csv.antes_do_reparo_20261001T183306Z`.
+
+    NAO foi usado como fonte de recuperacao o arquivo
+    `execucoes.csv.antes_do_reparo` (sem marca de tempo, de setembro): ele e um
+    snapshot ANTERIOR a correcao do filtro de area da conjuntivite, e 118
+    run_ids dele divergem em METRICA do estado atual justamente porque aquele
+    estado foi corrigido de proposito. O script abortou ao detectar isso, que e
+    o comportamento desejado.
+
+A correcao de causa
+    `evidencia._trava` -- trava entre processos por arquivo `.lock` criado com
+    O_EXCL -- e `evidencia._escrever_atomico` -- gravacao em temporario e
+    `os.replace`. A leitura e a escrita de `registrar` ficam agora na MESMA
+    trava; separa-las reintroduziria a corrida.
+
+    Coberto por `tests/test_registro_concorrente.py`, que roda dois PROCESSOS
+    (nao threads: a trava e entre processos, e o GIL esconderia a corrida).
+
+    Campanhas simultaneas passam a usar `--registro` com um CSV proprio e
+    `scripts/mesclar_registro.py` no fim, para nao dependerem so da trava.
+
+Efeito cientifico
+    Nenhuma conclusao mudou: as linhas foram recuperadas e as metricas
+    conferem. A campanha `ganho_marginal` do schisto foi reexecutada de ponta a
+    ponta porque sobraram 130 de 260 candidatos no registro, e reexecutar e
+    idempotente.
+
+## 2026-10-01 (continuacao) — 1 fragmento corrompido removido, 1 registro destruncado
+
+Segunda parte do mesmo incidente de escrita concorrente. Descoberta porque
+`tests/test_evidencia.py::test_registro_do_projeto_e_valido` passou a falhar.
+
+O registro `474d88f24de2ece5` (final_comparison_v3, FLIM_lm, linha 9 de
+`per_model_coreset_s1.csv`) estava TRUNCADO no arquivo:
+
+    no git HEAD:  ...,3,2,1,000675|000060,UNKNOWN,0.7974,0.7423,0.6729,0.0086,...
+    no arquivo:   ...,3,2,1,000675,,,,,,,,,,,,,,,,,
+
+O campo `imagens` perdeu `|000060` e todas as metricas ficaram vazias. Como
+`imagens` entra em CAMPOS_ID, o run_id deixou de bater com os campos, e foi
+assim que o teste pegou.
+
+RESTAURADO a partir do git HEAD, que tinha a linha intacta. O git e a fonte
+autoritativa aqui: o CSV e versionado justamente para isso. Junto voltaram as
+linhas 10 e 11 da mesma fonte (FLIM_pb fb=0.8025 e FLIM_mb fb=0.8151), que a
+corrida havia derrubado.
+
+Para que `reparar_registro.py` pudesse fazer isso foi preciso distinguir
+TRUNCAMENTO de CONFLITO: campo vazio contra campo preenchido e escrita
+interrompida, e a copia preenchida ganha. Conflito de verdade e quando os dois
+lados tem valor e diferem — e ai o script aborta, como deve.
+
+REMOVIDO do registro ativo e preservado em
+`evidencia/execucoes/descartados_fragmento_corrompido.csv`:
+
+    1 linha com run_id "NOWN"
+
+Ela nao e uma execucao: e a cauda orfa da linha quebrada, com as colunas
+deslocadas para a esquerda. "NOWN" e o resto de "UNKNOWN"; `usuario` carrega o
+valor de `esquema_origem`, `split` carrega o de `fonte`
+(final_comparison_v3/per_model_coreset_s1.csv), `braco` carrega o
+`linha_origem` (11) e `variante` carrega o `registrado_em`. Nao ha fb, dice,
+iou nem mae — nenhuma medida.
+
+Conferido antes de remover: as linhas 9, 10 e 11 daquela fonte estao todas no
+registro com suas metricas reais, entao o fragmento nao guardava nada
+recuperavel. Sem isso a remocao teria sido perda de evidencia, e nao limpeza.
+
+Estado final: 11.228 execucoes, ZERO invalidas.
+
+### Copias-sombra do reparo de 2026-10-01
+
+MANTIDA: `evidencia/execucoes/execucoes.csv.antes_do_reparo_20261001T183159Z`
+    O estado danificado COMO FOI ENCONTRADO. E a copia que documenta o
+    incidente, e a unica necessaria para conferi-lo.
+
+REMOVIDAS:
+    `..._20261001T183306Z`  — byte-identica a mantida (verificado com `cmp`:
+        4.049.775 bytes nas duas). Era duplicata literal, criada porque a
+        primeira tentativa de reparo abortou na validacao e a segunda copiou
+        de novo o mesmo estado.
+
+    `..._20261001T205006Z`  — estado INTERMEDIARIO, entre o reparo pelo backup
+        e o reparo pelo git HEAD. Reconstruivel: e a copia mantida mais as 293
+        linhas recuperadas, e os numeros de cada etapa estao registrados acima.
+        Nao e estado experimental, e estado de meio de conserto.
+
+O pre-sessao continua disponivel em `git show HEAD:evidencia/execucoes/execucoes.csv`,
+que foi a fonte autoritativa do destrucamento.
