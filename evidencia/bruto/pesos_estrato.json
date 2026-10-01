@@ -1,0 +1,114 @@
+{
+  "brats": {
+    "particao": {
+      "n_pool": 40,
+      "n_val": 40,
+      "n_test": 60
+    },
+    "k": 3,
+    "n_segments": 150,
+    "semente_particao": 0,
+    "por_semente": {
+      "0": {
+        "superpixels": 399,
+        "tocam_objeto": 20,
+        "p_objeto": 0.050125,
+        "imagens": [
+          "BraTS2021_00162_s052",
+          "BraTS2021_00238_s105",
+          "BraTS2021_00218_s127"
+        ]
+      },
+      "1": {
+        "superpixels": 389,
+        "tocam_objeto": 31,
+        "p_objeto": 0.079692,
+        "imagens": [
+          "BraTS2021_00084_s088",
+          "BraTS2021_00238_s105",
+          "BraTS2021_00077_s091"
+        ]
+      },
+      "2": {
+        "superpixels": 403,
+        "tocam_objeto": 21,
+        "p_objeto": 0.052109,
+        "imagens": [
+          "BraTS2021_00152_s057",
+          "BraTS2021_00196_s105",
+          "BraTS2021_00035_s100"
+        ]
+      },
+      "3": {
+        "superpixels": 401,
+        "tocam_objeto": 36,
+        "p_objeto": 0.089776,
+        "imagens": [
+          "BraTS2021_00159_s100",
+          "BraTS2021_00054_s097",
+          "BraTS2021_00052_s079"
+        ]
+      },
+      "4": {
+        "superpixels": 412,
+        "tocam_objeto": 36,
+        "p_objeto": 0.087379,
+        "imagens": [
+          "BraTS2021_00211_s093",
+          "BraTS2021_00250_s093",
+          "BraTS2021_00081_s067"
+        ]
+      },
+      "5": {
+        "superpixels": 391,
+        "tocam_objeto": 38,
+        "p_objeto": 0.097187,
+        "imagens": [
+          "BraTS2021_00137_s066",
+          "BraTS2021_00116_s052",
+          "BraTS2021_00144_s055"
+        ]
+      },
+      "6": {
+        "superpixels": 390,
+        "tocam_objeto": 27,
+        "p_objeto": 0.069231,
+        "imagens": [
+          "BraTS2021_00254_s075",
+          "BraTS2021_00077_s091",
+          "BraTS2021_00227_s050"
+        ]
+      },
+      "7": {
+        "superpixels": 396,
+        "tocam_objeto": 23,
+        "p_objeto": 0.058081,
+        "imagens": [
+          "BraTS2021_00104_s102",
+          "BraTS2021_00162_s052",
+          "BraTS2021_00085_s099"
+        ]
+      },
+      "8": {
+        "superpixels": 380,
+        "tocam_objeto": 25,
+        "p_objeto": 0.065789,
+        "imagens": [
+          "BraTS2021_00018_s090",
+          "BraTS2021_00162_s052",
+          "BraTS2021_00204_s079"
+        ]
+      },
+      "9": {
+        "superpixels": 403,
+        "tocam_objeto": 41,
+        "p_objeto": 0.101737,
+        "imagens": [
+          "BraTS2021_00085_s099",
+          "BraTS2021_00178_s069",
+          "BraTS2021_00031_s079"
+        ]
+      }
+    }
+  }
+}

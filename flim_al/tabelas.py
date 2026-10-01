@@ -1180,3 +1180,433 @@ def tabela_geral_al(recs=None, experimento: str = "tabela_k_por_modelo",
             t.adicionar(linha + [_fmt(tp["delta"]), _fmt(tp["p"], 4),
                                  f"{vit} de {tot}"], ids)
     return t
+
+
+# ── diagnóstico do ganho marginal ───────────────────────────────────────────
+
+def _gm_campos(r: dict) -> dict:
+    """
+    Lê os escores que viajam na `variante` do experimento `ganho_marginal`.
+
+    O registro canônico não tem coluna para escore de região, e acrescentar
+    uma recalcularia o `run_id` das 10 mil execuções já gravadas — custo que
+    já foi pago uma vez neste projeto e revertido (ver `orcamento_px` em
+    `evidencia.CAMPOS_ID`). A `variante` carrega os escores como texto; esta
+    função é o parser.
+    """
+    v = r.get("variante", "")
+    out = {"papel": r.get("criterio", ""), "estrato": "", "ent": None,
+           "lc": None, "fg": None, "kernels": None}
+    for p in v.split("|"):
+        if p.startswith("ent="):
+            out["ent"] = float(p[4:])
+        elif p.startswith("lc="):
+            out["lc"] = float(p[3:])
+        elif p.startswith("fg="):
+            out["fg"] = float(p[3:])
+        elif p.startswith("k="):
+            try:
+                out["kernels"] = sum(int(x) for x in p[2:].split("-") if x)
+            except ValueError:
+                pass
+        elif p in ("objeto", "fundo"):
+            out["estrato"] = p
+    return out
+
+
+def _spearman(xs: list, ys: list):
+    """
+    Correlação de postos.
+
+    Implementada aqui para não depender de scipy no caminho que gera tabela —
+    este ambiente já teve um pacote mudando resultado em silêncio (`faiss`,
+    CLAUDE.md §2.2), e o caminho resultado→tabela é o que menos pode ter
+    dependência opcional.
+    """
+    import math
+    pares = [(x, y) for x, y in zip(xs, ys) if x is not None and y is not None]
+    n = len(pares)
+    if n < 3:
+        return None
+
+    def postos(vs):
+        ordem = sorted(range(len(vs)), key=lambda i: vs[i])
+        r = [0.0] * len(vs)
+        i = 0
+        while i < len(ordem):
+            j = i
+            while j + 1 < len(ordem) and vs[ordem[j + 1]] == vs[ordem[i]]:
+                j += 1
+            media = (i + j) / 2 + 1
+            for k in range(i, j + 1):
+                r[ordem[k]] = media
+            i = j + 1
+        return r
+
+    rx, ry = postos([p[0] for p in pares]), postos([p[1] for p in pares])
+    mx, my = sum(rx) / n, sum(ry) / n
+    num = sum((a - mx) * (b - my) for a, b in zip(rx, ry))
+    dx = math.sqrt(sum((a - mx) ** 2 for a in rx))
+    dy = math.sqrt(sum((b - my) ** 2 for b in ry))
+    return None if dx == 0 or dy == 0 else num / (dx * dy)
+
+
+def _gm_por_semente(recs, experimento, dataset, decoder):
+    """
+    Agrupa por semente, que é a unidade independente de análise.
+
+    Os 24 candidatos dentro de uma semente compartilham encoder, imagens e
+    partição — são correlacionados, e entram como n apenas depois de
+    colapsados num número por semente.
+    """
+    sub = [r for r in recs if r["experimento"] == experimento
+           and r["dataset"] == dataset
+           and r["decoder_paper"] == decoder
+           and "piloto" not in r.get("fonte", "")
+           and "smoke" not in r.get("fonte", "")]
+    por = {}
+    for r in sub:
+        fb = ag._num(r.get("fb"))
+        if fb is None:
+            continue
+        s = str(r["seed"])
+        por.setdefault(s, {"base": None, "cands": [], "imgs": []})
+        linha = dict(_gm_campos(r), fb=fb, run_id=r["run_id"])
+        if r["criterio"] == "base":
+            por[s]["base"] = linha
+        elif r["criterio"] == "imagem_nova":
+            por[s]["imgs"].append(linha)
+        else:
+            por[s]["cands"].append(linha)
+    # Sem base não há Δ: a semente inteira sai.
+    return {s: v for s, v in por.items() if v["base"] and v["cands"]}
+
+
+PESOS_ESTRATO = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "evidencia", "bruto", "pesos_estrato.json")
+
+
+def _pesos_estrato(dataset: str) -> dict:
+    """
+    Fração de superpixels que tocam o objeto, por semente.
+
+    Medida por `scripts/pesos_estrato.py`, que roda SLIC e o ground truth sem
+    treinar nada. Serve para reponderar o sorteio estratificado num sorteio
+    uniforme — ver `_linha_uniforme`.
+    """
+    if not os.path.isfile(PESOS_ESTRATO):
+        return {}
+    with open(PESOS_ESTRATO, encoding="utf-8") as fh:
+        d = json.load(fh)
+    return (d.get(dataset) or {}).get("por_semente", {})
+
+
+def _colapsou(base_fb: float) -> bool:
+    """
+    Base degenerada: Fβ exatamente zero.
+
+    Não é limiar escolhido — é o piso aritmético. Com Fβ(sem) = 0, o Δ de
+    qualquer candidato é ≥ 0 por construção, e a média dessa população não
+    estima a mesma coisa que a média de uma população que pode piorar. Ver
+    `evidencia/campanhas/adendo_ganho_marginal_2026-10-01.json`.
+    """
+    return base_fb == 0.0
+
+
+def tabela_ganho_marginal(recs=None, experimento: str = "ganho_marginal",
+                          dataset: str = "schisto",
+                          decoder: str = "FLIM_lm",
+                          regime: str = "funcional") -> Tabela:
+    """
+    Existe ganho a capturar na escolha da região, e o escore o encontra?
+
+    Cada linha é um ponto na mesma escala de Δ = Fβ(validação) com o marcador
+    extra, menos Fβ(validação) sem ele. Tudo o mais é idêntico dentro da
+    semente: partição, imagens, marcadores base, encoder inicial, conjunto de
+    validação. A única variável é qual região recebeu o marcador.
+
+    As três linhas que importam, nesta ordem:
+
+        melhor região (teto)   o máximo de Δ entre os candidatos sorteados —
+                               quanto haveria para ganhar se soubéssemos qual
+        argmax entropia        o que o Active Learning de fato escolhe
+        candidato sorteado     o piso
+
+    O teto usa o Fβ da validação para escolher. **Não é um método** — é a
+    medida do que existe para ser capturado. Citá-lo como estratégia seria
+    citar informação que não existe em produção.
+
+    A linha `imagem nova` é o controle de escala, e é ela que separa "nenhuma
+    região ajuda" de "o FLIM não incorpora marcador novo". Se ela se move e as
+    regiões não, o mecanismo de atualização está intacto e o que falta é
+    informação.
+
+    n é o número de SEMENTES, nunca o de candidatos.
+    """
+    recs = ev.carregar() if recs is None else recs
+    por = _gm_por_semente(recs, experimento, dataset, decoder)
+    if not por:
+        raise ValueError(f"nenhuma execução de {experimento}/{dataset}")
+
+    # Estratificação por regime da base. POST-HOC e forçada pela aritmética:
+    # Δ a partir de Fβ=0 exato não pode ser negativo, então as duas populações
+    # não têm a mesma média estimável. Ver o adendo da campanha.
+    if regime != "todos":
+        quer = (regime == "colapsada")
+        por = {k: v for k, v in por.items()
+               if _colapsou(v["base"]["fb"]) == quer}
+    if not por:
+        raise ValueError(
+            f"nenhuma semente no regime '{regime}' para {dataset}/{decoder}")
+
+    sementes = sorted(por, key=lambda s: int(s))
+    sufixo = {"funcional": "base funcional",
+              "colapsada": "base colapsada (Fβ₀=0)",
+              "todos": "todas as sementes"}[regime]
+    t = Tabela(
+        f"ganho_marginal_{dataset}_{decoder.replace('*', 'x')}_{regime}",
+        "Ganho marginal de um marcador adicional — "
+        f"{NOME_DATASET.get(dataset, dataset)}, {decoder}, {sufixo}",
+        ["o que recebeu o marcador", "n (sementes)", "Δ Fβ médio", "IC95%",
+         "pior", "melhor", "Δ vs sorteado", "p"],
+        alinhamento="lrrrrrrr",
+        nota=("Δ = Fβ na **validação** com o marcador extra menos Fβ sem ele. "
+              "Dentro de cada semente, a partição, as imagens iniciais, os "
+              "marcadores base, o encoder inicial e o conjunto de validação "
+              "são idênticos — a única variável é qual região recebeu os "
+              "~300 px adicionais. O treino é determinístico (verificado: "
+              "três repetições dão Fβ idêntico até a décima casa), então Δ "
+              "não contém ruído de k-means. **n é o número de sementes**: os "
+              "candidatos de uma mesma semente compartilham encoder e são "
+              "correlacionados. `melhor região (teto)` escolhe pelo Fβ da "
+              "validação e **não é uma estratégia** — mede o que existe para "
+              "capturar, **entre os 22 candidatos examinados** de ~380 "
+              "superpixels; não é teto absoluto. "
+              f"Linhas restritas a: **{sufixo}**. A separação por regime é "
+              "post-hoc e forçada pela aritmética — Δ a partir de Fβ=0 exato "
+              "não pode ser negativo, então as duas populações não têm média "
+              "comparável. As sementes compartilham o pool e o conjunto de "
+              "validação: o IC95% vale para **esta** validação sob sorteio "
+              "das imagens de treino, e não generaliza para o dataset. "
+              "O conjunto de teste não foi tocado por esta campanha."))
+
+    def serie(f):
+        vs, ids = [], []
+        for s in sementes:
+            b = por[s]["base"]
+            r = f(por[s])
+            if r is None:
+                vs.append(None)
+                continue
+            vs.append(r["fb"] - b["fb"])
+            ids += [r["run_id"], b["run_id"]]
+        return vs, ids
+
+    def sorteados(v):
+        return [x for x in v["cands"] if x["papel"] == "sorteado"]
+
+    def melhor(v):
+        c = sorteados(v)
+        return max(c, key=lambda x: x["fb"]) if c else None
+
+    def pior(v):
+        c = sorteados(v)
+        return min(c, key=lambda x: x["fb"]) if c else None
+
+    def papel(nome):
+        return lambda v: next((x for x in v["cands"] if x["papel"] == nome),
+                              None)
+
+    def media_de(chave):
+        def f(v):
+            c = sorteados(v) if chave == "sorteado" else v["imgs"]
+            if not c:
+                return None
+            return {"fb": sum(x["fb"] for x in c) / len(c),
+                    "run_id": c[0]["run_id"]}
+        return f
+
+    ref, _ = serie(media_de("sorteado"))
+    linhas = [
+        ("melhor região (teto amostrado)", melhor),
+        ("argmax entropia (o AL)", papel("argmax_entropia")),
+        ("argmax least confidence", papel("argmax_lc")),
+        ("candidato sorteado (média)", media_de("sorteado")),
+        ("pior região", pior),
+        ("imagem nova inteira (orçamento MAIOR)", media_de("imagem")),
+    ]
+    for rotulo, f in linhas:
+        vs, ids = serie(f)
+        reais = [v for v in vs if v is not None]
+        d = ag.descrever(reais)
+        if not d["n"]:
+            continue
+        eh_ref = rotulo.startswith("candidato")
+        tp = ag.teste_pareado(vs, ref)
+        ic = (f"[{_fmt(d['ic95'][0], 4)}, {_fmt(d['ic95'][1], 4)}]"
+              if d["ic95"] else "—")
+        t.adicionar(
+            [rotulo, d["n"], _fmt(d["media"], 4), ic,
+             _fmt(d["minimo"], 4), _fmt(d["maximo"], 4),
+             "—" if eh_ref else _fmt(tp["delta"], 4),
+             "—" if eh_ref else _fmt(tp["p"], 4)],
+            ids or [por[sementes[0]]["base"]["run_id"]])
+
+    # ── o sorteio UNIFORME, reponderado ────────────────────────────────────
+    # O braço sorteado do pré-registro é estratificado por ground truth (12
+    # objeto / 10 fundo), e no Schisto só ~7% dos superpixels tocam o objeto.
+    # Ele recebe de graça um prior que o argmax de entropia não recebe, e
+    # comparar os dois direto favorece o sorteio. A reponderação desfaz isso:
+    # é o estimador estratificado padrão, e sai dos mesmos dados.
+    pesos = _pesos_estrato(dataset)
+    if pesos:
+        vs, ids = [], []
+        for s in sementes:
+            p = (pesos.get(s) or {}).get("p_objeto")
+            if p is None:
+                vs.append(None)
+                continue
+            b = por[s]["base"]
+            est = {}
+            for e in ("objeto", "fundo"):
+                cs = [c for c in por[s]["cands"]
+                      if c["papel"] == "sorteado" and c["estrato"] == e]
+                est[e] = (sum(c["fb"] for c in cs) / len(cs)) if cs else None
+                ids += [c["run_id"] for c in cs]
+            if est["objeto"] is None or est["fundo"] is None:
+                vs.append(None)
+                continue
+            vs.append(p * est["objeto"] + (1 - p) * est["fundo"] - b["fb"])
+        reais = [v for v in vs if v is not None]
+        if reais:
+            d = ag.descrever(reais)
+            tp = ag.teste_pareado(vs, ref)
+            ic = (f"[{_fmt(d['ic95'][0], 4)}, {_fmt(d['ic95'][1], 4)}]"
+                  if d["ic95"] else "—")
+            t.adicionar(
+                ["sorteio uniforme (reponderado, sem GT)", d["n"],
+                 _fmt(d["media"], 4), ic, _fmt(d["minimo"], 4),
+                 _fmt(d["maximo"], 4), _fmt(tp["delta"], 4),
+                 _fmt(tp["p"], 4)],
+                ids or [por[sementes[0]]["base"]["run_id"]])
+    return t
+
+
+def tabela_ganho_mecanismo(recs=None, experimento: str = "ganho_marginal",
+                           dataset: str = "schisto",
+                           decoder: str = "FLIM_lm",
+                           regime: str = "funcional") -> Tabela:
+    """
+    O escore de incerteza ranqueia as regiões úteis? E, se não, o que ranqueia?
+
+    A correlação é calculada DENTRO de cada semente, sobre os candidatos
+    sorteados daquela semente, e só então os valores por semente entram num
+    teste com n = número de sementes. Um Spearman único sobre todos os
+    candidatos de todas as sementes trataria observações correlacionadas como
+    independentes e inflaria a significância — é o erro que o pré-registro
+    desta campanha proíbe explicitamente.
+
+    As variáveis candidatas a explicar Δ:
+
+        entropia      o escore que o Active Learning usa para decidir
+        fração fg     quanto da região é objeto — a geometria
+        Δ kernels     quantos filtros a mais o encoder conseguiu extrair, que
+                      é capacidade e não posição
+    """
+    recs = ev.carregar() if recs is None else recs
+    por = _gm_por_semente(recs, experimento, dataset, decoder)
+    if not por:
+        raise ValueError(f"nenhuma execução de {experimento}/{dataset}")
+    if regime != "todos":
+        quer = (regime == "colapsada")
+        por = {k: v for k, v in por.items()
+               if _colapsou(v["base"]["fb"]) == quer}
+    if not por:
+        raise ValueError(
+            f"nenhuma semente no regime '{regime}' para {dataset}/{decoder}")
+    sementes = sorted(por, key=lambda s: int(s))
+
+    t = Tabela(
+        f"ganho_mecanismo_{dataset}_{decoder.replace('*', 'x')}_{regime}",
+        "O que prevê o ganho de anotar uma região — "
+        f"{NOME_DATASET.get(dataset, dataset)}, {decoder}",
+        ["variável", "ρ de Spearman com Δ Fβ", "IC95%", "n (sementes)",
+         "p (ρ ≠ 0)"],
+        alinhamento="lrrrr",
+        nota=("ρ calculado **dentro** de cada semente, sobre os candidatos "
+              "sorteados daquela semente; são os ρ por semente que entram no "
+              "teste, com n = sementes. Agregar candidatos de sementes "
+              "diferentes num ρ único trataria observações correlacionadas "
+              "como independentes. `entropia da região` é o escore que o "
+              "Active Learning usa para decidir — um ρ indistinguível de "
+              "zero significa que o escore não ordena as regiões por "
+              "utilidade, e é isso que explicaria todos os resultados "
+              "negativos das campanhas anteriores. `Δ kernels` mede "
+              "capacidade, não posição: é quantos filtros a mais o encoder "
+              "extraiu com o marcador extra."))
+
+    base_k = {s: (por[s]["base"]["kernels"] or 0) for s in sementes}
+    variaveis = [
+        ("entropia da região", lambda c, s: c["ent"]),
+        ("least confidence", lambda c, s: c["lc"]),
+        ("fração de foreground", lambda c, s: c["fg"]),
+        ("Δ kernels do encoder",
+         lambda c, s: None if c["kernels"] is None
+         else c["kernels"] - base_k[s]),
+    ]
+    for rotulo, f in variaveis:
+        rhos, ids = [], []
+        for s in sementes:
+            b = por[s]["base"]
+            cs = [c for c in por[s]["cands"] if c["papel"] == "sorteado"]
+            if len(cs) < 3:
+                continue
+            rho = _spearman([f(c, s) for c in cs],
+                            [c["fb"] - b["fb"] for c in cs])
+            if rho is not None:
+                rhos.append(rho)
+                ids += [c["run_id"] for c in cs]
+        if len(rhos) < 2:
+            # Um ρ indefinido não é "sem dado": quando a variável é CONSTANTE
+            # entre candidatos, isso é o achado. No BraTS a arquitetura fixa 8
+            # kernels por camada e a anotação extra acrescenta zero — então o
+            # Δ de kernels é constante e, ainda assim, o Fβ varia. Omitir a
+            # linha esconderia exatamente isso.
+            constante = all(
+                len({f(c, s) for c in por[s]["cands"]
+                     if c["papel"] == "sorteado"}) <= 1
+                for s in sementes
+                if [c for c in por[s]["cands"] if c["papel"] == "sorteado"])
+            if constante:
+                t.adicionar([rotulo, "constante", "—", len(sementes),
+                             "não estimável"],
+                            [por[s]["base"]["run_id"] for s in sementes])
+            continue
+        d = ag.descrever(rhos)
+        tp = ag.teste_pareado(rhos, [0.0] * len(rhos))
+        ic = (f"[{_fmt(d['ic95'][0], 3)}, {_fmt(d['ic95'][1], 3)}]"
+              if d["ic95"] else "—")
+        t.adicionar([rotulo, _fmt(d["media"], 3), ic, d["n"],
+                     _fmt(tp["p"], 4)], ids)
+
+    # Os estratos lado a lado: anotar objeto contra anotar fundo, na mesma
+    # escala de Δ. É a leitura geométrica do mesmo dado.
+    for estrato in ("objeto", "fundo"):
+        vs, ids = [], []
+        for s in sementes:
+            b = por[s]["base"]
+            cs = [c for c in por[s]["cands"]
+                  if c["papel"] == "sorteado" and c["estrato"] == estrato]
+            if not cs:
+                continue
+            vs.append(sum(c["fb"] for c in cs) / len(cs) - b["fb"])
+            ids += [c["run_id"] for c in cs]
+        if len(vs) < 2:
+            continue
+        d = ag.descrever(vs)
+        ic = (f"[{_fmt(d['ic95'][0], 4)}, {_fmt(d['ic95'][1], 4)}]"
+              if d["ic95"] else "—")
+        t.adicionar([f"(Δ Fβ médio ao anotar região de {estrato})",
+                     _fmt(d["media"], 4), ic, d["n"], "—"], ids)
+    return t

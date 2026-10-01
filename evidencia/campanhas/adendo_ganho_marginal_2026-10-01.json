@@ -1,0 +1,43 @@
+{
+  "id": "adendo_ganho_marginal_2026-10-01",
+  "adendo_a": "diagnostico_ganho_marginal_2026-10-01",
+  "declarado_em": "2026-10-01T16:00:00+00:00",
+  "git_commit": "217c19f",
+  "tipo": "ADENDO POST-HOC — decidido DEPOIS de ver os dados do BraTS. Nao e analise pre-registrada.",
+
+  "o_que_mudou": "Estratificacao das sementes por colapso da base, e acrescimo de duas analises que o pre-registro nao tinha.",
+
+  "1_estratificacao_por_colapso": {
+    "o_que": "Separar as sementes em base COLAPSADA (Fbeta inicial = 0,0000 exato) e base FUNCIONAL (Fbeta inicial > 0).",
+    "por_que_e_forcado_e_nao_escolhido": "Delta = Fbeta(com) - Fbeta(sem). Quando Fbeta(sem) = 0,0000 exato, Delta nao pode ser negativo: o piso e mecanico, nao empirico. Agregar as duas populacoes numa media mistura uma distribuicao limitada por baixo com uma limitada por cima, e a media resultante nao estima nada. A justificativa e aritmetica e vale independentemente do resultado — nao e selecao de subgrupo favoravel.",
+    "quando_foi_decidido": "Depois de rodar o BraTS e ver 3 das 10 sementes com Fbeta inicial exatamente 0,0000. O pre-registro nao previu esse caso.",
+    "consequencia_estatistica": "Os n caem para 3 e 7 no BraTS. Nenhum teste nesses subgrupos tem poder para confirmar nada; eles sao DESCRITIVOS.",
+    "o_que_NAO_autoriza": "Nao autoriza afirmar que o AL evita o pior caso no regime funcional. Isso e hipotese gerada aqui, e exige confirmatorio em sementes ineditas."
+  },
+
+  "2_sorteio_uniforme_reponderado": {
+    "o_que": "Acrescentar, ao lado do sorteio estratificado, a estimativa do Delta de um sorteio UNIFORME sobre todos os superpixels: p*media(Delta|objeto) + (1-p)*media(Delta|fundo), com p medido por scripts/pesos_estrato.py.",
+    "por_que": "O sorteio do pre-registro e estratificado por ground truth (12 objeto / 10 fundo), e so ~7% dos superpixels tocam o objeto no Schisto. O braco sorteado recebe de graca um prior que o argmax de entropia nao recebe. Comparar os dois direto favorece o sorteio e subestima o AL.",
+    "status": "Correcao de um defeito de desenho apontado em revisao, nao exploracao. Sai dos mesmos dados, sem execucao nova."
+  },
+
+  "3_kernels_constantes_como_controle_natural": {
+    "observacao": "A arquitetura do BraTS pede noutput_channels=8 em 3 camadas, e o encoder entrega 8/8/8 em TODAS as sementes: a anotacao extra acrescenta ZERO kernel. A do Schisto pede 200 em 4 camadas e entrega 138-156, abaixo do teto.",
+    "por_que_importa": "No BraTS a contagem de filtros esta fixada pela arquitetura, e ainda assim o Delta varia de -0,78 a +0,76 entre candidatos. Isso mostra que a variacao NAO precisa de mudanca de capacidade para existir — o que muda e QUAIS patches se tornam filtros, nao quantos.",
+    "limite": "BraTS e Schisto diferem em modalidade, objeto, numero de camadas e resolucao. O contraste e quase-experimental, nao controlado: autoriza dizer que capacidade nao e necessaria para explicar o efeito, NAO que capacidade e irrelevante.",
+    "ablacao_que_fecharia": "Variar noutput_channels no MESMO dataset com os MESMOS marcadores. Pendente de verificar se e valido nesta variante do FLIM, onde o numero de kernels e consequencia dos patches disponiveis e nao hiperparametro livre."
+  },
+
+  "4_orcamento_da_imagem_nova": {
+    "reconhecido": "A imagem nova recebe o gerador realista completo (milhares de px), contra 300 px da regiao. Os dois NAO sao comparaveis em orcamento.",
+    "uso_legitimo": "Controle diagnostico de mecanismo: se nem imagem inteira move o Fbeta, a atualizacao do encoder nao esta incorporando marcador.",
+    "pendente": "Braco de imagem nova com os MESMOS 300 px, para comparacao de orcamento igual. Campanha separada, rotulo proprio, sem alterar esta."
+  },
+
+  "limites_de_interpretacao_reafirmados": [
+    "As 10 sementes compartilham o pool e o conjunto de validacao (semente_particao=0). Elas variam as 3 imagens de treino e os tracos. O IC95% vale para ESTA validacao e ESTE pool, sob sorteio de imagens de treino — nao generaliza para o dataset.",
+    "As sementes podem compartilhar imagens de treino entre si, porque as 3 saem do mesmo pool de 40.",
+    "A oportunidade medida e entre os 22 candidatos examinados de ~380 superpixels. Nao e teto absoluto.",
+    "Determinismo verificado significa repetibilidade nas condicoes testadas. Nao isola posicao: mudar a regiao muda filtros, normalizacao e diversidade de patches ao mesmo tempo."
+  ]
+}

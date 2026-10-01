@@ -1,0 +1,52 @@
+{
+  "id": "diagnostico_ganho_marginal_2026-10-01",
+  "declarado_em": "2026-10-01T00:00:00+00:00",
+  "git_commit": "217c19f",
+  "tipo": "DIAGNOSTICO — descritivo, com informacao privilegiada. NAO e uma estrategia aplicavel, e NAO testa melhoria.",
+
+  "pergunta": "Existe ganho a ser capturado na escolha da REGIAO a anotar? E, se existe, o escore de Active Learning o encontra?",
+
+  "por_que_esta_e_a_lacuna": "Todos os experimentos anteriores mediram o DESEMPENHO de criterios de AL e nenhum mediu o TETO que eles tentam atingir. Sabemos que entropy, least_confidence, coreset e a escolha de regiao nao batem o sorteio. Nao sabemos se isso e porque (a) ha regioes uteis e o escore nao as acha, (b) nenhuma regiao e util neste regime, ou (c) o FLIM nao incorpora o marcador adicional. Essas tres causas exigem conclusoes diferentes na dissertacao, e nenhum dado existente as separa.",
+
+  "o_que_ja_responde_a_pergunta_preferida_do_usuario": "A pergunta 'selecao ativa de regiao bate selecao aleatoria com mesmo orcamento' JA foi respondida duas vezes: campanha `clique` (AL vence 4 de 12 celulas, Delta medio -0.0215, 0 sobrevivem a Benjamini-Hochberg) e campanha `artigo_vs_regiao` (AL - aleatorio significativo em 0 de 7 decoders). Repetir seria gastar execucao para reconfirmar o que ja esta registrado.",
+
+  "desenho": {
+    "unidade_independente_de_analise": "a semente (repeticao). As 24 regioes candidatas dentro de uma semente compartilham encoder, imagens e particao — NAO sao independentes e nunca entram como n.",
+    "constante_dentro_da_repeticao": "particao pool/val/teste, as K imagens iniciais, os marcadores base, o encoder inicial E0, o conjunto de 24 candidatos, o conjunto de validacao",
+    "unica_variavel": "qual regiao recebe o marcador adicional",
+    "orcamento": "identico entre candidatos: cada candidato acrescenta no maximo px_regiao pixels aos marcadores base, rotulados pelo ground truth LOCAL daquela regiao (que e o que um anotador real enxerga ao passar o pincel ali)",
+    "candidatos_por_semente": "argmax global de entropia + argmax global de least confidence + 12 superpixels sorteados que tocam o objeto + 10 sorteados de fundo puro = 24",
+    "por_que_estratificado": "O objeto ocupa ~3% da imagem no Schisto. Um sorteio uniforme de 24 superpixels traria ~1 que toca o objeto, e o experimento mediria o ganho de anotar fundo. A estratificacao mede os dois estratos com precisao util; os estratos sao reportados separados, nunca agregados sem peso.",
+    "controle_de_escala": "2 imagens novas inteiras anotadas pelo gerador padrao, medidas no MESMO Delta. Serve para separar 'nenhuma regiao ajuda' de 'o FLIM nao incorpora marcador novo'."
+  },
+
+  "metrica_principal": "Delta_r = Fbeta(E_r, validacao) - Fbeta(E0, validacao), por candidato r",
+
+  "analises_pre_especificadas": [
+    "A1 (teto): Delta do melhor candidato por semente (oracle de regiao). Descritivo, com IC95% entre sementes.",
+    "A2 (o escore ranqueia?): Spearman rho(entropia da regiao, Delta_r) calculado DENTRO de cada semente sobre os 22 candidatos sorteados; depois t pareado bicaudal dos rho contra 0, n = numero de sementes.",
+    "A3 (cabeca a cabeca): Delta(argmax entropia) contra Delta(candidato sorteado), pareado por semente, t bicaudal.",
+    "A4 (escala): Delta(imagem inteira nova) contra Delta(melhor regiao), pareado por semente.",
+    "A5 (mecanismo): Delta por estrato (toca objeto / fundo puro), e correlacao de Delta com a fracao de foreground da regiao."
+  ],
+
+  "como_interpretar": {
+    "A1 grande e A3 nulo": "Existem marcadores uteis e o escore nao os encontra. Conclusao: falha de criterio, nao do regime. A dissertacao aponta o que um criterio melhor teria de capturar (A5 diz o que).",
+    "A1 proximo de zero e A4 grande": "Nenhuma regiao isolada ajuda, mas imagem nova ajuda. O FLIM incorpora marcador — o que falta e informacao, e uma regiao nao carrega o suficiente. Conclusao: AL por regiao e estruturalmente inviavel neste regime, e isso explica TODOS os resultados negativos anteriores.",
+    "A1 e A4 ambos proximos de zero": "O encoder ja saturou com K=3, ou a atualizacao nao incorpora marcadores. Exige uma verificacao extra antes de concluir qualquer das duas."
+  },
+
+  "o_que_este_experimento_NAO_autoriza_afirmar": [
+    "Nao autoriza afirmar reducao de tempo de especialista: a anotacao e simulada a partir do ground truth.",
+    "Nao autoriza propor o oracle de regiao como metodo: ele le o ground truth da validacao para escolher, o que nao existe em producao.",
+    "Nao mede o conjunto de teste. O teste comum nao e tocado por esta campanha."
+  ],
+
+  "datasets": ["schisto"],
+  "extensao_condicional": "brats e conjunctiva rodam depois, com o protocolo CONGELADO, se o piloto no schisto fechar dentro do custo.",
+  "orcamentos_K": [3],
+  "sementes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "decoders": ["labeled_marker", "decoder_2"],
+  "decoder_primario": "labeled_marker",
+  "particao": "pool 40 / validacao 40 / teste 60 — disjuntos, sorteados com semente_particao=0"
+}
