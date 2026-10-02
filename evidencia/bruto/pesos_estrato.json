@@ -110,5 +110,229 @@
         ]
       }
     }
+  },
+  "schisto": {
+    "particao": {
+      "n_pool": 40,
+      "n_val": 40,
+      "n_test": 60
+    },
+    "k": 3,
+    "n_segments": 150,
+    "semente_particao": 0,
+    "por_semente": {
+      "0": {
+        "superpixels": 379,
+        "tocam_objeto": 25,
+        "p_objeto": 0.065963,
+        "imagens": [
+          "000300",
+          "000455",
+          "000427"
+        ]
+      },
+      "1": {
+        "superpixels": 373,
+        "tocam_objeto": 25,
+        "p_objeto": 0.067024,
+        "imagens": [
+          "000150",
+          "000455",
+          "000105"
+        ]
+      },
+      "2": {
+        "superpixels": 373,
+        "tocam_objeto": 25,
+        "p_objeto": 0.067024,
+        "imagens": [
+          "000286",
+          "000373",
+          "000032"
+        ]
+      },
+      "3": {
+        "superpixels": 381,
+        "tocam_objeto": 33,
+        "p_objeto": 0.086614,
+        "imagens": [
+          "000296",
+          "000089",
+          "000054"
+        ]
+      },
+      "4": {
+        "superpixels": 386,
+        "tocam_objeto": 32,
+        "p_objeto": 0.082902,
+        "imagens": [
+          "000407",
+          "000523",
+          "000132"
+        ]
+      },
+      "5": {
+        "superpixels": 368,
+        "tocam_objeto": 28,
+        "p_objeto": 0.076087,
+        "imagens": [
+          "000256",
+          "000204",
+          "000279"
+        ]
+      },
+      "6": {
+        "superpixels": 377,
+        "tocam_objeto": 36,
+        "p_objeto": 0.095491,
+        "imagens": [
+          "000529",
+          "000105",
+          "000429"
+        ]
+      },
+      "7": {
+        "superpixels": 374,
+        "tocam_objeto": 27,
+        "p_objeto": 0.072193,
+        "imagens": [
+          "000196",
+          "000300",
+          "000186"
+        ]
+      },
+      "8": {
+        "superpixels": 391,
+        "tocam_objeto": 27,
+        "p_objeto": 0.069054,
+        "imagens": [
+          "000006",
+          "000300",
+          "000399"
+        ]
+      },
+      "9": {
+        "superpixels": 366,
+        "tocam_objeto": 25,
+        "p_objeto": 0.068306,
+        "imagens": [
+          "000186",
+          "000370",
+          "000019"
+        ]
+      }
+    }
+  },
+  "conjunctiva": {
+    "particao": {
+      "n_pool": 20,
+      "n_val": 25,
+      "n_test": 30
+    },
+    "k": 3,
+    "n_segments": 150,
+    "semente_particao": 0,
+    "por_semente": {
+      "0": {
+        "superpixels": 442,
+        "tocam_objeto": 90,
+        "p_objeto": 0.20362,
+        "imagens": [
+          "conj_072",
+          "conj_057",
+          "conj_079"
+        ]
+      },
+      "1": {
+        "superpixels": 436,
+        "tocam_objeto": 101,
+        "p_objeto": 0.231651,
+        "imagens": [
+          "conj_076",
+          "conj_068",
+          "conj_070"
+        ]
+      },
+      "2": {
+        "superpixels": 431,
+        "tocam_objeto": 98,
+        "p_objeto": 0.227378,
+        "imagens": [
+          "conj_079",
+          "conj_044",
+          "conj_010"
+        ]
+      },
+      "3": {
+        "superpixels": 435,
+        "tocam_objeto": 110,
+        "p_objeto": 0.252874,
+        "imagens": [
+          "conj_014",
+          "conj_036",
+          "conj_072"
+        ]
+      },
+      "4": {
+        "superpixels": 442,
+        "tocam_objeto": 119,
+        "p_objeto": 0.269231,
+        "imagens": [
+          "conj_021",
+          "conj_009",
+          "conj_070"
+        ]
+      },
+      "5": {
+        "superpixels": 444,
+        "tocam_objeto": 127,
+        "p_objeto": 0.286036,
+        "imagens": [
+          "conj_020",
+          "conj_009",
+          "conj_017"
+        ]
+      },
+      "6": {
+        "superpixels": 438,
+        "tocam_objeto": 94,
+        "p_objeto": 0.214612,
+        "imagens": [
+          "conj_068",
+          "conj_055",
+          "conj_020"
+        ]
+      },
+      "7": {
+        "superpixels": 448,
+        "tocam_objeto": 121,
+        "p_objeto": 0.270089,
+        "imagens": [
+          "conj_036",
+          "conj_012",
+          "conj_006"
+        ]
+      },
+      "8": {
+        "superpixels": 433,
+        "tocam_objeto": 109,
+        "p_objeto": 0.251732,
+        "imagens": [
+          "conj_055",
+          "conj_076",
+          "conj_005"
+        ]
+      },
+      "9": {
+        "superpixels": 432,
+        "tocam_objeto": 98,
+        "p_objeto": 0.226852,
+        "imagens": [
+          "conj_057",
+          "conj_014",
+          "conj_070"
+        ]
+      }
+    }
   }
 }

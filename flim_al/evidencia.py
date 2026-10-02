@@ -132,6 +132,17 @@ CAMPOS_ID = [
 
 NUMERICOS = {"fb", "dice", "iou", "mae", "fb_val", "segundos",
              "segundos_treino", "segundos_aval"}
+
+# As MEDIDAS -- e so elas -- disparam alerta de divergencia quando o mesmo
+# run_id reaparece com valor diferente.
+#
+# `segundos*` esta em NUMERICOS porque precisa da mesma normalizacao numerica,
+# mas e relogio de parede: reexecutar a mesma configuracao SEMPRE da um tempo
+# diferente. Usar NUMERICOS na deteccao fazia todo merge de reexecucao acusar
+# divergencia -- 258 alertas numa reexecucao de 540, dos quais 256 eram so
+# tempo. Alerta que soa sempre nao informa nada, e foi preciso conferir os 258
+# a mao para achar os 2 que importavam.
+MEDIDAS = {"fb", "dice", "iou", "mae", "fb_val"}
 INTEIROS = {"split", "bloco", "orcamento", "seed", "colapsou",
             "orcamento_px"}
 
@@ -383,7 +394,7 @@ def registrar(recs, arquivo: str = None, substituir: bool = False) -> dict:
                 vistos[r["run_id"]] = r
                 continue
             duplicados.append(r["run_id"])
-            if any(anterior.get(c, "") != r.get(c, "") for c in NUMERICOS):
+            if any(anterior.get(c, "") != r.get(c, "") for c in MEDIDAS):
                 divergentes.append(r["run_id"])
 
         linhas = existentes + novos

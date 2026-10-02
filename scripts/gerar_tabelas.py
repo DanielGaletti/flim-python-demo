@@ -54,14 +54,52 @@ CATALOGO = [
     ("dissertacao_pb", lambda recs: tb.tabela_dissertacao(recs,
                                                           decoder="FLIM_pb")),
     ("curva_orcamento", lambda recs: tb.tabela_curva_orcamento(recs)),
-    ("ganho_marginal_lm",
-     lambda recs: tb.tabela_ganho_marginal(recs, decoder="FLIM_lm")),
-    ("ganho_marginal_pb",
-     lambda recs: tb.tabela_ganho_marginal(recs, decoder="FLIM_pb")),
-    ("ganho_mecanismo_lm",
-     lambda recs: tb.tabela_ganho_mecanismo(recs, decoder="FLIM_lm")),
-    ("ganho_mecanismo_pb",
-     lambda recs: tb.tabela_ganho_mecanismo(recs, decoder="FLIM_pb")),
+    # O diagnostico roda nos tres datasets e nos dois decoders. O regime
+    # `colapsada` so existe no BraTS, onde 3 das 10 sementes saem com
+    # Fbeta inicial zero -- uma tabela que falha por nao ter semente naquele
+    # regime nao derruba as outras, o CATALOGO trata isso.
+    ("ganho_marginal_schisto_lm",
+     lambda recs, d="schisto", k="FLIM_lm": tb.tabela_ganho_marginal(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_mecanismo_schisto_lm",
+     lambda recs, d="schisto", k="FLIM_lm": tb.tabela_ganho_mecanismo(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_marginal_schisto_pb",
+     lambda recs, d="schisto", k="FLIM_pb": tb.tabela_ganho_marginal(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_mecanismo_schisto_pb",
+     lambda recs, d="schisto", k="FLIM_pb": tb.tabela_ganho_mecanismo(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_marginal_brats_lm",
+     lambda recs, d="brats", k="FLIM_lm": tb.tabela_ganho_marginal(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_mecanismo_brats_lm",
+     lambda recs, d="brats", k="FLIM_lm": tb.tabela_ganho_mecanismo(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_marginal_brats_pb",
+     lambda recs, d="brats", k="FLIM_pb": tb.tabela_ganho_marginal(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_mecanismo_brats_pb",
+     lambda recs, d="brats", k="FLIM_pb": tb.tabela_ganho_mecanismo(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_marginal_conjunctiva_lm",
+     lambda recs, d="conjunctiva", k="FLIM_lm": tb.tabela_ganho_marginal(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_mecanismo_conjunctiva_lm",
+     lambda recs, d="conjunctiva", k="FLIM_lm": tb.tabela_ganho_mecanismo(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_marginal_conjunctiva_pb",
+     lambda recs, d="conjunctiva", k="FLIM_pb": tb.tabela_ganho_marginal(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_mecanismo_conjunctiva_pb",
+     lambda recs, d="conjunctiva", k="FLIM_pb": tb.tabela_ganho_mecanismo(
+         recs, dataset=d, decoder=k, regime="funcional")),
+    ("ganho_marginal_brats_lm_colapsada",
+     lambda recs, k="FLIM_lm": tb.tabela_ganho_marginal(
+         recs, dataset="brats", decoder=k, regime="colapsada")),
+    ("ganho_marginal_brats_pb_colapsada",
+     lambda recs, k="FLIM_pb": tb.tabela_ganho_marginal(
+         recs, dataset="brats", decoder=k, regime="colapsada")),
     ("proveniencia_registro",
      lambda recs: tb.tabela_resumo_registro(recs)),
 ]

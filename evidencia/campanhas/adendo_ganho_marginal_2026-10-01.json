@@ -34,6 +34,15 @@
     "pendente": "Braco de imagem nova com os MESMOS 300 px, para comparacao de orcamento igual. Campanha separada, rotulo proprio, sem alterar esta."
   },
 
+  "5_ruido_entre_execucoes_medido": {
+    "o_que_eu_havia_afirmado": "Que o treino e deterministico e portanto Delta nao contem ruido numerico. A base dessa afirmacao foi um teste que retreinou TRES vezes a partir do MESMO diretorio de markers, no MESMO processo, e deu Fbeta 0.4376998524 identico ate a decima casa.",
+    "o_que_a_reexecucao_mostrou": "A campanha do schisto foi reexecutada de ponta a ponta depois de uma perda de registro. Comparando os 540 run_id reexecutados com os originais: 538 tem Fbeta IDENTICO; 2 divergem. O maior desvio e |dFbeta| = 0.0034 (0.666757 contra 0.670182); o outro e 2e-6.",
+    "correcao_da_afirmacao": "Determinismo vale DENTRO de um processo, a partir dos mesmos arquivos de marcador. ENTRE execucoes ha ruido, medido em 2 de 540 registros (0,4%), com desvio maximo 0,0034.",
+    "causa_provavel_NAO_verificada": "Ordem de reducao em BLAS multithread introduz diferencas da ordem de 1e-6, e o pos-processamento (Otsu mais filtro de area) e LIMIARIZADO: uma diferenca de 1e-6 pode fazer uma componente conexa cruzar a fronteira do filtro de area e entrar ou sair da predicao, o que move o Fbeta de forma discreta. Isso explicaria um salto de 3e-3 a partir de um ruido de 1e-6. NAO foi verificado experimentalmente — e hipotese sobre o mecanismo, nao medida.",
+    "efeito_nas_conclusoes": "Nenhum. Os efeitos reportados estao entre 0,10 e 0,35, duas ordens de grandeza acima de 0,0034. Mas a frase 'Delta nao contem ruido' esta errada e foi substituida por 'ruido entre execucoes medido em no maximo 0,0034, em 2 de 540'.",
+    "consequencia_de_engenharia": "A deteccao de divergencia de `registrar` usava NUMERICOS, que inclui `segundos*` — relogio de parede, que sempre difere. Numa reexecucao de 540 ela acusou 258 divergencias, das quais 256 eram so tempo, e foi preciso conferir as 258 a mao para achar as 2 que importavam. Criado o conjunto `MEDIDAS` (fb, dice, iou, mae, fb_val) para a deteccao; o alerta passa a significar algo."
+  },
+
   "limites_de_interpretacao_reafirmados": [
     "As 10 sementes compartilham o pool e o conjunto de validacao (semente_particao=0). Elas variam as 3 imagens de treino e os tracos. O IC95% vale para ESTA validacao e ESTE pool, sob sorteio de imagens de treino — nao generaliza para o dataset.",
     "As sementes podem compartilhar imagens de treino entre si, porque as 3 saem do mesmo pool de 40.",
