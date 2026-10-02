@@ -1,406 +1,322 @@
 {
   "tabela": "al_vs_flim",
   "titulo": "Melhora sobre o FLIM do artigo e sobre o sorteio, pareada por semente",
-  "gerado_em": "2026-10-01T13:31:53+00:00",
+  "gerado_em": "2026-10-02T03:12:56+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "e8d111f61108-sujo",
+  "git_commit": "c179ed3ca1ed-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/al_vs_flim.tex}",
   "linhas": [
     {
       "linha": 1,
-      "rotulo": "entropy",
+      "rotulo": "coreset",
       "run_ids": [
-        "095449bac0eaa9d3",
-        "1710aeb9ffd5eb10",
-        "86a420d476f1c086",
-        "ea22e00f2350869c",
-        "f87ebc08784f4e3a"
+        "044e7659e1fd8df6",
+        "08256984399bbfce",
+        "0bb25bb47e88b932",
+        "195890cafa46fe68",
+        "34ef19012ab0b731",
+        "41578f5327245bdc",
+        "4c22a22fbdb19ba5",
+        "5b09f2f7c41d3521",
+        "77e8f6476b46ed6f",
+        "81ac2f19622bf033",
+        "86242fb62b4debb7",
+        "8c24b4a493f43d23",
+        "92f1dd8b07ed350f",
+        "a242bbffa4a2cf50",
+        "a47cd828fcdfe0f0",
+        "b5379a377d3c471f",
+        "beb0afb54c58bf6a",
+        "e4e938db209af499",
+        "f4da54a59afc05d6",
+        "fddde08b79ca0588"
       ]
     },
     {
       "linha": 2,
-      "rotulo": "entropy",
+      "rotulo": "coreset",
       "run_ids": [
-        "62065d44bd1aa49d",
-        "7bdf103ba8e796ca",
-        "8025edd58f40d17c",
-        "82165ee602e2a113",
-        "e1f0ddf9b35484f2"
+        "13d815963ecb17cb",
+        "2eef8bf2e495550e",
+        "3fd5389a89d817b8",
+        "66beec2e373de0a7",
+        "72f12ddf7d4dad35",
+        "785d72c1b0c2daaf",
+        "7d753b4e0c8a18e3",
+        "82117fd9d938df52",
+        "89d7f71a165ba095",
+        "8e9e10c0f41179f8",
+        "956ffc67a0b5ac2f",
+        "9a58f6af7d7fdbd0",
+        "9ab8c3f209429fdf",
+        "9b20585d3b1396f3",
+        "ab4348307a56a373",
+        "bff143df32c4117d",
+        "c9dc6b4d3023b420",
+        "cde9ac77480ba3d4",
+        "d7e3c824b83ba721",
+        "f7cc115f36f2ec17"
       ]
     },
     {
       "linha": 3,
-      "rotulo": "entropy",
+      "rotulo": "coreset",
       "run_ids": [
-        "4108c0480ffa9335",
-        "5082155261e96cc6",
-        "88ab82fbfd31e4d0",
-        "c15e35617bad748d",
-        "c5fefea554d41d03"
+        "013b828350975447",
+        "132ed1ef2781d89f",
+        "144d9a9d505f77ad",
+        "27fc490a62c8b9b3",
+        "2bf60beeb297ff53",
+        "2c7f491a758d7da6",
+        "34c1bac353c80a62",
+        "46644a408e8315ac",
+        "68380f537a2c6ba7",
+        "877824ca77fccc41",
+        "9ea4b08486c6b3f5",
+        "a35c2471a8de520d",
+        "b94b1eb3c09802ef",
+        "ccef9e32135480fc",
+        "d58ef4ea673b1d8b",
+        "e8d821de8fa04855",
+        "edbe6ed610f13f06",
+        "f6c9c16b26b5db38",
+        "f9aa2209b820e8e3",
+        "ff2a5e0862c401c0"
       ]
     },
     {
       "linha": 4,
-      "rotulo": "entropy",
+      "rotulo": "coreset",
       "run_ids": [
-        "1a72e82732ae7fab",
-        "5b529a00e1e0d195",
-        "8551e0529f49529f",
-        "ab6eff28a9b56da8",
-        "f32f4b1676c1cc08"
+        "036641cb385ffbd2",
+        "184e1bd3fad01abb",
+        "1eda4211090d62d0",
+        "2ed5de96afd0e429",
+        "34bcfc43b8ef4137",
+        "3ddd3b9a2eb6aa51",
+        "4cadcad58ccfb6e0",
+        "536c58dafde301bb",
+        "54329cc214f4d415",
+        "5e149a109cb3fa04",
+        "651698a51fea5fef",
+        "8d0a478773939d59",
+        "940cfe739c4b982a",
+        "94d35a8037a3c6a8",
+        "bdf4b9b0c3eee28d",
+        "d02c026276c598d7",
+        "d46ae2d8097f2759",
+        "db7fb27d1ed4dafc",
+        "e7a4cad521969d29",
+        "e9e2a8b174bdfa08"
       ]
     },
     {
       "linha": 5,
       "rotulo": "entropy",
       "run_ids": [
-        "0390cccd977ee227",
-        "3dd7582e6847d793",
-        "667b958d89a9905a",
-        "7467edd4a5c25055",
-        "b89bd3ccb7fbffa5"
+        "0c90d24f55cf99a5",
+        "10e9fa7ab7c0089a",
+        "2374c924a3830b2e",
+        "35b9e0ecf02f3818",
+        "35d673c3b44b0b94",
+        "398b4e6305101755",
+        "40cdf967f039abda",
+        "451129c4cd9b07e8",
+        "5661ec19abc9803b",
+        "5cfc62ec2e0024be",
+        "641f7fd9627ee9c0",
+        "8571dc6360ae272e",
+        "864396508d8fd554",
+        "a64686ea23718ef5",
+        "af5b61e94091e263",
+        "d8de2cc67e169f20",
+        "dc5e598016c5f0dc",
+        "e1fd280642d848af",
+        "e8fe51ac5e92b847",
+        "f526fa373b9dad8c"
       ]
     },
     {
       "linha": 6,
       "rotulo": "entropy",
       "run_ids": [
-        "35febd03ab036291",
-        "850817c07b1a2595",
-        "99184c4e8a0b5330",
-        "b736fe8994b08ded",
-        "db863741e150555c"
+        "0e000991e9add041",
+        "40af94fbe8ce6c94",
+        "4cb824764d1c96e5",
+        "5724f10e69e63864",
+        "62028cc26058e1cd",
+        "71d8e4499a79c554",
+        "7b421a0e1d04cc0e",
+        "7f477e2b3755052b",
+        "82728b4716263600",
+        "8d4aa7d4b71b4d91",
+        "923b841d8b7fb58c",
+        "9775af76267eb434",
+        "a16ea5f808ec07d5",
+        "ae1bd554491308b1",
+        "c44644ea3435afcb",
+        "c8499680a43b5ad1",
+        "dd93d08180a39ca3",
+        "df0adf515709a02a",
+        "e0d339d13fe44240",
+        "f14f5fb95c1b18f9"
       ]
     },
     {
       "linha": 7,
       "rotulo": "entropy",
       "run_ids": [
-        "066eb99f16beeb32",
-        "3a4e958adae12fac",
-        "6ee501756bd4cb69",
-        "74b53a109dab313a",
-        "d0e60f4007532740"
+        "21e33f26b43699ef",
+        "296e2c38587c89b9",
+        "2e61a2dc99ae623f",
+        "39a0a37a0767c622",
+        "58d2163a35530cbf",
+        "5daac1de0ee6050a",
+        "6b30ee8219e48b25",
+        "78d074b2bba4cb4e",
+        "9f3c248e60720ba3",
+        "a03dccb001001fc4",
+        "a280573eedc2ab29",
+        "a3eb6a5cd07cffbb",
+        "aee4b9d7c3bd1eac",
+        "b3469e44ab6c341a",
+        "b75953c2fb4b4847",
+        "b96f4045d86ce9b3",
+        "de220c6dd28e7601",
+        "df9c8f370a728a0d",
+        "e4298a7656f2fa3a",
+        "f18b30eaa0061717"
       ]
     },
     {
       "linha": 8,
       "rotulo": "entropy",
       "run_ids": [
-        "131fe944e2093b8e",
-        "8a77634a712cd50c",
-        "a4c387eeebc6b4e3",
-        "c4906634e13e2c55",
-        "ca1f23512d4e2f8d"
+        "0acc0600ed4e3dc4",
+        "2030594f1ae15864",
+        "234f14fc1c4634b2",
+        "2cb062253f4ff255",
+        "4de28f7f0f8eb9dd",
+        "56f9e90944ecdd52",
+        "5a244b9b35b05aaa",
+        "5c28ebf471d92d4d",
+        "66156a842d50390c",
+        "86c4a2aa403bc7e9",
+        "8d32095fb5f57a77",
+        "ab1b7d6b6c3d7eea",
+        "b69deb7ff5b179b7",
+        "cd35d698b5d0d77f",
+        "d1466175447cf36d",
+        "d5f0ed31ae6447d3",
+        "ea51bd7998222a46",
+        "f9eef81bf096f9ed",
+        "fc2de021f175b8f3",
+        "fedde5cb3b4744a6"
       ]
     },
     {
       "linha": 9,
-      "rotulo": "entropy",
+      "rotulo": "least_confidence",
       "run_ids": [
-        "4bc05f46a34d2f60",
-        "a84786916da8c80d",
-        "b2b30cdf104d7853",
-        "e65f93a661733b91",
-        "f3c1311f0cc5a4da"
+        "22913c9b1f0ea6fe",
+        "36bf15bf3982bbd9",
+        "4099f45e5335e062",
+        "4d8f968fab68331f",
+        "57cfb988c3803f62",
+        "5ac90210e5c190d2",
+        "7ed2a3734cf0edd7",
+        "80bf3a95b291ebdb",
+        "818e7ee2e7fb60af",
+        "8b1cede1f4745d9f",
+        "93a985222399e91f",
+        "a849ae4c6bc66fdc",
+        "cc5597a81465de3c",
+        "d98fb6813bcef280",
+        "e296a28febc6f6b9",
+        "e2abef87a0d3cd87",
+        "e567818852e6aee2",
+        "e9822be3e9b00287",
+        "eefdefa7b0eacdfb",
+        "f1845f1939f2eab1"
       ]
     },
     {
       "linha": 10,
-      "rotulo": "entropy",
+      "rotulo": "least_confidence",
       "run_ids": [
-        "2427290b95a5e07a",
-        "8e657708d13f2674",
-        "ba42656c1d146c43",
-        "d00e9f905675cc4f",
-        "ec8ba9a1339a4cc2"
+        "029ded1147498aba",
+        "03919baf0bd77c11",
+        "1226f485f9d4ac3b",
+        "191c538231ba9fab",
+        "2d15c0c2f35c8a37",
+        "3cd5a479cf71cf1a",
+        "4c16c6be05bc8778",
+        "5bcff5964514565e",
+        "5f1b0f67e51e00d1",
+        "674f13b3315928ae",
+        "6758d09679fa1546",
+        "6e971e36163d264f",
+        "873321b6a413f8b8",
+        "9178cbde9bb30ec7",
+        "cc3e1a1fcd855d9f",
+        "d007805af0d8652e",
+        "d19fe078bf4cfae4",
+        "dffa04dd9e3fc7ee",
+        "e8c8a2ef4ac95bd1",
+        "fbcff66335e77905"
       ]
     },
     {
       "linha": 11,
-      "rotulo": "entropy",
+      "rotulo": "least_confidence",
       "run_ids": [
-        "46a9b88b355634ff",
-        "56b6784581abd700",
-        "cc4b249065901f9a",
-        "dc7cd53922793a41",
-        "eb00705e3aec2b4f"
+        "0c4e231328170564",
+        "1590a37de0d6f528",
+        "15eee69e7620e4a4",
+        "17e20edc3f7bdcf5",
+        "220e8dfc926667ef",
+        "24d92b4d7f53b065",
+        "2d5e63512950eaa2",
+        "321d1af127e43930",
+        "39a62689f971f296",
+        "b73ebfff8e5af27a",
+        "bec40c01dfc57c2c",
+        "c25f1471ffa7bd8f",
+        "cfdc9a1401074eee",
+        "d6276d3c142c7437",
+        "da1f31482980296c",
+        "e19c9cb1c551d4ff",
+        "e8ef054c264431a0",
+        "ed42d8ffc9fb06fd",
+        "f81a08f3818db0cb",
+        "fb3d79321e5b8424"
       ]
     },
     {
       "linha": 12,
-      "rotulo": "entropy",
+      "rotulo": "least_confidence",
       "run_ids": [
-        "2c487e3d442fb017",
-        "7156a4c5e30454af",
-        "80a2e72caf0acb30",
-        "be64d5df33b94572",
-        "bf6ae7171a2d7465"
-      ]
-    },
-    {
-      "linha": 13,
-      "rotulo": "coreset",
-      "run_ids": [
-        "29989123519e4bc2",
-        "7f2c4bb5b7569360",
-        "837e9fb539696667",
-        "a3b5fb2d63918bbb",
-        "e14ce1ed975ae868"
-      ]
-    },
-    {
-      "linha": 14,
-      "rotulo": "coreset",
-      "run_ids": [
-        "0ce2ed4053cb5bb1",
-        "105099c6e2963f13",
-        "5860c54050571160",
-        "8cc57523140545f7",
-        "9918fbf4ce34556e"
-      ]
-    },
-    {
-      "linha": 15,
-      "rotulo": "coreset",
-      "run_ids": [
-        "1c636c99845bbcd3",
-        "9290165118a5fa77",
-        "a0d495aa7760652e",
-        "a4c3992fa2081482",
-        "a6b5c129f3488763"
-      ]
-    },
-    {
-      "linha": 16,
-      "rotulo": "coreset",
-      "run_ids": [
-        "6fdb1aac83155a06",
-        "7063cb70083acf91",
-        "912fffe6c3d9da68",
-        "92df0e66452f8375",
-        "f482da4080afb8a4"
-      ]
-    },
-    {
-      "linha": 17,
-      "rotulo": "coreset",
-      "run_ids": [
-        "367406239ee476ed",
-        "44b30d2d305d71e9",
-        "b31545a62ac404c1",
-        "b6eb9930e89bad36",
-        "fd77ad43d35e0811"
-      ]
-    },
-    {
-      "linha": 18,
-      "rotulo": "coreset",
-      "run_ids": [
-        "30344ad135a36850",
-        "3fa6720ec687a47b",
-        "a91556b9f9e29e06",
-        "bfeacbf3fd79eb55",
-        "da503d25ce752ae2"
-      ]
-    },
-    {
-      "linha": 19,
-      "rotulo": "coreset",
-      "run_ids": [
-        "5a82b11b7782d8c9",
-        "80105f4865a436e3",
-        "8fcd3b184bf00770",
-        "d3dbb6d465a81131",
-        "ff37bcbc1abed1dd"
-      ]
-    },
-    {
-      "linha": 20,
-      "rotulo": "coreset",
-      "run_ids": [
-        "152bd4978ae5b42d",
-        "4700bf3d4b067bba",
-        "b2d7de7c141eab74",
-        "b9026d6042be0565",
-        "eeba6b20807a3646"
-      ]
-    },
-    {
-      "linha": 21,
-      "rotulo": "coreset",
-      "run_ids": [
-        "065467c0ad566659",
-        "5f118a37ce0c6f4a",
-        "6f68c632542c2df6",
-        "dd017e5e755ae771",
-        "eb421b3d977dff52"
-      ]
-    },
-    {
-      "linha": 22,
-      "rotulo": "coreset",
-      "run_ids": [
-        "2d68c45209f697ca",
-        "576d5c26c64f1248",
-        "64084ea26b5df2f9",
-        "fe008d05bd86f466",
-        "ffe457952b757b6c"
-      ]
-    },
-    {
-      "linha": 23,
-      "rotulo": "coreset",
-      "run_ids": [
-        "755acd2d83f9a4eb",
-        "79e994ae94669131",
-        "b4caaa410ac7258f",
-        "ec435c1de9ff6803",
-        "f546023c43e45dee"
-      ]
-    },
-    {
-      "linha": 24,
-      "rotulo": "coreset",
-      "run_ids": [
-        "113d67aed1b9678a",
-        "a1455870d4e547e3",
-        "aaaac051f160b4fe",
-        "b01c73398e2f1451",
-        "fa94aaeec6400eff"
-      ]
-    },
-    {
-      "linha": 25,
-      "rotulo": "medoide",
-      "run_ids": [
-        "80e1072e3e66be9c",
-        "cc8b7b31b58690ce",
-        "d01766301bf62570",
-        "d0970451b0d802bb",
-        "e47d9febfd4b08c8"
-      ]
-    },
-    {
-      "linha": 26,
-      "rotulo": "medoide",
-      "run_ids": [
-        "2ecdcf5cce91b767",
-        "88eda29b3a1d34eb",
-        "9018d3b20b4de7ee",
-        "bcc7b3954b7bba4d",
-        "f1c4fda0e2c01eba"
-      ]
-    },
-    {
-      "linha": 27,
-      "rotulo": "medoide",
-      "run_ids": [
-        "596429fa96bc6faa",
-        "78dd4414d9761bca",
-        "c74c9ace9e64c811",
-        "d37a5992faea95e5",
-        "fa1f03da29ff6a10"
-      ]
-    },
-    {
-      "linha": 28,
-      "rotulo": "medoide",
-      "run_ids": [
-        "01a560b3b602baf2",
-        "0672aeece4f749f9",
-        "65534602704817c4",
-        "9e8e5cde69a934c7",
-        "dd9a95a1ec41c5e5"
-      ]
-    },
-    {
-      "linha": 29,
-      "rotulo": "medoide",
-      "run_ids": [
-        "0176f47b8d4dc25b",
-        "257dc5017cbda508",
-        "670eb19653158588",
-        "daee89aa87ae0e46",
-        "e98c787a40b2056f"
-      ]
-    },
-    {
-      "linha": 30,
-      "rotulo": "medoide",
-      "run_ids": [
-        "2a53e07de359def6",
-        "311f93cf6c476115",
-        "7b0c508e0ec7fc87",
-        "7f3e4d33bd13b75c",
-        "e74c3015cb5fd4d0"
-      ]
-    },
-    {
-      "linha": 31,
-      "rotulo": "medoide",
-      "run_ids": [
-        "2829d2666e18f122",
-        "71e73e96b5da6946",
-        "87177a2daf1233ef",
-        "b8534e5d355ca7e6",
-        "d5ac73b878b0f13e"
-      ]
-    },
-    {
-      "linha": 32,
-      "rotulo": "medoide",
-      "run_ids": [
-        "7dd456cff457a5a2",
-        "9e00fcc2c03aca77",
-        "a334e05d05a2154f",
-        "c7709550415c5706",
-        "d50a578315d0e1be"
-      ]
-    },
-    {
-      "linha": 33,
-      "rotulo": "medoide",
-      "run_ids": [
-        "4e6fe36ff6e5f84d",
-        "58bd08dbe0a12bda",
-        "6addc3fcf6a284c1",
-        "dfe7e9ab3c1123cd",
-        "e0966f12195ed3b3"
-      ]
-    },
-    {
-      "linha": 34,
-      "rotulo": "medoide",
-      "run_ids": [
-        "5425e1bd88460ddf",
-        "ade70168083594cf",
-        "be447db89027ecda",
-        "e45774b9577cd82b",
-        "e5e4263cfd1f080a"
-      ]
-    },
-    {
-      "linha": 35,
-      "rotulo": "medoide",
-      "run_ids": [
-        "8ab398838cb3631c",
-        "aa761a944eb029ba",
-        "ec3c0b9befe7d0b4",
-        "ee1e5a85ae471d66",
-        "f5f3b0e7222a5b15"
-      ]
-    },
-    {
-      "linha": 36,
-      "rotulo": "medoide",
-      "run_ids": [
-        "1b83ba6f33829986",
-        "5d64fdbfbf640ddf",
-        "665ac4961d2e096a",
-        "6e769ccc1d5ce77a",
-        "df4a1e8ca8a4fffc"
+        "0aca56f83985af4e",
+        "0fc6803136e7fcc3",
+        "1728ac9aa0b527d6",
+        "20f06c42fe4f292b",
+        "369693aec6aeb042",
+        "3875d29a6deee498",
+        "45411f956ac15b23",
+        "48402cf67c9d5d75",
+        "4c37d6388799faf7",
+        "50a08f9295a3eaae",
+        "61b2e680013aed06",
+        "6204f1b8505d9ecd",
+        "9745e6d78e0bfa45",
+        "d670613a28a08908",
+        "d7aa561e68bae1b0",
+        "e83f601fc1dd6db4",
+        "e986814f9550a3de",
+        "ed12d855985f7418",
+        "f014119e9d72c350",
+        "f4dfb5bf1c54269a"
       ]
     }
   ]

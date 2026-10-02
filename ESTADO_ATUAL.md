@@ -40,6 +40,15 @@ pareada, piso de ruído ±0.023):
 
 - **CoreSet é o único método que supera o aleatório**: ΔFβ +0.072,
   IC95% [+0.038, +0.106], p<0.001.
+
+  > **ESCOPO, e superado em 2026-10 — ver §2.1.** Este número vale para
+  > **Schisto apenas**, com **encoder fixo** e decoder 1×1 cujo teto é 0.567.
+  > Não se reproduz quando o encoder é retreinado, nem nos outros datasets.
+  > Dois motivos concretos: o CoreSet **nunca rodou no BraTS** até 2026-09
+  > (`extract_encoder_features` assumia 3 bandas e o BraTS é grayscale), e a
+  > conjuntivite nunca rodou com filtro de área válido. No confirmatório de
+  > 10 sementes × 3 datasets × 2 decoders, o CoreSet fica **−0.0606 ABAIXO**
+  > do sorteio na média (p=0.0020).
 - **Com K=10, CoreSet e BADGE igualam o pool completo** (~190 imagens):
   0.575 e 0.563 contra 0.567. Diferença dentro do ruído → 19× menos imagens
   anotadas sem perda mensurável.
@@ -67,6 +76,132 @@ pareada, piso de ruído ±0.023):
 **Ferramenta de anotação caracterizada** (`analyze_real_markers.py`, 31
 arquivos reais): pincel circular de raio 5 (81 px), ~4 toques de foreground a
 ~12 px dentro da borda, ~9 de background a ~121 px fora.
+
+---
+
+## 2.1 Estado em 2026-10 — o que mudou, e por quê
+
+Esta seção supera parte da §2. Ela existe porque três bugs de montagem
+invalidaram números anteriores, e porque duas campanhas confirmatórias
+fecharam.
+
+### Os bugs que invalidaram resultado
+
+| bug | efeito | onde |
+|---|---|---|
+| `extract_encoder_features` assumia 3 bandas | **CoreSet nunca rodou no BraTS** (grayscale → `IndexError`) | `flim_al/coreset_badge.py` |
+| `orig_ext=".png"` fixo | **Conjuntivite nunca rodou** (imagens `.jpg`) | `scripts/tabela_k_por_modelo.py` |
+| filtro de área `[1000,9000]` copiado do Schisto | **0 de 39** objetos da conjuntivite cabiam; Fβ 0.050 → 0.573 ao corrigir para `[5000,300000]` | `flim_app/datasets.py` |
+| top-K em lote com encoder de 1 imagem | não era Active Learning: faltava o laço iterativo com retreino | `scripts/tabela_k_por_modelo.py` |
+| `rng.integers()` avançava por arquivo | marcadores dependiam da ordem de leitura do diretório | idem |
+
+120 execuções da conjuntivite foram postas em quarentena
+(`evidencia/execucoes/descartados_filtro_conjuntivite.csv`). Qualquer número
+anterior a essas correções que envolva BraTS ou conjuntivite **não vale**.
+
+### Nenhuma vantagem do Active Learning sobre o sorteio
+
+Testado em 3 datasets × 4 orçamentos (K ∈ {2,3,5,8}) × 7 decoders, com
+pré-registro, teste pareado e correção de Benjamini-Hochberg:
+
+- **Seleção de imagem**: nenhum critério se destaca. 96 testes, 0 sobrevivem a
+  BH. Sinal do CoreSet: 14 de 24 células, p=0.541.
+- **O oracle do próprio artigo** (passo 7 do Algoritmo 1, que lê o gabarito do
+  pool) **perde do sorteio em 9 de 24** células.
+- **AL de região** contra clique aleatório dentro do objeto: vence 4 de 12,
+  Δ médio −0.0215, 0 sobrevivem a BH.
+- **Tabela III reproduzida**, cliques realocados: AL−artigo dá 7/7 negativo
+  significativo, mas **aleatório−artigo também dá 7/7**, e **AL−aleatório dá
+  0 de 7**. O dano vem de tirar o clique da borda, não da escolha do AL.
+- **Dispersão** (confirmatório `confirmatorio_estabilidade_2026-10-01`,
+  10 sementes inéditas, 24 células): entropy contra sorteio, Δ desvio
+  −0.0059, **p=0.8765 → FALSEADO**. Na média, CoreSet fica −0.0606 abaixo do
+  sorteio (p=0.0020).
+
+**Formulação correta:** não há evidência de superioridade nas condições
+avaliadas. Ausência de significância **não** é prova de equivalência.
+
+### Dois falsos positivos capturados pelo pré-registro
+
+Vale mais que um ganho pequeno, e é argumento de método:
+
+1. Ganho da conjuntivite na densidade: p=0.0016 na exploratória, **p=0.586**
+   no confirmatório.
+2. Entropia menos dispersa: p=0.082 post-hoc com 3 sementes, **p=0.8765** com
+   10 sementes inéditas.
+
+### O diagnóstico do ganho marginal — onde está o mecanismo
+
+Campanha `ganho_marginal` (pré-registro + adendo em `evidencia/campanhas/`):
+fixa partição, imagens, marcadores base, encoder inicial e validação, e varia
+só **qual região recebe os ~300 px seguintes**.
+
+Firme nas 6 células (3 datasets × 2 decoders), nos dois sentidos:
+
+- **melhor região** supera o sorteio: +0.133 a +0.303, p ≤ 0.0037 em 6 de 6
+- **pior região** fica abaixo: −0.199 a −0.502, p ≤ 0.0015 em 6 de 6
+- **uma anotação extra em lugar sorteado tem Δ médio negativo**
+- o **sorteio uniforme reponderado sem GT** fica a p ≥ 0.16 do estratificado:
+  o viés da estratificação por gabarito era desprezível
+
+Ou seja: **há oportunidade real na escolha da região, e há risco grande.** O
+que falha é o critério, não o regime.
+
+O escore de entropia bate o sorteio em 2 de 6 células (p=0.017 e p=0.0067),
+**ambas no decoder de que o escore foi extraído** (`labeled_marker`, ver
+`ganho_marginal.py:315`). Nas 3 células não alinhadas: ~0. Com BH sobre as 6,
+1 sobrevive. **O escore prevê ganho para o decoder de que saiu — não é "AL
+funciona".**
+
+E o Δ próprio da entropia nunca se distingue de zero (IC95% [−0.058,+0.226],
+[−0.347,+0.120], [−0.073,+0.151]). Ela só bate o sorteio porque **o sorteio é
+nocivo**. A afirmação defensável é *evita o dano*, não *melhora o modelo*.
+
+### Capacidade do encoder NÃO explica o efeito
+
+Hipótese anterior deste projeto — mais pixels, mais kernels, encoder melhor —
+**contradita em duas frentes**:
+
+- Schisto: ρ(Δkernels, ΔFβ) = **−0.314** (p=0.0008). Mais kernels, **pior**.
+- BraTS (`noutput_channels: 8`) e conjuntivite (16/12/8/6): kernels
+  **constantes**, e o Δ ainda varia de −0.78 a +0.76.
+
+Compatível com **deslocamento**: sem backpropagação os filtros *são* os
+patches anotados, e anotação nova injeta agrupamentos que diluem os que
+funcionavam. **Hipótese, não mecanismo demonstrado** — a correlação com
+kernels não estabelece causalidade. A ablação que fecharia isso varia
+`noutput_channels` no mesmo dataset com os mesmos marcadores, e depende de
+verificar se é válida nesta variante do FLIM, onde o número de kernels é
+consequência dos patches disponíveis e não hiperparâmetro livre.
+
+A `fração de foreground` da região prevê ganho em todas as células medidas
+(ρ +0.28 / +0.12 / +0.28) — sinal mais simples que a entropia.
+
+### Determinismo: o limite medido
+
+Determinismo vale **dentro de um processo**, a partir dos mesmos arquivos de
+marcador (3 repetições → Fβ idêntico a 10 casas). **Entre** execuções há
+ruído: na reexecução completa do Schisto, 538 de 540 registros deram Fβ
+idêntico; os 2 restantes divergiram em no máximo **0.0034** — duas ordens de
+grandeza abaixo dos efeitos reportados.
+
+### Lacunas declaradas
+
+- **Não há controle direto borda vs interior.** O que existe é borda (cliques
+  reais do especialista, ~12 px dentro da borda) contra uniforme **dentro do
+  objeto**, que inclui posições perto da borda. O "Fβ 0.665 vs 0.000" que
+  circulava vem de `flim_al/fig_tutorial.py`, um gerador de figura sobre
+  **3 imagens, sem sementes e sem teste pareado** — é ilustração, não medida.
+- As 10 sementes do diagnóstico **compartilham pool e validação**
+  (`semente_particao=0`). O IC95% vale para *aquela* validação sob sorteio das
+  imagens de treino, e não generaliza para o dataset.
+- A oportunidade medida é entre os **22 candidatos examinados** de ~380
+  superpixels. Não é teto absoluto.
+- A imagem nova inteira gasta **milhares** de pixels contra 300 da região: é
+  controle diagnóstico de mecanismo, **não** comparação de orçamento igual.
+  O braço de orçamento igual está pendente.
+- Anotação simulada do gabarito. **Nada aqui autoriza afirmar redução de tempo
+  de especialista** — isso exigiria avaliação humana.
 
 ---
 

@@ -42,5 +42,19 @@
   ],
   "celulas": 240,
   "o_que_falsearia": "p >= 0,05 no teste primario.",
+
+  "RESULTADO": {
+    "fechado_em": "2026-10-02",
+    "celulas": "24 de 24 completas, 10 sementes cada (20-29). 486 registros. Zero falhas.",
+    "teste_primario": "entropy contra random, desvio-padrao do Fbeta, pareado por celula (dataset x K x decoder), n=12 celulas: delta_desvio = -0,0059, p = 0,8765.",
+    "veredito": "FALSEADO. p >> 0,05. A hipotese nao se sustenta.",
+    "secundarios_descritivos": {
+      "least_confidence": "delta_desvio = -0,0086, p = 0,7961",
+      "coreset": "delta_desvio = -0,0063, p = 0,6917"
+    },
+    "o_post_hoc_que_gerou_a_hipotese_NAO_replicou": "A analise post-hoc da campanha `dissertacao` (3 sementes) deu desvio -0,046 com p = 0,082 para entropy. Com 10 sementes ineditas: -0,0059 e p = 0,88. O sinal desapareceu por completo. E o segundo falso positivo que o pre-registro deste projeto capturou — o primeiro foi o ganho da conjuntivite na densidade (p=0,0016 que nao replicou, p=0,586).",
+    "achado_nao_previsto_na_media": "Na MEDIA, coreset fica -0,0606 abaixo do sorteio com p = 0,0020, e entropy -0,0826 com p = 0,0717. Ou seja: onde ha diferenca significativa, ela e CONTRA o Active Learning. Isto NAO era o teste primario e nao foi pre-registrado; e observacao, e o p=0,0020 nao recebeu correcao para as comparacoes desta campanha.",
+    "consequencia": "Aplica-se a clausula `se_falhar` declarada acima. Encerra-se a busca por vantagem do Active Learning sobre o sorteio no FLIM: nao ha vantagem mensuravel, nem em media nem em dispersao. A dissertacao defende o resultado negativo com o mecanismo, e o diagnostico `ganho_marginal` e o que fornece o mecanismo."
+  },
   "se_falhar": "Entao nao ha nenhuma vantagem mensuravel do Active Learning sobre o sorteio no FLIM, em media nem em dispersao, e a dissertacao defende o resultado negativo com o mecanismo que o explica."
 }

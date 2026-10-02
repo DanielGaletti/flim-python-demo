@@ -1,0 +1,8 @@
+o que recebeu o marcador,n (sementes),Δ Fβ médio,IC95%,pior,melhor,Δ vs sorteado,p
+melhor região (teto amostrado),7,0.0748,"[-0.0049, 0.1544]",0.0080,0.2581,0.2696,0.0036
+argmax entropia (o AL),7,-0.1134,"[-0.3468, 0.1199]",-0.6785,0.0532,0.0814,0.3225
+argmax least confidence,7,0.0301,"[-0.0027, 0.0630]",-0.0344,0.0680,0.2250,0.0021
+candidato sorteado (média),7,-0.1948,"[-0.2955, -0.0941]",-0.3571,-0.0406,—,—
+pior região,7,-0.6972,"[-0.7849, -0.6095]",-0.7768,-0.4949,-0.5024,0.0002
+imagem nova inteira (orçamento MAIOR),7,-0.2158,"[-0.4314, -0.0001]",-0.5292,0.0363,-0.0209,0.8321
+"sorteio uniforme (reponderado, sem GT)",7,-0.2101,"[-0.3531, -0.0671]",-0.4400,0.0098,-0.0152,0.5279

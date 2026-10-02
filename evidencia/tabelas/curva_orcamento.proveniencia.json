@@ -1,9 +1,9 @@
 {
   "tabela": "curva_orcamento",
   "titulo": "Fβ por número de imagens anotadas",
-  "gerado_em": "2026-10-01T13:31:55+00:00",
+  "gerado_em": "2026-10-02T03:12:57+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "e8d111f61108-sujo",
+  "git_commit": "c179ed3ca1ed-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/curva_orcamento.tex}",
   "linhas": [

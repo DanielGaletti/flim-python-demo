@@ -3,7 +3,8 @@
 | família | execuções | sem seed | sem commit |
 |---|---|---|---|
 | al_corrected_results | 2316 | 42% | 100% |
-| tabela_k_por_modelo | 1352 | 0% | 0% |
+| tabela_k_por_modelo | 1840 | 0% | 0% |
+| ganho_marginal | 1638 | 0% | 0% |
 | final_comparison_v3 | 1029 | 4% | 100% |
 | benchmark_conjunctiva | 588 | 68% | 100% |
 | sel_cs_grande | 540 | 0% | 100% |

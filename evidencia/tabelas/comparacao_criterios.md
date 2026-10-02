@@ -3,9 +3,9 @@
 | técnica | nível | Fβ (células pareadas) | n pares | Δ vs random | p | Δ vs FLIM (K=3) | p (FLIM) | Δ vs controle do nível | veredito |
 |---|---|---|---|---|---|---|---|---|---|
 | badge | imagem | 0.430 | 95 | **-0.019** | 0.0105 | — | — | — | suportado |
-| coreset | imagem | 0.458 | 234 | -0.011 | 0.3354 | — | — | — | sem suporte |
-| entropy | imagem | 0.457 | 351 | 0.016 | 0.0728 | — | — | — | indicativo |
-| least_confidence | imagem | 0.419 | 249 | -0.000 | 0.9991 | — | — | — | sem suporte |
+| coreset | imagem | 0.464 | 354 | **-0.028** | 0.0149 | — | — | — | suportado |
+| entropy | imagem | 0.455 | 471 | -0.009 | 0.3661 | — | — | — | sem suporte |
+| least_confidence | imagem | 0.437 | 369 | -0.020 | 0.0937 | — | — | — | indicativo |
 | margin | imagem | 0.451 | 72 | 0.023 | 0.2110 | — | — | — | sem suporte |
 | random | imagem | — | — | — | — | — | — | — | piso |
 | oracle | imagem (usa GT) | 0.514 | 103 | -0.020 | 0.4456 | — | — | — | sem suporte |
@@ -20,14 +20,19 @@
 | 8_imagens | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
 | al_regiao | ? | 0.456 | 28 | **-0.032** | 0.0439 | — | — | — | suportado |
 | aleatorio_objeto | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
+| argmax_entropia | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
+| argmax_lc | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
 | artigo | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
+| base | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
 | flim_paper | ? | 0.467 | 69 | -0.015 | 0.4074 | — | — | — | sem suporte |
 | flim_puro | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
+| imagem_nova | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
 | medoide | ? | 0.482 | 94 | **-0.043** | 0.0054 | — | — | — | suportado |
 | regiao_aleatoria | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
 | regiao_borda | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
 | regiao_confusa | ? | 0.396 | 71 | -0.075 | 0.0766 | — | — | — | indicativo |
 | regiao_incerteza | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
+| sorteado | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
 | uniforme | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
 | uniforme_balanceado | ? | — | 0 | — | — | — | — | — | sem pares suficientes |
 

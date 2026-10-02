@@ -1,0 +1,155 @@
+{
+  "tabela": "ganho_marginal_brats_FLIM_lm_colapsada",
+  "titulo": "Ganho marginal de um marcador adicional — BraTS, FLIM_lm, base colapsada (Fβ₀=0)",
+  "gerado_em": "2026-10-02T03:12:59+00:00",
+  "gerado_por": "flim_al/tabelas.py",
+  "git_commit": "c179ed3ca1ed-sujo",
+  "registro": "evidencia/execucoes/execucoes.csv",
+  "input_latex": "\\input{generated/tables/ganho_marginal_brats_FLIM_lm_colapsada.tex}",
+  "linhas": [
+    {
+      "linha": 1,
+      "rotulo": "melhor região (teto amostrado)",
+      "run_ids": [
+        "6e43207bc24f823d",
+        "af8456f3cf1fa55c",
+        "b2070881aa9387da",
+        "ca0ac74428998975",
+        "dd19460ef24b72e5",
+        "e240a4ec0d63b9e8"
+      ]
+    },
+    {
+      "linha": 2,
+      "rotulo": "argmax entropia (o AL)",
+      "run_ids": [
+        "6e43207bc24f823d",
+        "9a67902155c46411",
+        "9d28932274d0bd16",
+        "b2070881aa9387da",
+        "e240a4ec0d63b9e8",
+        "f78f9210ac06f031"
+      ]
+    },
+    {
+      "linha": 3,
+      "rotulo": "argmax least confidence",
+      "run_ids": [
+        "6e43207bc24f823d",
+        "8b77949b2ae54e67",
+        "a18fea5e4d970286",
+        "b2070881aa9387da",
+        "bd747fbd33b8d7f6",
+        "e240a4ec0d63b9e8"
+      ]
+    },
+    {
+      "linha": 4,
+      "rotulo": "candidato sorteado (média)",
+      "run_ids": [
+        "2604c6bc7b6221cf",
+        "6e43207bc24f823d",
+        "b2070881aa9387da",
+        "b23d722f27767132",
+        "e240a4ec0d63b9e8",
+        "ed174a944060f148"
+      ]
+    },
+    {
+      "linha": 5,
+      "rotulo": "pior região",
+      "run_ids": [
+        "486562b668e0f0fb",
+        "6e43207bc24f823d",
+        "b2070881aa9387da",
+        "e240a4ec0d63b9e8",
+        "eb9c9e75654c91be",
+        "ed174a944060f148"
+      ]
+    },
+    {
+      "linha": 6,
+      "rotulo": "imagem nova inteira (orçamento MAIOR)",
+      "run_ids": [
+        "3681f452192fbb83",
+        "6e43207bc24f823d",
+        "985688eec69e34d7",
+        "b2070881aa9387da",
+        "ce0bddb6602ae76f",
+        "e240a4ec0d63b9e8"
+      ]
+    },
+    {
+      "linha": 7,
+      "rotulo": "sorteio uniforme (reponderado, sem GT)",
+      "run_ids": [
+        "05e39d455fa5b8da",
+        "078a4cf89294ec10",
+        "08273c0d73538ffb",
+        "109d12326e282c43",
+        "14ad8d6addfa047a",
+        "1eba4fb22d75e7e3",
+        "2604c6bc7b6221cf",
+        "28772c3afab4e163",
+        "2a2c9fa7bfe271e1",
+        "2bdf230f254f1658",
+        "32282236be2f9d15",
+        "361f3ee38cf20800",
+        "39d5fd1e0b0a7e19",
+        "3a0e9618a06d3455",
+        "3ffb9131e8037634",
+        "439ca195878cd1d7",
+        "46f391d919a97048",
+        "486562b668e0f0fb",
+        "4ab726644d2edc24",
+        "557250930af1a795",
+        "5e5bd77aff754499",
+        "5f96d8c999d7c91f",
+        "632c49d22639707e",
+        "639360526a86af80",
+        "66d28958a2c7fc3c",
+        "70d653b90f158b7f",
+        "716e6cfcf33b8862",
+        "7b37c4b0c1b759c3",
+        "80050daace4df6d0",
+        "85f7af76e9d0b2c7",
+        "8a7f16fcccf31869",
+        "8b0712e2ec4431f7",
+        "916dfebd1bc364af",
+        "96bf7164412e0c97",
+        "9845b1817fb9554d",
+        "9a296528acdd4bbb",
+        "9c6d42053ab155a1",
+        "9fa3be5c02648e71",
+        "a5fdd7b3b54eba98",
+        "aa358e91fdba3180",
+        "ace8e06e37b95128",
+        "aecb6a625792ef04",
+        "af8456f3cf1fa55c",
+        "b127e4eaf4289787",
+        "b23d722f27767132",
+        "b5c17b154eefed50",
+        "b927a5a4dffcf49c",
+        "bdf88cade99bb9eb",
+        "c1ad6719760b92bb",
+        "c49a9b3749d67668",
+        "c561015e1383078e",
+        "c678c3164dd1f5cf",
+        "ca0ac74428998975",
+        "cd18fb71fecfad11",
+        "d0bf42a3de557bb8",
+        "d1c386a70d62f1eb",
+        "d5c80a5bd5f8a693",
+        "d6e8e8f6a76c7e5b",
+        "dd19460ef24b72e5",
+        "dd2eb27d16d76326",
+        "e944174a3f3e7546",
+        "eb9c9e75654c91be",
+        "ed174a944060f148",
+        "f19a90ff34910b40",
+        "f2ba45251654d9f5",
+        "fb6cd29397031129"
+      ]
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 {
   "tabela": "comparacao_final",
   "titulo": "FLIM puro contra seleção por Active Learning, por decoder",
-  "gerado_em": "2026-10-01T13:31:51+00:00",
+  "gerado_em": "2026-10-02T03:12:55+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "e8d111f61108-sujo",
+  "git_commit": "c179ed3ca1ed-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/comparacao_final.tex}",
   "linhas": [

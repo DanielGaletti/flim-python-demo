@@ -1,0 +1,121 @@
+{
+  "tabela": "ganho_marginal_brats_FLIM_pb_colapsada",
+  "titulo": "Ganho marginal de um marcador adicional — BraTS, FLIM_pb, base colapsada (Fβ₀=0)",
+  "gerado_em": "2026-10-02T03:12:59+00:00",
+  "gerado_por": "flim_al/tabelas.py",
+  "git_commit": "c179ed3ca1ed-sujo",
+  "registro": "evidencia/execucoes/execucoes.csv",
+  "input_latex": "\\input{generated/tables/ganho_marginal_brats_FLIM_pb_colapsada.tex}",
+  "linhas": [
+    {
+      "linha": 1,
+      "rotulo": "melhor região (teto amostrado)",
+      "run_ids": [
+        "0dad5af6dee289ea",
+        "45f7f135d521e43f",
+        "b6862a03a71ac476",
+        "bcf9d808ee2a42b8"
+      ]
+    },
+    {
+      "linha": 2,
+      "rotulo": "argmax entropia (o AL)",
+      "run_ids": [
+        "45f7f135d521e43f",
+        "8dd4bbfaa53e58a5",
+        "bcf9d808ee2a42b8",
+        "d0601081075d0715"
+      ]
+    },
+    {
+      "linha": 3,
+      "rotulo": "argmax least confidence",
+      "run_ids": [
+        "45f7f135d521e43f",
+        "517c17e6a9ad4b88",
+        "bcf9d808ee2a42b8",
+        "ceb447cca55754fb"
+      ]
+    },
+    {
+      "linha": 4,
+      "rotulo": "candidato sorteado (média)",
+      "run_ids": [
+        "45f7f135d521e43f",
+        "74b1cf93afa750e2",
+        "b6862a03a71ac476",
+        "bcf9d808ee2a42b8"
+      ]
+    },
+    {
+      "linha": 5,
+      "rotulo": "pior região",
+      "run_ids": [
+        "45f7f135d521e43f",
+        "6b9b62986fde522d",
+        "bcf9d808ee2a42b8",
+        "e40049d03bc31b0a"
+      ]
+    },
+    {
+      "linha": 6,
+      "rotulo": "imagem nova inteira (orçamento MAIOR)",
+      "run_ids": [
+        "1a514bdd5defcf0e",
+        "45f7f135d521e43f",
+        "bcf9d808ee2a42b8",
+        "cb1e46a88fbe9d91"
+      ]
+    },
+    {
+      "linha": 7,
+      "rotulo": "sorteio uniforme (reponderado, sem GT)",
+      "run_ids": [
+        "0dad5af6dee289ea",
+        "17cec8d26e3d45d2",
+        "18ff57816a8a4625",
+        "208e81fd2d0574d9",
+        "20a32e841dc42282",
+        "24f8abfd14aec57a",
+        "29ef728873c43ed1",
+        "2aaf4df998723d48",
+        "3228e4467f7cee3b",
+        "3430488827032047",
+        "35f4b0981f9e15db",
+        "3d516265df4b92b3",
+        "468282388afb0e2f",
+        "5b132a578840ca7a",
+        "5ed7a0c4bb162103",
+        "6b9b62986fde522d",
+        "6ebfb4b1ffece9c4",
+        "71fc0591c8d6e1a1",
+        "74b1cf93afa750e2",
+        "7a34410391bf867c",
+        "7c6a0cf676647a91",
+        "87ff351ab95f681e",
+        "88d806cfa4cd5623",
+        "893fa2e8d1969966",
+        "8a44832675c4eb90",
+        "91a0c9df9bbb0879",
+        "91d0a8f45fdedafd",
+        "924aa209aeed320a",
+        "93115b52f96b5c20",
+        "9458b649a2d4be9a",
+        "9a6c4245ad2b05d4",
+        "a57e40e8c60f8628",
+        "a8ff8771a9beba07",
+        "a9489c7007ec8ab7",
+        "ae9530286babcd1c",
+        "b6862a03a71ac476",
+        "bcbc225e737248f9",
+        "cab9849b931f1bec",
+        "db1a90c5836d4c26",
+        "e40049d03bc31b0a",
+        "ee00afe46cd5ee0f",
+        "f30fc4ace6c985d0",
+        "f5e15650de0310fa",
+        "f9a4ca3352f9f020"
+      ]
+    }
+  ]
+}
