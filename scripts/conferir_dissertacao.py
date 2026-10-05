@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""
+conferir_dissertacao.py — checagens mecânicas do texto em LaTeX
+
+O que isto pega, e que revisão humana cansa de não pegar:
+
+    1. citação sem entrada no .bib  (quebra a compilação ou sai como "?")
+    2. entrada no .bib nunca citada (a ABNT pede que referência listada
+       tenha sido usada no texto)
+    3. \\ref ou \\label vazios, e \\ref para label inexistente
+    4. sigla usada com \\ac sem estar declarada em abrev/
+    5. travessão e meia-risca no corpo do texto
+
+O item 5 existe porque é uma exigência de estilo deste trabalho: travessão
+como recurso de pontuação deve dar lugar a vírgula, ponto, dois-pontos ou
+parênteses. O hífen comum fica, porque é ortografia.
+
+Uso
+    python scripts/conferir_dissertacao.py
+    python scripts/conferir_dissertacao.py --raiz DISSERTACAO
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import os
+import re
+import sys
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+RAIZ_PADRAO = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "DISSERTACAO")
+
+
+def sem_comentarios(t: str) -> str:
+    """Remove linhas de comentário e o que vem depois de % não escapado."""
+    saida = []
+    for linha in t.split("\n"):
+        pos = None
+        for i, c in enumerate(linha):
+            if c == "%" and (i == 0 or linha[i - 1] != "\\"):
+                pos = i
+                break
+        saida.append(linha if pos is None else linha[:pos])
+    return "\n".join(saida)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--raiz", default=RAIZ_PADRAO)
+    a = ap.parse_args()
+
+    texs = sorted(glob.glob(os.path.join(a.raiz, "*.tex"))
+                  + glob.glob(os.path.join(a.raiz, "*", "*.tex")))
+    bibs = sorted(glob.glob(os.path.join(a.raiz, "*", "*.bib")))
+    if not texs:
+        print(f"nenhum .tex em {a.raiz}")
+        return 1
+
+    corpo = {}
+    for f in texs:
+        with open(f, encoding="utf-8") as fh:
+            corpo[f] = sem_comentarios(fh.read())
+
+    chaves_bib = set()
+    for b in bibs:
+        with open(b, encoding="utf-8") as fh:
+            chaves_bib |= set(re.findall(r"(?m)^@\w+\{\s*([^,\s]+)",
+                                         fh.read()))
+
+    citadas, labels, refs, siglas = set(), set(), [], []
+    for f, t in corpo.items():
+        for grupo in re.findall(r"\\cite[a-zA-Z]*\s*\{([^}]*)\}", t):
+            for k in grupo.split(","):
+                if k.strip():
+                    citadas.add((k.strip(), f))
+        labels |= set(re.findall(r"\\label\s*\{([^}]*)\}", t))
+        refs += [(r, f) for r in re.findall(r"\\(?:page)?ref\s*\{([^}]*)\}", t)]
+        siglas += [(s, f) for s in re.findall(r"\\ac\s*\{([^}]*)\}", t)]
+
+    declaradas = set()
+    for f in glob.glob(os.path.join(a.raiz, "abrev", "*.tex")):
+        with open(f, encoding="utf-8") as fh:
+            declaradas |= set(re.findall(r"\\acro\s*\{([^}]*)\}", fh.read()))
+
+    problemas = []
+
+    sem_entrada = sorted({(k, os.path.basename(f))
+                          for k, f in citadas if k not in chaves_bib})
+    if sem_entrada:
+        problemas.append(("citação sem entrada no .bib", sem_entrada))
+
+    nunca_citadas = sorted(chaves_bib - {k for k, _ in citadas})
+    if nunca_citadas:
+        problemas.append(("entrada no .bib nunca citada no texto",
+                          nunca_citadas))
+
+    vazios = [(k, os.path.basename(f)) for k, f in refs if not k.strip()]
+    if vazios:
+        problemas.append(("\\ref vazio", vazios))
+
+    quebradas = sorted({(k, os.path.basename(f)) for k, f in refs
+                        if k.strip() and k not in labels})
+    if quebradas:
+        problemas.append(("\\ref para label inexistente", quebradas))
+
+    sem_declarar = sorted({(s, os.path.basename(f)) for s, f in siglas
+                           if s not in declaradas}) if declaradas else []
+    if sem_declarar:
+        problemas.append(("\\ac de sigla não declarada em abrev/",
+                          sem_declarar))
+
+    travessoes = []
+    for f, t in corpo.items():
+        for n, linha in enumerate(t.split("\n"), 1):
+            if "—" in linha or "–" in linha:
+                travessoes.append((f"{os.path.basename(f)}:{n}",
+                                   linha.strip()[:70]))
+    if travessoes:
+        problemas.append(("travessão ou meia-risca no corpo", travessoes))
+
+    print(f"{len(texs)} arquivo(s) .tex · {len(chaves_bib)} entrada(s) no .bib "
+          f"· {len({k for k, _ in citadas})} chave(s) citada(s)\n")
+    if not problemas:
+        print("nenhum problema mecânico encontrado.")
+        return 0
+    for titulo, itens in problemas:
+        print(f"== {titulo}: {len(itens)}")
+        for it in itens[:15]:
+            print(f"   {it}")
+        if len(itens) > 15:
+            print(f"   ... e {len(itens) - 15} outro(s)")
+        print()
+    # Entrada nao citada e aviso, nao erro: o .bib do modelo vem povoado.
+    graves = [t for t, _ in problemas
+              if t != "entrada no .bib nunca citada no texto"]
+    return 1 if graves else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

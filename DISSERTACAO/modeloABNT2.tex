@@ -1,0 +1,249 @@
+%% Este arquivo foi modificado de:
+%% modeloABNT2, v1.0 athila
+%% Copyright 2013 by Athila e Monaro
+%% Desenvolvido para EESC-USP
+
+% ------------------------------------------------------------------------
+% Opções:
+% 	tesedr:     Formata documento para tese de doutorado
+%	qualidr:    Formata documento para qualificação de doutorado
+% 	dissertmst: Formata documento para dissertação de mestrado
+% 	qualimst:   Formata documento para qualificação de mestrado
+% ------------------------------------------------------------------------
+\documentclass[dissertmst]{ufscar}
+
+% ---
+% PACOTES
+% ---
+
+% ---
+% Pacotes fundamentais 
+% ---
+\usepackage{cmap}				% Mapear caracteres especiais no PDF
+\usepackage{lmodern}				% Usa a fonte Latin Modern
+\usepackage{makeidx}            	% Cria o indice
+\usepackage{hyperref}  			% Controla a formação do índice
+\usepackage{lastpage}			% Usado pela Ficha catalográfica
+\usepackage{indentfirst}			% Indenta o primeiro parágrafo de cada seção.
+\usepackage{nomencl} 			% Lista de simbolos
+\usepackage{graphicx}			% Inclusão de gráficos
+% ---
+\usepackage{amssymb}
+
+% Para centralizar as imagens
+\usepackage{float}
+
+%Pack imagens
+\graphicspath{ {./cap_comandos/figuras} }
+
+\usepackage{caption}
+\usepackage{subcaption}
+
+% ---
+% Pacotes adicionais
+% ---
+\usepackage{lipsum}				       % para geração de dummy text
+\usepackage[printonlyused]{acronym}
+\usepackage[table]{xcolor}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{pdflscape} % Pacote para o modo paisagem
+\usepackage{seqsplit}  % Pacote para quebrar palavras longas em células
+\usepackage{rotating} 
+\usepackage{lscape}    % Para o ambiente 'landscape' (versão mais estável que pdflscape)
+\usepackage{rotating}
+\usepackage{adjustbox}
+\newcommand{\p}{\rule{8mm}{2mm}}
+\newcommand{\pp}{\rule{3mm}{2mm}\hspace{2mm}\rule{3mm}{2mm}\hspace{2mm}\rule{3mm}{2mm}\hspace{2mm}}
+
+% ---
+
+
+% ---
+% Informações de dados para CAPA e FOLHA DE ROSTO
+% ---
+%
+% Título:
+%	1. Título em português
+%	2. Título em inglês
+\titulo{Framework Interativo e Adaptativo Baseado em Aprendizado Ativo e Contínuo para Segmentação Semântica de Imagens}{Título em inglês}
+%
+
+% Autor:
+%	1. Nome completo do autor
+%	2. Formato de nome para bibliografia
+\autor{Daniel Martins Galetti}{Martins Galetti, Daniel}
+%
+% Cidade
+\local{São Carlos}
+% Ano de defesa
+\data{2026}
+
+% Universidade
+\universidade{Universidade Federal de São Carlos}{UFSCar}
+% \universidade{Universidade Federal de São Carlos}{UFSCar}
+
+% Centro
+\centro{Centro de Ciências Exatas e de Tecnologia}{CCET}
+% \centro{Centro de Ciências Exatas e de Tecnologia}{CCET}
+
+% Depatamento
+\departamento{Departamento de Computação}{DC}
+%\departamento{Departamento de Computação}{DC}
+
+
+% Programa de Pós-Graduação
+\programa{Programa de Pós-Graduação em Ciência da Computação}{PPGCC}
+% \programa{Programa de Pós-Graduação em Ciência da Computação}{PPGCC}
+
+
+% Curso
+\curso{Ciência da Computação}
+%\curso{Ciência da Computação}
+
+
+
+% Área de concentração da pesquisa
+\areaconcentracao{Visão Computacional}
+% \areaconcentracao{Metodologias e Técnicas de Computação}
+
+
+% Nome do orientador
+\orientador{Priscila Maeda Tiemi Saito}
+% Nome do coorientador
+\coorientador{}
+% ---
+
+% ---
+% compila o indice
+% ---
+\makeindex
+% ---
+
+% ---
+% Compila a lista de abreviaturas e siglas
+% ---
+\makenomenclature
+% ---
+
+% ----
+% Início do documento
+% ----
+
+\begin{document}
+
+% ----------------------------------------------------------
+% ELEMENTOS PRÉ-TEXTUAIS
+% ----------------------------------------------------------
+\pretextual
+
+% ---
+% Insere Capa, Folha de rosto.
+% ---
+\maketitle
+
+
+% ---
+% Dedicatória
+% ---
+\imprimirdedicatoria{Este trabalho é dedicado às crianças adultas que,\\
+   quando pequenas, sonharam em se tornar cientistas.}
+% ---
+% ---
+
+% ---
+% Epígrafe
+% ---
+\imprimirepigrafe{
+		``Somos essencialmente profissionais do sentido. Educamos, \\
+		 quando ensinamos com sentido. Educar é impregnar de sentido\\
+		 a vida. A profissão docente está centrada na vida, no bem querer.''\\
+		(Prof. Gilberto Teixeira)
+}
+% ---
+
+% ---
+% RESUMO e ABSTRACT
+% ---
+
+% Resumo em português
+\begin{resumo}{Segmentação Semântica. Aprendizagem Contínua. Interação Humano-Computador. Anotação de Dados. Deep Learning}
+
+A segmentação semântica é uma tarefa fundamental em Visão Computacional, porém seu avanço é frequentemente limitado pelo elevado custo, tempo e complexidade do processo de anotação manual de dados. Esta dissertação propõe e avalia 
+%tem como objetivo desenvolver e validar
+uma metodologia de segmentação interativa baseada em aprendizado contínuo e ativo, com o objetivo de reduzir significativamente o esforço de anotação humana. A abordagem utiliza um modelo previamente treinado (e.g. DeepLabV3-ResNet50) como modelo especialista, que é posteriormente refinado de forma interativa por um especialista humano por meio de anotações esparsas. Para garantir estabilidade durante o refinamento e mitigar o esquecimento catastrófico, um desafio típico de cenários de fine-tuning com poucos dados, a metodologia integra Destilação de Conhecimento e uma taxa de aprendizagem adaptativa condicionada ao desempenho inicial (e.g. \ac{IoU} > 95\%). Os experimentos preliminares, conduzidos no conjunto de dados \ac{PascalVOC2012}, demonstram a eficácia da abordagem. O processo de refinamento preservou o conhecimento do modelo especialista, apresentando apenas variações marginais de desempenho (\ac{IoU} > 0.93). Além disso, verificou-se a capacidade de transferência de conhecimento: o modelo refinado em uma instância manteve, e discretamente aprimorou, seu desempenho (\ac{IoU} = 0.984) em uma outra imagem da mesma classe, evidenciando propriedades de aprendizado contínuo mediado pela interação humano-computador. Conclui-se que o framework desenvolvido constitui uma alternativa viável e eficiente à anotação manual tradicional. Além disso, a incorporação futura de estratégias de aprendizado ativo para seleção de dados mais informativos tende a potencializar ainda mais seus benefícios, estabelecendo um paradigma colaborativo entre humano e modelo capaz de acelerar e democratizar a construção de conjuntos de dados de segmentação semântica de alta qualidade. %reduzindo o esforço humano e ampliando a eficácia do refinamento interativo. Assim, o método proposto consolida um paradigma colaborativo entre humano e modelo, capaz de acelerar e democratizar a construção de conjuntos de dados de segmentação semântica de alta qualidade.
+
+%DeepLabV3-ResNet50, pré treinado como especialista e refinado de forma interativa por um especialista humano através de anotações esparsas. Para garantir a estabilidade do aprendizado e mitigar o esquecimento catastrófico inerente ao fine-tuning com poucos dados, foram integradas técnicas de Destilação de Conhecimento juntamente a uma taxa de aprendizagem (Learning Rate) adaptativa com base na performance Inicial (\ac{IoU} > 95\%). Os resultados experimentais, conduzidos no dataset \ac{PascalVOC2012}, demonstram a eficácia da abordagem. A metodologia inicial provou ser segura, preservando o conhecimento dos especialista com uma queda insignificante (\ac{IoU} > 0.93) depois de refinado. Também validou-se a transferência de conhecimento, onde o modelo refinado em uma imagem manteve sua performance (\ac{IoU} = 0.984) em uma instância diferente de mesma classe, mostrando e averiguando a aprendizagem contínua através da interação humano-computador. Conclui-se de antemão que o framework proposto é uma alternativa viável e eficiente à anotação manual, estabelecendo um paradigma de colaboração Humano-Computador que pode acelerar e democratizar a criação de datasets de segmentação de alta qualidade.
+
+\end{resumo}
+
+% Resumo em inglês
+\begin{abstract}{Semantic Segmentation. Continual Learning. Human-Computer Interaction. Data Annotation. Deep Learning}
+
+Semantic segmentation is a fundamental task in Computer Vision, but its progress is often limited by the high cost, time, and complexity involved in manual data annotation. This dissertation aims to develop and validate an interactive segmentation methodology based on continual and active learning, with the goal of reducing annotation effort. The proposed methodology employed a DeepLabV3-ResNet50 model, pretrained as a specialist and interactively refined by a human expert through sparse annotations, where annotation points were suggested by the framework using difficulty analysis via Active Learning. To ensure training stability and mitigate the catastrophic forgetting inherent to fine-tuning with limited data, Knowledge Distillation techniques were integrated along with an adaptive Learning Rate based on initial performance (\ac{IoU} > 95\%). Experimental results conducted on the \ac{PascalVOC2012} dataset demonstrate the effectiveness of the approach. The methodology proved to be robust, preserving the specialist knowledge with an insignificant drop (\ac{IoU} > 0.93) after refinement. Knowledge transfer was also validated: the model refined on a single image maintained its performance (\ac{IoU} = 0.984) on a different instance of the same class, showcasing and confirming continual learning through human-computer interaction. We conclude that the proposed framework is a viable and efficient alternative to manual annotation, establishing a Human-Computer collaboration paradigm that can accelerate and democratize the creation of high-quality segmentation datasets.
+
+	
+\end{abstract}
+% ---
+
+% ---
+% inserir lista de ilustrações
+% ---
+\listailustracoes
+% ---
+
+% ---
+% inserir lista de tabelas
+% ---
+\listatabelas
+% ---
+
+% ---
+% inserir lista de abreviaturas e siglas
+% ---
+\listasiglas{abrev/Abreviaturas}
+% ---
+
+% ---
+% inserir o sumario
+% ---
+\sumario
+% ---
+
+% ----------------------------------------------------------
+% ELEMENTOS TEXTUAIS
+% ----------------------------------------------------------
+\mainmatter
+
+% ----------------------------------------------------------
+% Introdução
+% ----------------------------------------------------------
+\include{cap_introducao/introducao}
+
+% ----------------------------------------------------------
+% Capitulo com exemplos de comandos inseridos de arquivo externo 
+% ----------------------------------------------------------
+\include{cap_comandos/cap_2}
+\include{cap_comandos/cap_3}
+
+\bookmarksetup{startatroot}% 
+% ---
+
+% ---
+% Conclusão
+% ---
+
+% ----------------------------------------------------------
+% ELEMENTOS PÓS-TEXTUAIS
+% ----------------------------------------------------------
+\postextual
+
+% ----------------------------------------------------------
+% Referências bibliográficas
+% ----------------------------------------------------------
+\bibliography{bib/abntex2-modelo-references}
+
+\end{document}
+
+
