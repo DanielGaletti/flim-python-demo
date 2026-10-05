@@ -16,8 +16,17 @@
 
   "como_alpha_sera_escolhido": "NAO sera escolhido pelos dados do teste primario. O alpha e fixado em 0,5 ANTES de rodar, por ser o ponto medio da unica faixa possivel [0,1]. Os outros valores de alpha entram como curva DESCRITIVA, para mostrar o trade-off estabilidade-plasticidade, e nao como candidatos entre os quais escolher o melhor.",
 
-  "alphas": [0.0, 0.25, 0.5, 0.75, 1.0],
+  "alphas": [0.0, 0.5, 1.0],
   "alpha_do_teste_primario": 0.5,
+
+  "REDUCAO_DE_ESCOPO_declarada_antes_de_rodar": {
+    "quando": "2026-10-05, depois de sete execucoes serem interrompidas pelo limite de 10 minutos por invocacao e ANTES de qualquer analise dos dados parciais.",
+    "o_que_muda": "sementes de 10 para 5 (0 a 4), e alphas de cinco valores para tres (0, 0,5 e 1).",
+    "por_que_nao_afeta_o_teste_primario": "O teste primario compara alpha=0,5 contra alpha=1, e os dois continuam no conjunto. Os valores 0,25 e 0,75 eram DESCRITIVOS, para desenhar a curva de trade-off com mais pontos; com tres pontos a curva ainda mostra os extremos (retencao total, meio, FLIM puro).",
+    "efeito_no_poder": "A unidade independente e a semente. Com 5 sementes x 3 datasets sao 15 unidades, contra 30 do desenho original. O poder cai, e isso aumenta a chance de falso negativo, nao de falso positivo. Se o teste primario falhar com n=15, a conclusao correta e 'nao detectamos', nao 'nao existe'.",
+    "o_que_NAO_e": "Nao e selecao de sementes por resultado. As sementes 0 a 4 sao as cinco primeiras da sequencia declarada, escolhidas por ordem e nao por valor de Fbeta. As sementes 5 a 9 ficam disponiveis e serao rodadas se houver tempo, com o mesmo protocolo.",
+    "tambem": "A fase de exploracao (achar a pior e a melhor regiao sorteada) passa a avaliar somente o decoder labeled_marker, que e o unico que ela usa para decidir. Isso nao muda nenhum numero reportado, so deixa de calcular um que era descartado."
+  },
 
   "candidatos_por_semente": [
     "argmax_entropia: a regiao que o Active Learning escolhe, sem ground truth",

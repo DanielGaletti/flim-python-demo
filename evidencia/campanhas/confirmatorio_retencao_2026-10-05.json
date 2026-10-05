@@ -1,0 +1,46 @@
+{
+  "id": "confirmatorio_retencao_2026-10-05",
+  "declarado_em": "2026-10-05T00:00:00+00:00",
+  "git_commit": "6a1ff33",
+  "tipo": "CONFIRMATORIO — hipotese unica, imagens ineditas, UM teste primario.",
+
+  "de_onde_veio": "A campanha `il_noc` declarou tres valores de plasticidade (0, 0,5 e 1) e fixou alpha=0,5 como primario ANTES de rodar. O primario FALHOU: NoC de alpha=0,5 contra alpha=1 deu Delta = -0,38 com p = 0,345, em 29 imagens de Schisto e BraTS. Mas alpha=0, que era braco DESCRITIVO, deu Delta = -1,31 com IC95% [-2,46, -0,16] e p = 0,0265, com taxa de sucesso 41% contra 28% e 4 pares discordantes a favor contra 0 contra.",
+
+  "por_que_isso_exige_confirmatorio": "alpha=0 nao era o primario. Foi escolhido olhando os dados, entre tres bracos, e este projeto ja viu dois achados assim evaporarem em sementes ineditas: o ganho da conjuntivite na densidade (p=0,0016 virou p=0,586) e a dispersao da entropia (p=0,082 virou p=0,5674). Reportar alpha=0 como resultado sem este teste repetiria o erro que o pre-registro existe para impedir.",
+
+  "ressalva_do_achado_original": "O p=0,0265 vem de agregar Schisto e BraTS num unico conjunto de 29 imagens, e os dois tem dificuldade muito diferente (taxa de sucesso 6-22% contra 70-80%). Separados, nenhum dos dois chega a p<0,05. A agregacao nao foi declarada de antemao.",
+
+  "hipotese": "Congelar o banco de filtros (alpha=0) reduz o numero de cliques necessarios para a IoU passar do alvo, em relacao ao FLIM puro (alpha=1).",
+
+  "mecanismo_proposto": "Com alpha=0 nenhuma direcao nova entra no banco de filtros, mas os MARCADORES continuam mudando, e o decoder `labeled_marker` le os rotulos dos marcadores diretamente. Entao o clique melhora a segmentacao pelo decoder, sem o risco de reescrever o encoder. O FLIM puro refaz o k-means final a cada clique e pode perder os filtros que funcionavam, o que foi medido em `ganho_marginal` (-0,199 a -0,502 em 6 de 6 celulas). A previsao concreta e: o ganho de alpha=0 vem de EVITAR dano, nao de aprender mais, e portanto a IoU final de alpha=0 nao deve ser menor que a de alpha=1.",
+
+  "teste_primario": "NoC medio, alpha=0 contra alpha=1, pareado por imagem, t pareado bicaudal, alfa=0,05, SEPARADO por dataset. Nao ha agregacao entre datasets no primario: a agregacao foi o que inflou o achado original.",
+  "secundario_obrigatorio": "taxa de sucesso por dataset, McNemar exato. Reduzir NoC derrubando a taxa de sucesso nao e melhoria.",
+  "terciario": "IoU final. Se alpha=0 tiver IoU final MENOR que alpha=1, o mecanismo proposto esta errado, porque ele preve que congelar evita dano sem custar qualidade.",
+
+  "imagens": "INEDITAS. O achado original usou as imagens 0 a 19 da permutacao com semente 99 no Schisto e 0 a 19 no BraTS. Este confirmatorio usa de 20 em diante nos dois, mais a conjuntivite inteira, que nao entrou no achado original.",
+  "pula": 20,
+  "n_imagens_por_dataset": 20,
+
+  "parametros_congelados": {
+    "alvo_iou": 0.75,
+    "max_cliques": 12,
+    "alphas": [0.0, 1.0],
+    "raio_do_pincel": 5,
+    "decoder": "labeled_marker",
+    "usuario_simulado": "Xu et al. (2016), sem sorteio"
+  },
+  "por_que_so_dois_alphas": "O teste e alpha=0 contra alpha=1. Incluir 0,5 de novo seria reabrir a escolha entre bracos, que e exatamente o que invalidou o achado original como resultado.",
+
+  "o_que_falsearia": "p >= 0,05 no primario em ambos os datasets, ou NoC de alpha=0 maior que de alpha=1, ou queda da taxa de sucesso, ou IoU final menor.",
+
+  "limitacao_conhecida_do_alvo": "No Schisto, a IoU alvo de 0,75 e atingida por 6% a 22% das imagens em 12 cliques, o que CENSURA o NoC no teto e derruba o poder do teste. O alvo nao sera mudado, porque mudar o alvo depois de ver os dados escolheria o numero. A censura e reportada como limitacao, e a taxa de sucesso e o secundario justamente por isso.",
+
+  "o_que_NAO_sera_afirmado": [
+    "Reducao de tempo de especialista: o clique e simulado do ground truth e o usuario acerta sempre.",
+    "Que o Active Learning melhora o FLIM: o clique vai ao maior erro, que usa ground truth, e portanto e usuario simulado e nao criterio de aquisicao.",
+    "Comparacao com NoC publicado de RITM ou SimpleClick: datasets e definicao de alvo diferentes."
+  ],
+
+  "determinismo": "threadpoolctl limitado a 1 thread em toda execucao, por flim_al/determinismo.fixar()."
+}

@@ -65,7 +65,7 @@ import onde_marcar as OM  # noqa: E402
 EXPERIMENTO = "cl_plasticidade"
 
 DECODERS = [("labeled_marker", "FLIM_lm"), ("decoder_2", "FLIM_pb")]
-ALPHAS = [0.0, 0.25, 0.5, 0.75, 1.0]
+ALPHAS = [0.0, 0.5, 1.0]
 
 PARTICAO = {
     "schisto":     dict(n_pool=40, n_val=40, n_test=60),
@@ -240,8 +240,15 @@ def main() -> int:
                      + [k_bg[i] for i in
                         rs.permutation(len(k_bg))[:a.n_sorteadas - metade]])
 
-        def _treina(chave, alpha, tag):
-            """Acrescenta a regiao `chave` e retreina com plasticidade alpha."""
+        def _treina(chave, alpha, tag, so_primeiro=False):
+            """
+            Acrescenta a regiao `chave` e retreina com plasticidade alpha.
+
+            `so_primeiro` avalia apenas o primeiro decoder. A fase de
+            exploracao usa so o `labeled_marker` para decidir qual regiao e a
+            pior e qual e a melhor, entao avaliar os dois ali era metade do
+            custo jogada fora.
+            """
             img, rid = chave
             fg0, bg0, H, W = base[img]
             fgx, bgx = GM._pixels_da_regiao(info[chave]["mask"], gts[img],
@@ -256,14 +263,16 @@ def main() -> int:
             t = time.time()
             cl_flim.treinar(cfg["arch"], md, cfg["orig"], cfg["label"],
                             a.device, enc, banco=banco0, alpha=alpha)
-            return (_fb(enc, cfg, decoders, arq_val, a.device),
+            quais = decoders[:1] if so_primeiro else decoders
+            return (_fb(enc, cfg, quais, arq_val, a.device),
                     time.time() - t, len(fgx) + len(bgx))
 
         # ── exploracao: achar a pior e a melhor sorteada com alpha=1 ───────
         fb_sort = {}
         for chave in sorteadas:
             try:
-                m, t, px = _treina(chave, 1.0, f"exp{chave[1]}")
+                m, t, px = _treina(chave, 1.0, f"exp{chave[1]}",
+                                   so_primeiro=True)
                 if m is None:
                     continue
                 fb_sort[chave] = m["labeled_marker"]["fb"]

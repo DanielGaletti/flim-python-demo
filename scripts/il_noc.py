@@ -79,6 +79,10 @@ def main() -> int:
     ap.add_argument("--ds", default="schisto")
     ap.add_argument("--n_imagens", type=int, default=10,
                     help="quantas imagens refinar, uma por execucao de laco")
+    ap.add_argument("--pula", type=int, default=0,
+                    help="pula as primeiras N imagens da sequencia. Serve "
+                         "para retomar: a janela de execucao e limitada, e "
+                         "refazer o que ja esta registrado seria so custo")
     ap.add_argument("--alvo", type=float, default=0.75)
     ap.add_argument("--max_cliques", type=int, default=12)
     ap.add_argument("--alphas", nargs="+", type=float, default=[0.5, 1.0])
@@ -104,8 +108,10 @@ def main() -> int:
     com_obj = [i for i in todas[:600] if GM._tem_objeto(a.ds, i)]
     emb = rng0.permutation(len(com_obj))
     pool = sorted(com_obj[i] for i in emb[:part["n_pool"]])
+    # A sequencia e fixa pela semente 99, entao `pula` recorta sempre o mesmo
+    # trecho e os pedacos de execucoes diferentes se encaixam sem sobrepor.
     alvos = [str(x) for x in np.random.default_rng(99).permutation(pool)]
-    alvos = alvos[:a.n_imagens]
+    alvos = alvos[a.pula:a.pula + a.n_imagens]
 
     print(f"dataset {a.ds} · {len(alvos)} imagens · alvo IoU {a.alvo} · "
           f"max {a.max_cliques} cliques · alphas {a.alphas}")
