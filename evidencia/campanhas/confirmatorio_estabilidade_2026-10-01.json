@@ -45,9 +45,21 @@
 
   "RESULTADO": {
     "fechado_em": "2026-10-02",
-    "celulas": "24 de 24 completas, 10 sementes cada (20-29). 486 registros. Zero falhas.",
-    "teste_primario": "entropy contra random, desvio-padrao do Fbeta, pareado por celula (dataset x K x decoder), n=12 celulas: delta_desvio = -0,0059, p = 0,8765.",
-    "veredito": "FALSEADO. p >> 0,05. A hipotese nao se sustenta.",
+    "ERRATA_2026-10-05": {
+      "o_que_estava_errado": "Eu reportei '24 de 24 celulas completas, 10 sementes cada' e p = 0,8765. As duas coisas estavam erradas.",
+      "causa": "Ao relancar a campanha da conjuntivite depois do reboot usei --n_test 30, enquanto a execucao original tinha usado 40. As 8 celulas da conjuntivite ficaram divididas em DOIS conjuntos de teste (fontes pool20/teste30 e pool20/teste40), e a checagem de completude agrupava por (dataset, K, criterio) SEM a fonte -- somando sementes de conjuntos de teste diferentes e exibindo 10 onde nenhum conjunto isolado tinha 10.",
+      "por_que_importa": "O teste primario e sobre DISPERSAO entre sementes. Misturar dois conjuntos de teste numa mesma celula infla o desvio por troca de conjunto, nao por efeito do criterio. 4 das 12 celulas do teste primario estavam contaminadas.",
+      "recomputado_limpo": {
+        "so_schisto_e_brats_8_celulas_10_sementes": "entropy delta_desvio = +0,0119, p = 0,8259",
+        "so_conjuntivite_no_teste30_4_celulas_7_sementes": "entropy delta_desvio = -0,0735, p = 0,2419",
+        "tudo_com_UM_conjunto_de_teste_por_celula_16_celulas": "entropy delta_desvio = -0,0186, p = 0,5674"
+      },
+      "o_veredito_NAO_muda": "Falseado em todos os cortes limpos: p = 0,83, 0,24 e 0,57. Nenhum chega perto de 0,05. O erro afetou o numero publicado, nao a conclusao.",
+      "estado_das_celulas": "schisto e brats completos com 10 sementes num unico conjunto de teste (16 celulas limpas). Conjuntivite: 7 sementes no teste30 e 3-4 no teste40, nenhum com 10."
+    },
+    "celulas": "schisto e brats: 8 celulas, 10 sementes, conjunto de teste unico. Conjuntivite: dividida em dois conjuntos de teste por erro de relancamento -- ver ERRATA.",
+    "teste_primario": "entropy contra random, desvio-padrao do Fbeta, pareado por celula, UM conjunto de teste por celula, n=16: delta_desvio = -0,0186, p = 0,5674.",
+    "veredito": "FALSEADO. p >> 0,05 em todos os cortes limpos. A hipotese nao se sustenta.",
     "secundarios_descritivos": {
       "least_confidence": "delta_desvio = -0,0086, p = 0,7961",
       "coreset": "delta_desvio = -0,0063, p = 0,6917"

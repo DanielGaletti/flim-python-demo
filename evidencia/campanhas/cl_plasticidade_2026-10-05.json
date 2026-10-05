@@ -1,0 +1,49 @@
+{
+  "id": "cl_plasticidade_2026-10-05",
+  "declarado_em": "2026-10-05T00:00:00+00:00",
+  "git_commit": "296ce58",
+  "tipo": "CONFIRMATORIO de uma hipotese com mecanismo. Hipotese unica, teste primario unico.",
+
+  "de_onde_veio": "A campanha `ganho_marginal` mediu, em 6 de 6 celulas (dataset x decoder), que acrescentar ~300 px de anotacao na regiao errada derruba o Fbeta de validacao em -0,199 a -0,502 (p <= 0,0015), chegando a levar o Fbeta de 0,78 a 0,00. E esquecimento catastrofico num modelo SEM backpropagacao.",
+
+  "mecanismo_identificado_no_codigo": "FLIMModel.learn_layer_weights junta os candidatos de kernel de todas as imagens e marcadores e roda um k-means FINAL que os reduz a noutput_channels. Anotacao nova acrescenta candidatos, o k-means reparticiona tudo, e os centroides que funcionavam se movem ou desaparecem. O banco de filtros e reescrito, nao estendido.",
+
+  "intervencao": "flim_al/cl_flim.py intercepta esse k-means final e interpola: para cada centroide anterior, acha o novo mais proximo (guloso, sem repeticao) e devolve (1-alpha)*anterior + alpha*novo. O tamanho do banco e o do banco anterior, para nao mudar ninput_channels da camada seguinte.",
+
+  "hipotese": "Existe alpha < 1 em que acrescentar uma anotacao ao FLIM deixa de ter Delta medio negativo, SEM eliminar o ganho das boas anotacoes.",
+
+  "teste_primario": "Delta Fbeta de validacao ao acrescentar UMA anotacao, no alpha escolhido contra alpha=1 (FLIM puro), pareado por celula (dataset x decoder x semente x candidato), t pareado bicaudal, alfa=0,05. UM teste.",
+
+  "como_alpha_sera_escolhido": "NAO sera escolhido pelos dados do teste primario. O alpha e fixado em 0,5 ANTES de rodar, por ser o ponto medio da unica faixa possivel [0,1]. Os outros valores de alpha entram como curva DESCRITIVA, para mostrar o trade-off estabilidade-plasticidade, e nao como candidatos entre os quais escolher o melhor.",
+
+  "alphas": [0.0, 0.25, 0.5, 0.75, 1.0],
+  "alpha_do_teste_primario": 0.5,
+
+  "candidatos_por_semente": [
+    "argmax_entropia: a regiao que o Active Learning escolhe, sem ground truth",
+    "pior_sorteada: a regiao sorteada que mais derruba o Fbeta (usa GT, e DIAGNOSTICO)",
+    "melhor_sorteada: a que mais sobe (usa GT, e DIAGNOSTICO)",
+    "sorteada: uma regiao sorteada qualquer, o caso medio"
+  ],
+
+  "testes_de_corretude_que_tem_de_passar_antes": [
+    "cl_flim.treinar sem banco reproduz retrain_encoder com Fbeta identico a 1e-9 (senao nao e o mesmo treino e nada se compara)",
+    "o k-means final e de fato interceptado em >= 2 camadas (senao os testes de alpha passam por vacuidade)",
+    "alpha=0 com marcadores NOVOS devolve encoder byte-identico ao anterior (retencao total)"
+  ],
+  "status_dos_testes_de_corretude": "os tres passam em tests/test_cl_flim.py, verificado em 2026-10-05 antes desta campanha rodar",
+
+  "o_que_falsearia": "p >= 0,05 no teste primario, ou Delta negativo (alpha=0,5 pior que FLIM puro).",
+
+  "o_que_este_experimento_NAO_autoriza_afirmar": [
+    "Que o Active Learning melhora o FLIM. O braco argmax_entropia esta aqui para medir o que acontece com a escolha do AL sob protecao, nao para ressuscitar a comparacao AL vs sorteio, que ja foi respondida e e negativa.",
+    "Reducao de tempo de especialista: a anotacao e simulada a partir do ground truth.",
+    "Que alpha=0,5 e o melhor alpha. Ele foi fixado antes, nao otimizado."
+  ],
+
+  "datasets": ["schisto", "brats", "conjunctiva"],
+  "decoders": ["labeled_marker", "decoder_2"],
+  "sementes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "particao": "identica a `ganho_marginal`: pool 40 / val 40 / teste 60 (conjuntivite 20/25/30), semente_particao=0. O conjunto de TESTE nao e tocado.",
+  "cruzamento_de_verificacao": "alpha=1 reproduz `ganho_marginal`. Os Fbeta das celulas correspondentes tem de bater; divergencia alem de 0,0034 (o ruido entre execucoes ja medido) indica erro."
+}
