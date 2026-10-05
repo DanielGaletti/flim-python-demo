@@ -32,6 +32,22 @@
         "atravessa_borda": 0.0,
         "fundo_puro": 0.2,
         "interior_puro": 0.8
+      },
+      "coreset_regiao": {
+        "n": 10,
+        "frac_mediana": 0.0,
+        "frac_media": 0.003,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 1.0,
+        "interior_puro": 0.0
+      },
+      "medoide_regiao": {
+        "n": 10,
+        "frac_mediana": 0.0,
+        "frac_media": 0.003,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 1.0,
+        "interior_puro": 0.0
       }
     },
     "todas_as_regioes": {
@@ -78,6 +94,22 @@
         "atravessa_borda": 0.2,
         "fundo_puro": 0.5,
         "interior_puro": 0.3
+      },
+      "coreset_regiao": {
+        "n": 10,
+        "frac_mediana": 0.0,
+        "frac_media": 0.0,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 1.0,
+        "interior_puro": 0.0
+      },
+      "medoide_regiao": {
+        "n": 10,
+        "frac_mediana": 0.0,
+        "frac_media": 0.0,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 1.0,
+        "interior_puro": 0.0
       }
     },
     "todas_as_regioes": {
@@ -124,6 +156,22 @@
         "atravessa_borda": 0.6,
         "fundo_puro": 0.1,
         "interior_puro": 0.3
+      },
+      "coreset_regiao": {
+        "n": 10,
+        "frac_mediana": 1.0,
+        "frac_media": 0.9008,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 0.1,
+        "interior_puro": 0.9
+      },
+      "medoide_regiao": {
+        "n": 10,
+        "frac_mediana": 0.0,
+        "frac_media": 0.0105,
+        "atravessa_borda": 0.2,
+        "fundo_puro": 0.8,
+        "interior_puro": 0.0
       }
     },
     "todas_as_regioes": {

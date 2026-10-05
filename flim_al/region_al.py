@@ -1118,3 +1118,124 @@ def _cli():
 
 if __name__ == "__main__":
     _cli()
+
+
+# ── diversidade no nivel de REGIAO ──────────────────────────────────────────
+#
+# CoreSet, BADGE e medoide sao criterios de IMAGEM por construcao: eles
+# comparam imagens inteiras num espaco de atributos, uma imagem um vetor. Por
+# isso a familia de diversidade nunca havia sido testada no nivel de regiao
+# neste projeto, enquanto a familia de incerteza (entropia, least confidence,
+# BALD) foi testada varias vezes.
+#
+# O que falta para levar diversidade a regiao e um vetor POR REGIAO. Ele sai do
+# mesmo mapa de ativacoes que `coreset_badge.extract_encoder_features` usa,
+# trocando o Global Average Pool por media dentro da mascara de cada
+# superpixel.
+
+def features_por_regiao(encoder, caminho_imagem: str, superpixels,
+                        camada_alvo: int, device: str = "cpu"):
+    """
+    Um vetor de atributos por superpixel, do mesmo mapa que o CoreSet de
+    imagem usa.
+
+    `coreset_badge.extract_encoder_features` faz Global Average Pool e devolve
+    um vetor por IMAGEM. Aqui a media e tomada dentro da mascara de cada
+    regiao, o que da um vetor por REGIAO no mesmo espaco.
+
+    O mapa de ativacoes sai menor que a imagem por causa do pooling de cada
+    camada, entao a mascara do superpixel e reamostrada para a resolucao do
+    mapa por vizinho mais proximo. Interpolar suavizaria a mascara e misturaria
+    regioes vizinhas, que e o oposto do que se quer.
+
+    Devolve (ids, F) com F de forma (n_regioes, D), na ordem de `ids`.
+    """
+    import numpy as np
+    import torch
+    from PIL import Image
+    from flim_al.coreset_badge import _rgb_uint8_to_lab01
+
+    encoder.eval()
+    # Quantas bandas o encoder espera -- mesma logica de
+    # extract_encoder_features, pelo mesmo motivo: converter sempre para RGB
+    # estoura em dataset monocromatico.
+    npar = encoder.layers[0].normalization_parameters
+    esperado = int(np.atleast_1d(np.asarray(npar["mean"])).shape[0])
+    if esperado == 1:
+        img = (np.array(Image.open(caminho_imagem).convert("L"),
+                        dtype=np.float32)[:, :, None] / 255.0)
+    else:
+        img = _rgb_uint8_to_lab01(
+            np.array(Image.open(caminho_imagem).convert("RGB"),
+                     dtype=np.uint8))
+    x = torch.tensor(img.transpose(2, 0, 1).astype(np.float32)
+                     ).unsqueeze(0).to(device)
+    with torch.no_grad():
+        for l in range(encoder.architecture.nlayers):
+            if not encoder.use_bias:
+                x = encoder.normalization(
+                    x, encoder.layers[l].normalization_parameters)
+            x = encoder.layers[l].conv(x)
+            x = encoder.layers[l].activation(x)
+            x = encoder.layers[l].pool(x)
+            if l == camada_alvo:
+                break
+    mapa = x.squeeze(0).cpu().numpy()            # (D, h, w)
+    D, h, w = mapa.shape
+
+    sp = np.asarray(superpixels)
+    if sp.shape != (h, w):
+        sp = np.array(Image.fromarray(sp.astype(np.int32)).resize(
+            (w, h), Image.NEAREST))
+
+    plano = mapa.reshape(D, -1)
+    ids, vetores = [], []
+    for rid in np.unique(sp):
+        m = (sp == rid).reshape(-1)
+        if m.sum() == 0:
+            continue
+        ids.append(int(rid))
+        vetores.append(plano[:, m].mean(axis=1))
+    return ids, np.asarray(vetores, dtype=np.float32)
+
+
+def score_regions_by_coreset(ids, F, ids_anotados):
+    """
+    CoreSet de regiao: distancia ao conjunto JA anotado.
+
+    E o passo guloso do k-center: a proxima regiao e a mais distante de tudo
+    que ja foi coberto. Escore alto significa "nada parecido com isto foi
+    anotado ainda".
+
+    Sem regiao anotada, cai na distancia ao centro do conjunto, que e o unico
+    sentido de "mais distante do que ja se tem" quando nao se tem nada.
+    """
+    import numpy as np
+    F = np.asarray(F, dtype=np.float64)
+    pos = {r: i for i, r in enumerate(ids)}
+    sel = [pos[r] for r in ids_anotados if r in pos]
+    if sel:
+        A = F[sel]
+        d = np.sqrt(((F[:, None, :] - A[None, :, :]) ** 2).sum(-1)).min(axis=1)
+    else:
+        c = F.mean(axis=0, keepdims=True)
+        d = np.sqrt(((F - c) ** 2).sum(-1))
+    return {int(r): float(d[i]) for i, r in enumerate(ids)}
+
+
+def score_regions_by_medoide(ids, F):
+    """
+    Medoide de regiao: o oposto do CoreSet.
+
+    Escore alto significa "esta regiao e TIPICA", isto e, proxima da media de
+    todas. Entra como contraponto deliberado: o diagnostico
+    `ganho_marginal` mediu que trazer mais filtros novos correlaciona
+    NEGATIVAMENTE com o ganho (rho = -0,314, p = 0,0008). Se isso vale, o
+    CoreSet, que busca o mais atipico, deve ir mal, e o medoide, que busca o
+    mais tipico, deve ir melhor. Os dois juntos testam essa previsao nos dois
+    sentidos.
+    """
+    import numpy as np
+    F = np.asarray(F, dtype=np.float64)
+    d = np.sqrt(((F[:, None, :] - F[None, :, :]) ** 2).sum(-1)).mean(axis=1)
+    return {int(r): float(-d[i]) for i, r in enumerate(ids)}

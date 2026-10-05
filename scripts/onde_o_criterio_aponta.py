@@ -79,7 +79,10 @@ def main() -> int:
     ap.add_argument("--saida", default=SAIDA)
     a = ap.parse_args()
 
-    from flim_al.region_al import score_regions_by_entropy
+    from flim_al.region_al import (
+        score_regions_by_coreset, score_regions_by_medoide,
+        score_regions_by_entropy, features_por_regiao,
+    )
     from flim_app import server as SV
 
     tudo = {}
@@ -154,6 +157,18 @@ def main() -> int:
                     ent = score_regions_by_entropy(seg, prob)
                     lc_map = 1 - np.abs(prob - 0.5) * 2
                     pred = prob > 0.5
+                    # Diversidade precisa de um vetor por regiao e de saber
+                    # quais regioes JA foram anotadas: o passo do k-center e
+                    # "o mais distante do que ja esta coberto".
+                    ids_sp, F = features_por_regiao(
+                        modelo, os.path.join(cfg["orig"],
+                                             OM._arquivo(cfg, img)),
+                        seg, cfg["bloco"] - 1, "cpu")
+                    fgm, bgm, _, _ = base[img]
+                    anotados = {int(seg[y, x]) for x, y in list(fgm) + list(bgm)
+                                if 0 <= y < H and 0 <= x < W}
+                    cs = score_regions_by_coreset(ids_sp, F, anotados)
+                    md = score_regions_by_medoide(ids_sp, F)
                     for rid in np.unique(seg):
                         m = seg == rid
                         if m.sum() < 20:
@@ -166,6 +181,8 @@ def main() -> int:
                             # fronteira PREVISTA dentro da regiao, sem GT:
                             # 1 quando metade da regiao e objeto previsto.
                             fronteira=float(1.0 - abs(2.0 * fp - 1.0)),
+                            coreset=float(cs.get(int(rid), 0.0)),
+                            medoide=float(md.get(int(rid), 0.0)),
                             frac=float(gt[m].mean()),
                         )
                 if not regioes:
@@ -174,7 +191,9 @@ def main() -> int:
                 for nome, chave in (("argmax_entropia", "ent"),
                                     ("argmax_lc", "lc"),
                                     ("argmax_prob", "prob"),
-                                    ("argmax_fronteira", "fronteira")):
+                                    ("argmax_fronteira", "fronteira"),
+                                    ("coreset_regiao", "coreset"),
+                                    ("medoide_regiao", "medoide")):
                     c = max(regioes, key=lambda x: regioes[x][chave])
                     escolhas[nome].append(regioes[c]["frac"])
 
@@ -200,7 +219,8 @@ def main() -> int:
                   f"{'atravessa borda':>16} {'fundo puro':>11} "
                   f"{'interior puro':>14}")
             for nome in ("argmax_entropia", "argmax_lc", "argmax_prob",
-                         "argmax_fronteira"):
+                         "argmax_fronteira", "coreset_regiao",
+                         "medoide_regiao"):
                 s = tudo[ds]["criterios"].get(nome)
                 if not s:
                     continue
