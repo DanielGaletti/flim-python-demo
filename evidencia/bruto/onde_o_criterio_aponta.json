@@ -1,0 +1,140 @@
+{
+  "schisto": {
+    "criterios": {
+      "argmax_entropia": {
+        "n": 10,
+        "frac_mediana": 1.0,
+        "frac_media": 0.7,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 0.3,
+        "interior_puro": 0.7
+      },
+      "argmax_lc": {
+        "n": 10,
+        "frac_mediana": 1.0,
+        "frac_media": 0.7,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 0.3,
+        "interior_puro": 0.7
+      },
+      "argmax_prob": {
+        "n": 10,
+        "frac_mediana": 1.0,
+        "frac_media": 0.9998,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 0.0,
+        "interior_puro": 1.0
+      },
+      "argmax_fronteira": {
+        "n": 10,
+        "frac_mediana": 1.0,
+        "frac_media": 0.7953,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 0.2,
+        "interior_puro": 0.8
+      }
+    },
+    "todas_as_regioes": {
+      "n": 3768,
+      "frac_mediana": 0.0,
+      "frac_media": 0.0228,
+      "atravessa_borda": 0.025,
+      "fundo_puro": 0.96,
+      "interior_puro": 0.015
+    },
+    "n_segments": 150,
+    "k": 3
+  },
+  "brats": {
+    "criterios": {
+      "argmax_entropia": {
+        "n": 10,
+        "frac_mediana": 0.8884,
+        "frac_media": 0.5766,
+        "atravessa_borda": 0.2,
+        "fundo_puro": 0.4,
+        "interior_puro": 0.4
+      },
+      "argmax_lc": {
+        "n": 10,
+        "frac_mediana": 0.8884,
+        "frac_media": 0.5766,
+        "atravessa_borda": 0.2,
+        "fundo_puro": 0.4,
+        "interior_puro": 0.4
+      },
+      "argmax_prob": {
+        "n": 10,
+        "frac_mediana": 1.0,
+        "frac_media": 0.6911,
+        "atravessa_borda": 0.1,
+        "fundo_puro": 0.3,
+        "interior_puro": 0.6
+      },
+      "argmax_fronteira": {
+        "n": 10,
+        "frac_mediana": 0.3318,
+        "frac_media": 0.4469,
+        "atravessa_borda": 0.2,
+        "fundo_puro": 0.5,
+        "interior_puro": 0.3
+      }
+    },
+    "todas_as_regioes": {
+      "n": 3964,
+      "frac_mediana": 0.0,
+      "frac_media": 0.0361,
+      "atravessa_borda": 0.027,
+      "fundo_puro": 0.949,
+      "interior_puro": 0.024
+    },
+    "n_segments": 150,
+    "k": 3
+  },
+  "conjunctiva": {
+    "criterios": {
+      "argmax_entropia": {
+        "n": 10,
+        "frac_mediana": 1.0,
+        "frac_media": 0.9974,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 0.0,
+        "interior_puro": 1.0
+      },
+      "argmax_lc": {
+        "n": 10,
+        "frac_mediana": 1.0,
+        "frac_media": 0.9974,
+        "atravessa_borda": 0.0,
+        "fundo_puro": 0.0,
+        "interior_puro": 1.0
+      },
+      "argmax_prob": {
+        "n": 10,
+        "frac_mediana": 1.0,
+        "frac_media": 0.9932,
+        "atravessa_borda": 0.1,
+        "fundo_puro": 0.0,
+        "interior_puro": 0.9
+      },
+      "argmax_fronteira": {
+        "n": 10,
+        "frac_mediana": 0.7762,
+        "frac_media": 0.6801,
+        "atravessa_borda": 0.6,
+        "fundo_puro": 0.1,
+        "interior_puro": 0.3
+      }
+    },
+    "todas_as_regioes": {
+      "n": 4381,
+      "frac_mediana": 0.0,
+      "frac_media": 0.1416,
+      "atravessa_borda": 0.124,
+      "fundo_puro": 0.793,
+      "interior_puro": 0.083
+    },
+    "n_segments": 150,
+    "k": 3
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "massa_de_objeto_2026-10-05",
+  "declarado_em": "2026-10-05T00:00:00+00:00",
+  "git_commit": "86c9958",
+  "tipo": "CONFIRMATORIO de um criterio NOVO, derivado de um diagnostico proprio. Hipotese unica.",
+
+  "de_onde_veio": "O diagnostico `ganho_marginal` nao mediu so o teto da escolha de regiao, mediu O QUE PREVE o ganho. A fracao real de objeto na regiao (`frac_fg`) correlaciona com o ganho em 3 de 3 datasets (rho +0,28 / +0,12 / +0,28), enquanto a entropia correlaciona em 2 de 3 (+0,42 / +0,15 / +0,19). `frac_fg` usa o gabarito e nao serve de criterio.",
+
+  "a_ideia": "Se o que importa e MASSA DE OBJETO e nao INCERTEZA, entao o substituto sem gabarito de `frac_fg` e a probabilidade media de objeto que o proprio modelo preve na regiao. Chamamos de `argmax_prob`: escolher a regiao de maior probabilidade media prevista, em vez da de maior entropia.",
+
+  "por_que_e_diferente_do_que_ja_testamos": "entropia e least confidence medem onde o modelo NAO SABE. CoreSet e medoide medem diversidade no espaco de atributos. BADGE mistura incerteza e diversidade. Nenhum dos cinco mede massa de objeto prevista. E uma grandeza nova nesta investigacao, e ela foi sugerida pelos nossos proprios dados, nao por tentativa.",
+
+  "hipotese": "Escolher a regiao por maior probabilidade media prevista de objeto da ganho maior que escolher a regiao ao acaso.",
+
+  "teste_primario": "Delta Fbeta(validacao) de `argmax_prob` contra `sorteado`, pareado por (decoder, semente), t pareado bicaudal, alfa=0,05, SEPARADO por dataset. Correcao de Benjamini-Hochberg sobre as 6 comparacoes (3 datasets x 2 decoders). Nenhuma agregacao entre datasets: agregar foi o que inflou o achado da retencao.",
+
+  "o_que_falsearia": "Nenhuma das 6 comparacoes sobrevive a Benjamini-Hochberg.",
+
+  "MODO_DE_FALHA_QUE_EU_JA_PREVEJO": {
+    "o_que": "Este criterio pode escolher o INTERIOR do objeto, e nao a borda.",
+    "por_que": "A probabilidade media prevista e maxima no meio do objeto, onde o modelo esta mais confiante de que e objeto. Mas a campanha `artigo_vs_regiao` mediu que anotar fora da borda custa -0,126 a -0,166 de Fbeta, em 6 de 6 celulas, com p <= 0,0041.",
+    "consequencia": "Se este criterio falhar, a explicacao mais provavel e que ele acerta a massa de objeto e erra a geometria. Isso NAO seria uma desculpa post-hoc: esta escrito aqui antes de rodar, e e verificavel, porque a `variante` de cada execucao grava a fracao de objeto da regiao escolhida. Se `argmax_prob` escolher regioes com frac_fg perto de 1 (interior puro) e perder, a leitura esta confirmada.",
+    "o_que_isso_sugeriria": "Um criterio que combine massa de objeto PREVISTA com proximidade de borda prevista. Nao sera testado nesta campanha, para nao transformar um confirmatorio em busca."
+  },
+
+  "baseline": "`sorteado`, a regiao sorteada do desenho estratificado. O sorteio uniforme reponderado sem gabarito fica a p >= 0,16 dele em todas as 6 celulas (medido em `ganho_marginal`), entao os dois baselines sao equivalentes na pratica e o estratificado tem mais n.",
+
+  "custo": "Pontuar as regioes e uma passada direta ja feita para a entropia, sem treino adicional. O custo novo e UM treino por semente e por dataset, cerca de 30 treinos no total.",
+
+  "datasets": ["schisto", "brats", "conjunctiva"],
+  "decoders": ["labeled_marker", "decoder_2"],
+  "sementes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "particao": "identica a `ganho_marginal`. O conjunto de teste nao e tocado.",
+  "determinismo": "threadpoolctl em 1 thread.",
+
+  "o_que_NAO_sera_afirmado": [
+    "Que isto resolve a selecao de regiao no FLIM, se passar. Um confirmatorio positivo num criterio derivado dos proprios dados pede replicacao independente.",
+    "Reducao de tempo de especialista."
+  ]
+}

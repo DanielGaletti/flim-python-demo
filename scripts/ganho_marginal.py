@@ -343,6 +343,14 @@ def main() -> int:
                     mask=mask,
                     entropia=float(ent[int(rid)]),
                     lc=float(lc_map[mask].mean()),
+                    # `prob_media` e a massa de objeto que o MODELO preve na
+                    # regiao, e nao a incerteza dele. Entrou porque este mesmo
+                    # diagnostico mediu que `frac_fg` -- a fracao real de
+                    # objeto -- preve o ganho em 3 de 3 datasets, enquanto a
+                    # entropia preve em 2 de 3. `frac_fg` usa o gabarito e
+                    # portanto nao serve de criterio; `prob_media` e o
+                    # substituto dela que nao usa gabarito nenhum.
+                    prob_media=float(prob[mask].mean()),
                     frac_fg=frac,
                     estrato="objeto" if frac > 0 else "fundo",
                 )
@@ -351,6 +359,7 @@ def main() -> int:
         # Os dois argmax GLOBAIS: e a regiao que o criterio escolheria de fato.
         top_ent = max(chaves, key=lambda c: por_img_scores[c]["entropia"])
         top_lc = max(chaves, key=lambda c: por_img_scores[c]["lc"])
+        top_prob = max(chaves, key=lambda c: por_img_scores[c]["prob_media"])
         k_obj = [c for c in chaves if por_img_scores[c]["estrato"] == "objeto"]
         k_bg = [c for c in chaves if por_img_scores[c]["estrato"] == "fundo"]
         rs = np.random.default_rng(semente * 331 + 7)
@@ -358,7 +367,8 @@ def main() -> int:
             [k_obj[i] for i in rs.permutation(len(k_obj))[:n_obj]]
             + [k_bg[i] for i in rs.permutation(len(k_bg))[:n_bg]])
 
-        plano = ([(top_ent, "argmax_entropia"), (top_lc, "argmax_lc")]
+        plano = ([(top_ent, "argmax_entropia"), (top_lc, "argmax_lc"),
+                   (top_prob, "argmax_prob")]
                  + [(c, "sorteado") for c in sorteio])
 
         print(f"    {len(chaves)} superpixels · {len(k_obj)} tocam objeto · "
@@ -400,6 +410,7 @@ def main() -> int:
             var = (f"regiao|{papel}|{info['estrato']}|"
                    f"ent={info['entropia']:.6f}|lc={info['lc']:.6f}|"
                    f"fg={info['frac_fg']:.6f}|"
+                   f"pm={info['prob_media']:.6f}|"
                    f"k={'-'.join(str(x) for x in kn)}|{img}#{rid}")
             lote = [ev.execucao(
                 experimento=EXPERIMENTO, dataset=a.ds, braco="al",
