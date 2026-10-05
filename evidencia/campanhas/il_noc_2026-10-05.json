@@ -1,0 +1,43 @@
+{
+  "id": "il_noc_2026-10-05",
+  "declarado_em": "2026-10-05T00:00:00+00:00",
+  "git_commit": "5473ba1",
+  "tipo": "CONFIRMATORIO. Hipotese unica, teste primario unico, eixo de medida novo no projeto.",
+
+  "por_que_um_eixo_novo": "Todas as campanhas anteriores mediram Fbeta com orcamento de anotacao FIXO, e a resposta ja esta dada: nenhum critario de Active Learning mostra superioridade. NoC@X mede outra coisa, o numero de cliques ate uma qualidade alvo, que e a moeda da literatura de segmentacao interativa (RITM, arXiv:2102.06583; SimpleClick, arXiv:2210.11006). Nao e a mesma pergunta reformulada: um metodo pode nao melhorar o Fbeta a orcamento fixo e ainda assim reduzir o esforco de interacao.",
+
+  "hipotese": "Proteger o banco de filtros (alpha < 1) reduz o numero de cliques necessarios para a IoU passar do alvo, em relacao ao FLIM puro (alpha = 1).",
+
+  "mecanismo_previsto": "Medido em `ganho_marginal`: acrescentar anotacao ao FLIM pode derrubar o Fbeta. Num laco de cliques isso aparece como REGRESSAO, e o clique seguinte se gasta desfazendo o dano do anterior. Observado no piloto: na imagem 000296, com alpha=1, a IoU foi de 0,724 para 0,702 DEPOIS de 6 cliques. Com alpha=0,5 foi para 0,759 em 4. Se a protecao impedir a regressao, o laco avanca e o NoC cai.",
+
+  "como_pode_falhar": "Com alpha baixo o clique tambem entra menos no modelo, e o laco pode travar sem atingir o alvo. Observado no piloto na outra imagem: alpha=0,5 nao atingiu em 6 cliques onde alpha=1 atingiu em 4. E por isso que `taxa_sucesso` e reportada SEMPRE junto do NoC: NoC baixo com taxa de sucesso baixa e pior que NoC alto com taxa alta.",
+
+  "teste_primario": "NoC medio em alpha=0,5 contra alpha=1,0, pareado por imagem, t pareado bicaudal, alfa=0,05. Imagem que nao atinge o alvo conta max_cliques, para nao premiar desistencia.",
+  "secundario_obrigatorio": "taxa de sucesso em cada alpha. Se a protecao reduzir o NoC derrubando a taxa de sucesso, nao houve melhoria, houve troca de metrica.",
+  "alpha_do_teste_primario": 0.5,
+  "alpha_fixado_antes": true,
+
+  "usuario_simulado": "Protocolo de Xu et al. (2016): o clique vai ao ponto mais fundo do maior erro, separado em falso negativo (clique de objeto) e falso positivo (clique de fundo), pela transformada de distancia da componente conexa de maior area. Nao ha sorteio no laco, entao o NoC e deterministico dado o encoder inicial. Implementado em flim_al/il_flim.py, com 9 testes de invariante.",
+
+  "parametros": {
+    "alvo_iou": 0.75,
+    "max_cliques": 12,
+    "alphas": [0.0, 0.5, 1.0],
+    "n_imagens": 20,
+    "raio_do_pincel": 5,
+    "decoder": "labeled_marker"
+  },
+
+  "determinismo": "Toda execucao com threadpoolctl limitado a 1 thread, por flim_al/determinismo.fixar(). Sem isso o treino nao e reproduzivel quando o numero de candidatos passa do teto de kernels da arquitetura: medido em 2026-10-05, dois treinos identicos divergem 0,134 nos pesos da camada 1.",
+
+  "o_que_falsearia": "p >= 0,05 no teste primario, ou NoC de alpha=0,5 maior que o de alpha=1, ou queda da taxa de sucesso.",
+
+  "o_que_este_experimento_NAO_autoriza_afirmar": [
+    "Reducao de tempo de especialista. O clique e simulado do ground truth e o usuario acerta sempre, o que e um limite superior otimista de qualquer sistema real.",
+    "Comparacao com o NoC publicado de RITM ou SimpleClick: eles medem em SBD e GrabCut, com outra definicao de alvo e outro conjunto. O numero aqui so se compara entre os bracos desta campanha.",
+    "Que o Active Learning melhora o FLIM. O laco escolhe o clique pelo MAIOR ERRO, que usa ground truth, e portanto e usuario simulado, nao criterio de aquisicao."
+  ],
+
+  "datasets": ["schisto", "brats", "conjunctiva"],
+  "particao": "pool identico ao de `ganho_marginal` (semente_particao=0). As imagens refinadas saem do pool, nao do conjunto de teste, que continua intocado."
+}
