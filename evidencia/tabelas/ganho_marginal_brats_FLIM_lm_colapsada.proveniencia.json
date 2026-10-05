@@ -1,9 +1,9 @@
 {
   "tabela": "ganho_marginal_brats_FLIM_lm_colapsada",
   "titulo": "Ganho marginal de um marcador adicional — BraTS, FLIM_lm, base colapsada (Fβ₀=0)",
-  "gerado_em": "2026-10-02T03:12:59+00:00",
+  "gerado_em": "2026-10-05T20:21:31+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "c179ed3ca1ed-sujo",
+  "git_commit": "c630326e52d4-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/ganho_marginal_brats_FLIM_lm_colapsada.tex}",
   "linhas": [

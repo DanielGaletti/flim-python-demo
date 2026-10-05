@@ -42,5 +42,26 @@
     "Comparacao com NoC publicado de RITM ou SimpleClick: datasets e definicao de alvo diferentes."
   ],
 
-  "determinismo": "threadpoolctl limitado a 1 thread em toda execucao, por flim_al/determinismo.fixar()."
+  "determinismo": "threadpoolctl limitado a 1 thread em toda execucao, por flim_al/determinismo.fixar().",
+
+  "RESULTADO": {
+    "fechado_em": "2026-10-05",
+    "schisto": {
+      "n": 15,
+      "primario_NoC": "11,40 contra 11,40. Delta = +0,00, IC95% [0,00, 0,00], p = 1,0000.",
+      "secundario_sucesso": "7% contra 7%. McNemar 0/0.",
+      "terciario_IoU_final": "0,5186 contra 0,5643. Delta = -0,0457, p = 0,2100."
+    },
+    "brats": {
+      "n": 20,
+      "primario_NoC": "9,50 contra 9,60. Delta = -0,10, IC95% [-2,01, +1,81], p = 0,9138.",
+      "secundario_sucesso": "30% contra 30%. McNemar 2/2.",
+      "terciario_IoU_final": "0,2515 contra 0,2770. Delta = -0,0255, p = 0,7416."
+    },
+    "veredito_primario": "FALSEADO nos dois datasets. p = 1,0000 e p = 0,9138. Congelar o banco de filtros NAO reduz o numero de cliques.",
+    "veredito_do_MECANISMO": "FALSEADO TAMBEM, e pelo critério que foi declarado antes de rodar. O terciario dizia: se alpha=0 tiver IoU final MENOR que alpha=1, a explicacao de 'congelar evita dano sem custar qualidade' esta errada. A IoU final de alpha=0 e menor nos DOIS datasets (-0,0457 e -0,0255). Congelar custa qualidade. A explicacao que eu havia proposto para o achado exploratorio nao se sustenta.",
+    "o_achado_exploratorio_tambem_encolheu_sozinho": "Independente deste confirmatorio, o proprio achado se desfez quando o n cresceu: com 29 imagens dava Delta = -1,31 e p = 0,0265; completadas as 20 imagens de cada dataset, 40 no total, deu Delta = -0,80 e p = 0,1385. O p = 0,0265 foi reportado com o BraTS pela metade, o que o CLAUDE.md do projeto proibe explicitamente ('nao relatar numero de execucao incompleta'). Erro de quem reportou, e o quarto episodio desse tipo registrado no projeto.",
+    "limitacao_que_estava_prevista": "No Schisto a censura no teto foi total: todas as imagens deram o mesmo NoC nos dois bracos, com IC95% [0,00, 0,00]. O alvo de IoU 0,75 e atingido por 7% das imagens em 12 cliques, entao o NoC nao carrega informacao nesse dataset. Isso estava declarado como limitacao antes de rodar, e o alvo nao foi mudado de proposito.",
+    "consequencia": "Encerra a linha da retencao total. Nao ha ajuste de plasticidade, entre 0, 0,5 e 1, que reduza o esforco de interacao no FLIM nos orcamentos testados. O que permanece e o fenomeno: a anotacao adicional reescreve o banco de filtros, medido em `ganho_marginal`. O mecanismo de retencao implementado em `flim_al/cl_flim.py` resolve o problema que se propoe a resolver (alpha=0 nao deixa entrar direcao nova, verificado em teste), mas isso nao se converte em ganho mensuravel."
+  }
 }

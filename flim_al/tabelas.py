@@ -31,6 +31,7 @@ Três regras de honestidade, impostas em código
 """
 from __future__ import annotations
 
+import collections
 import csv
 import json
 import os
@@ -1614,4 +1615,146 @@ def tabela_ganho_mecanismo(recs=None, experimento: str = "ganho_marginal",
               if d["ic95"] else "—")
         t.adicionar([f"(Δ Fβ médio ao anotar região de {estrato})",
                      _fmt(d["media"], 4), ic, d["n"], "—"], ids)
+    return t
+
+
+# ── esforço de interação: NoC ────────────────────────────────────────────────
+
+def _noc_campos(r: dict) -> dict:
+    """
+    Lê NoC, sucesso e alpha da `variante` do experimento `il_noc`.
+
+    O registro canônico guarda uma métrica de qualidade por linha, não um par
+    (esforço, sucesso). Acrescentar colunas recalcularia o `run_id` das 13 mil
+    execuções já gravadas, custo que este projeto já pagou e reverteu. A
+    `variante` carrega os três valores como texto, e esta função é o parser.
+    """
+    v = r.get("variante", "")
+    out = {"alpha": None, "noc": None, "atingiu": None, "imagem": None}
+    for p in v.split("|"):
+        if p.startswith("alpha="):
+            out["alpha"] = float(p[6:])
+        elif p.startswith("noc="):
+            out["noc"] = int(p[4:])
+        elif p.startswith("atingiu="):
+            out["atingiu"] = bool(int(p[8:]))
+        elif not p.startswith("iou0="):
+            out["imagem"] = p
+    return out
+
+
+def _mcnemar(a: list, b: list):
+    """
+    Exato bicaudal sobre os pares discordantes.
+
+    Para taxa de sucesso, o par concordante não carrega informação: as duas
+    condições acertaram, ou as duas erraram. O que separa os braços são os
+    casos em que uma atinge o alvo e a outra não.
+    """
+    import math
+    sa = sum(1 for x, y in zip(a, b) if x and not y)
+    sb = sum(1 for x, y in zip(a, b) if y and not x)
+    n = sa + sb
+    if n == 0:
+        return sa, sb, 1.0
+    k = min(sa, sb)
+    p = sum(math.comb(n, i) for i in range(k + 1)) / 2 ** n
+    return sa, sb, min(1.0, 2 * p)
+
+
+def tabela_noc(recs=None, experimento: str = "il_noc",
+               rotulo: str = "noc", base: float = 1.0) -> Tabela:
+    """
+    Cliques até a IoU alvo, por plasticidade do banco de filtros.
+
+    O eixo é o da segmentação interativa, e não o Fβ a orçamento fixo: NoC@X,
+    usado por RITM e SimpleClick. Um método pode não mudar o Fβ a orçamento
+    fixo e ainda reduzir o esforço de interação, e é essa possibilidade que a
+    tabela testa.
+
+    A **taxa de sucesso** anda ao lado do NoC em todas as linhas, e isso não é
+    decoração. Imagem que não atinge o alvo entra com o teto de cliques, então
+    um braço pode exibir NoC baixo por desistir mais cedo. NoC sozinho
+    premiaria esse comportamento.
+
+    `α = 1` é o FLIM puro: o banco de filtros é refeito a cada clique. `α = 0`
+    congela o banco, e os cliques só chegam ao modelo pelos rótulos que o
+    decoder `labeled_marker` lê. Os valores intermediários interpolam.
+
+    Os testes são SEPARADOS por dataset, de propósito. Agregar Schisto e
+    BraTS, que têm taxas de sucesso de 7% e 30%, foi o que inflou um achado
+    exploratório desta campanha a p = 0,0265 — o mesmo dado, separado, não
+    passa de p = 0,10.
+    """
+    recs = ev.carregar() if recs is None else recs
+    sub = [r for r in recs if r["experimento"] == experimento
+           and rotulo in r.get("fonte", "")
+           and "piloto" not in r.get("fonte", "")]
+    if not sub:
+        raise ValueError(f"nenhuma execução de {experimento}/{rotulo}")
+
+    por = collections.defaultdict(dict)
+    for r in sub:
+        c = _noc_campos(r)
+        if c["alpha"] is None or c["noc"] is None:
+            continue
+        por[(r["dataset"], c["imagem"])][c["alpha"]] = (
+            c["noc"], c["atingiu"], ag._num(r.get("iou")), r["run_id"])
+
+    alphas = sorted({a for v in por.values() for a in v})
+    dss = [d for d in ("schisto", "brats", "conjunctiva")
+           if d in {k[0] for k in por}]
+
+    t = Tabela(
+        f"noc_{rotulo}",
+        "Cliques até a IoU alvo, por plasticidade do banco de filtros",
+        ["dataset", "α", "n", "NoC médio", "NoC mediano", "taxa de sucesso",
+         "IoU final", "Δ NoC vs α=1", "p", "McNemar"],
+        alinhamento="lrrrrrrrrr",
+        nota=("NoC@X é o número de cliques até a IoU passar do alvo, com teto "
+              "de 12; é o eixo de RITM (arXiv:2102.06583) e SimpleClick "
+              "(arXiv:2210.11006), e **não** se compara com o NoC publicado "
+              "deles, que usa outros conjuntos e outra definição de alvo. "
+              "Imagem que não atinge o alvo entra com o teto, e por isso a "
+              "**taxa de sucesso** aparece em toda linha: um braço pode "
+              "mostrar NoC baixo por desistir mais cedo. "
+              "`α=1` é o FLIM puro, que refaz o banco de filtros a cada "
+              "clique; `α=0` congela o banco, e o clique chega ao modelo só "
+              "pelos rótulos que o decoder `labeled_marker` lê. "
+              "Os testes são **separados por dataset**: agregar Schisto e "
+              "BraTS, com 7% e 30% de sucesso, inflou um achado exploratório "
+              "a p=0,0265 que separado não passa de p=0,10. "
+              "O clique é simulado do ground truth pelo protocolo de Xu et "
+              "al. (2016), com usuário que acerta sempre, então a tabela mede "
+              "**número de interações e não tempo de especialista**."))
+
+    for ds in dss:
+        ims = [k for k in por if k[0] == ds]
+        for al in alphas:
+            pares = [k for k in ims if al in por[k] and base in por[k]]
+            if not pares:
+                continue
+            nocs = [por[k][al][0] for k in pares]
+            ats = [bool(por[k][al][1]) for k in pares]
+            ious = [por[k][al][2] for k in pares
+                    if por[k][al][2] is not None]
+            ids = [por[k][al][3] for k in pares]
+            if al == base:
+                d_txt, p_txt, mc_txt = "—", "—", "—"
+            else:
+                tp = ag.teste_pareado(nocs, [por[k][base][0] for k in pares])
+                sa, sb, pm = _mcnemar(
+                    ats, [bool(por[k][base][1]) for k in pares])
+                d_txt = _fmt(tp["delta"], 2)
+                p_txt = _fmt(tp["p"], 4)
+                mc_txt = f"{sa}/{sb} (p={_fmt(pm, 3)})"
+                ids += [por[k][base][3] for k in pares]
+            t.adicionar(
+                [NOME_DATASET.get(ds, ds), f"{al:.2f}", len(pares),
+                 _fmt(sum(nocs) / len(nocs), 2),
+                 _fmt(sorted(nocs)[len(nocs) // 2], 1),
+                 f"{sum(ats) / len(ats):.0%}",
+                 _fmt(sum(ious) / len(ious), 4) if ious else "—",
+                 d_txt, p_txt, mc_txt],
+                ids)
     return t

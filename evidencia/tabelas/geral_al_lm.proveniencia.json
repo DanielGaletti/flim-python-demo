@@ -1,9 +1,9 @@
 {
   "tabela": "geral_al_lm",
   "titulo": "Active Learning no FLIM: todos os critérios, todos os K (FLIM_lm)",
-  "gerado_em": "2026-10-02T03:12:57+00:00",
+  "gerado_em": "2026-10-05T20:19:02+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "c179ed3ca1ed-sujo",
+  "git_commit": "c630326e52d4-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/geral_al_lm.tex}",
   "linhas": [

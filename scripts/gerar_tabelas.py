@@ -100,6 +100,9 @@ CATALOGO = [
     ("ganho_marginal_brats_pb_colapsada",
      lambda recs, k="FLIM_pb": tb.tabela_ganho_marginal(
          recs, dataset="brats", decoder=k, regime="colapsada")),
+    ("noc", lambda recs: tb.tabela_noc(recs, rotulo="noc")),
+    ("noc_confirmatorio",
+     lambda recs: tb.tabela_noc(recs, rotulo="confirmatorio")),
     ("proveniencia_registro",
      lambda recs: tb.tabela_resumo_registro(recs)),
 ]

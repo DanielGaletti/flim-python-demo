@@ -12,10 +12,12 @@ paper_selection_v2,324,0%,100%
 paper_selection_v3,324,0%,100%
 paper_selection_rand,321,0%,100%
 densidade,262,0%,0%
+cl_plasticidade,254,0%,0%
 sel_degen,216,0%,100%
 sel_medoide,216,0%,100%
 sel_proposto,216,0%,100%
 final_comparison_v2,210,10%,100%
+il_noc,205,0%,0%
 clique,183,0%,0%
 paper_selection_coreset,162,0%,100%
 onde_marcar,150,0%,0%

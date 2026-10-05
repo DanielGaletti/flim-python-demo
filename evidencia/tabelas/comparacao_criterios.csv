@@ -23,12 +23,18 @@ artigo,?,—,0,—,—,—,—,—,sem pares suficientes
 base,?,—,0,—,—,—,—,—,sem pares suficientes
 flim_paper,?,0.467,69,-0.015,0.4074,—,—,—,sem suporte
 flim_puro,?,—,0,—,—,—,—,—,sem pares suficientes
+il_alpha0.00,?,—,0,—,—,—,—,—,sem pares suficientes
+il_alpha0.50,?,—,0,—,—,—,—,—,sem pares suficientes
+il_alpha1.00,?,—,0,—,—,—,—,—,sem pares suficientes
 imagem_nova,?,—,0,—,—,—,—,—,sem pares suficientes
 medoide,?,0.482,94,-0.043,0.0054,—,—,—,suportado
+melhor_sorteada,?,—,0,—,—,—,—,—,sem pares suficientes
+pior_sorteada,?,—,0,—,—,—,—,—,sem pares suficientes
 regiao_aleatoria,?,—,0,—,—,—,—,—,sem pares suficientes
 regiao_borda,?,—,0,—,—,—,—,—,sem pares suficientes
 regiao_confusa,?,0.396,71,-0.075,0.0766,—,—,—,indicativo
 regiao_incerteza,?,—,0,—,—,—,—,—,sem pares suficientes
+sorteada,?,—,0,—,—,—,—,—,sem pares suficientes
 sorteado,?,—,0,—,—,—,—,—,sem pares suficientes
 uniforme,?,—,0,—,—,—,—,—,sem pares suficientes
 uniforme_balanceado,?,—,0,—,—,—,—,—,sem pares suficientes
