@@ -181,3 +181,27 @@ REMOVIDAS:
 
 O pre-sessao continua disponivel em `git show HEAD:evidencia/execucoes/execucoes.csv`,
 que foi a fonte autoritativa do destrucamento.
+
+## 2026-10-06 — 5 arquivos obsoletos de `evidencia/tabelas/dissertacao.*`
+
+Removidos: dissertacao.tex, .csv, .md, .proveniencia.json e o par antigo.
+
+Sao sobra da epoca em que `tabela_dissertacao` gravava num nome sem o decoder.
+Quando duas tabelas (lm e pb) passaram a ser geradas, os nomes ganharam o
+sufixo e viraram `dissertacao_lm.*` e `dissertacao_pb.*`. O conjunto antigo
+ficou no diretorio sem ser regenerado por ninguem: o catalogo de
+`scripts/gerar_tabelas.py` so tem as duas entradas com sufixo.
+
+Nao e perda de evidencia. Os numeros dele saem do mesmo registro e estao nas
+duas tabelas vivas, com proveniencia por linha. O arquivo antigo e que nao
+tinha mais quem o atualizasse, e por isso ficou mostrando um estado do
+registro de semanas atras.
+
+Motivo imediato da remocao: era o UNICO arquivo de `evidencia/tabelas/` com
+simbolos Unicode em linha de codigo LaTeX (13 ocorrencias de x, beta, Delta,
+travessao e subscrito). A classe `ufscar.cls` carrega [utf8]{inputenc} com
+[T1]{fontenc}, que resolve acentuacao latina mas NAO letra grega, entao esses
+13 caracteres quebrariam a compilacao no Overleaf, que usa pdflatex.
+
+As tabelas vivas passaram a converter esses simbolos na geracao, em
+`flim_al/tabelas._SIMBOLOS_TEX`.

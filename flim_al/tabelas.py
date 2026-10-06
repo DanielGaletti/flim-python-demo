@@ -63,9 +63,37 @@ def _fmt(v, casas: int = 3) -> str:
     return f"{v:.{casas}f}"
 
 
+# Símbolos que o texto usa e que o pdflatex NÃO aceita como caractere.
+#
+# A classe `ufscar.cls` carrega `[utf8]{inputenc}` com `[T1]{fontenc}`. Essa
+# combinação resolve acentuação latina, mas não letras gregas nem sinais
+# matemáticos: um α solto para a compilação com "Unicode character not set up
+# for use with LaTeX". Como as tabelas vão para o Overleaf, que usa pdflatex
+# por padrão, a conversão acontece aqui, na geração, e não no documento.
+#
+# A travessão vira `---`, que é a forma canônica em LaTeX e não depende de
+# inputenc ter a entrada correspondente.
+_SIMBOLOS_TEX = {
+    "α": r"$\alpha$", "β": r"$\beta$", "ρ": r"$\rho$", "Δ": r"$\Delta$",
+    "σ": r"$\sigma$", "μ": r"$\mu$", "χ": r"$\chi$",
+    "≠": r"$\neq$", "≥": r"$\geq$", "≤": r"$\leq$", "×": r"$\times$",
+    "−": "-", "–": "-", "—": "---",
+    "₀": r"$_0$", "₁": r"$_1$", "²": r"$^2$", "³": r"$^3$",
+}
+
+
 def _tex_escape(s: str) -> str:
+    """
+    Escapa para LaTeX e troca símbolos que o pdflatex não aceita.
+
+    A ordem importa: a barra invertida sai primeiro, senão ela escaparia as
+    barras que a própria substituição de símbolos acabou de inserir.
+    """
+    s = str(s)
     for de, para in (("\\", r"\textbackslash{}"), ("_", r"\_"), ("&", r"\&"),
                      ("%", r"\%"), ("#", r"\#"), ("$", r"\$")):
+        s = s.replace(de, para)
+    for de, para in _SIMBOLOS_TEX.items():
         s = s.replace(de, para)
     return s
 
@@ -151,12 +179,60 @@ class Tabela:
         out += [r"\hline", r"\end{tabular}"]
         return "\n".join(out) + "\n"
 
+    def latex_nota(self) -> str:
+        """
+        A nota da tabela, pronta para entrar logo abaixo do float.
+
+        O markdown da nota usa `**negrito**` e crase para código; aqui os dois
+        viram `\\textbf` e `\\texttt`. A conversão é feita antes do escape de
+        LaTeX, senão o escape transformaria a própria marcação.
+        """
+        if not self.nota:
+            return "% (esta tabela nao tem nota)\n"
+        t = self.nota
+        partes, i = [], 0
+        while True:
+            a = t.find("**", i)
+            if a < 0:
+                partes.append(("txt", t[i:]))
+                break
+            b = t.find("**", a + 2)
+            if b < 0:
+                partes.append(("txt", t[i:]))
+                break
+            partes.append(("txt", t[i:a]))
+            partes.append(("neg", t[a + 2:b]))
+            i = b + 2
+        saida = []
+        for tipo, s in partes:
+            s = _tex_escape(s)
+            # crase vira \texttt, depois do escape para o `\_` sobreviver
+            while s.count("`") >= 2:
+                p = s.index("`")
+                q = s.index("`", p + 1)
+                s = s[:p] + r"\texttt{" + s[p + 1:q] + "}" + s[q + 1:]
+            s = s.replace("`", "")
+            saida.append(r"\textbf{" + s + "}" if tipo == "neg" else s)
+        return (f"% Nota de {self.nome}. GERADA por flim_al/tabelas.py.\n"
+                r"\footnotesize " + "".join(saida) + "\n\\normalsize\n")
+
     def gravar(self, destino: str = DESTINO) -> dict:
         os.makedirs(destino, exist_ok=True)
         escritos = {}
+        # A nota sai em arquivo PRÓPRIO, e não dentro do `tabular`.
+        #
+        # Ela carrega as ressalvas que dão sentido aos números: o que é a
+        # unidade de análise, o que não pode ser lido como método, qual
+        # comparação é pareada. Sem ela a tabela vira um bloco de valores que
+        # convida à leitura errada.
+        #
+        # Em arquivo separado porque o `.tex` da tabela é um `tabular` puro,
+        # para caber dentro de qualquer float que o documento queira usar; a
+        # nota vai depois do float, como texto corrido.
         for ext, conteudo in (("csv", self.csv()),
                               ("md", self.markdown()),
-                              ("tex", self.latex())):
+                              ("tex", self.latex()),
+                              ("nota.tex", self.latex_nota())):
             caminho = os.path.join(destino, f"{self.nome}.{ext}")
             with open(caminho, "w", encoding="utf-8", newline="\n") as fh:
                 fh.write(conteudo)

@@ -1,9 +1,9 @@
 {
   "tabela": "ganho_marginal_brats_FLIM_lm_funcional",
   "titulo": "Ganho marginal de um marcador adicional — BraTS, FLIM_lm, base funcional",
-  "gerado_em": "2026-10-05T20:21:30+00:00",
+  "gerado_em": "2026-10-06T15:26:50+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "c630326e52d4-sujo",
+  "git_commit": "49a9cf3564d8-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/ganho_marginal_brats_FLIM_lm_funcional.tex}",
   "linhas": [

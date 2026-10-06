@@ -1,9 +1,9 @@
 {
   "tabela": "proveniencia_registro",
   "titulo": "Proveniência disponível por família de experimento",
-  "gerado_em": "2026-10-05T20:21:31+00:00",
+  "gerado_em": "2026-10-06T15:26:53+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "c630326e52d4-sujo",
+  "git_commit": "49a9cf3564d8-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/proveniencia_registro.tex}",
   "linhas": [

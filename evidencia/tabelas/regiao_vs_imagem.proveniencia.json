@@ -1,9 +1,9 @@
 {
   "tabela": "regiao_vs_imagem",
   "titulo": "Active Learning por região: braços e controle, por decoder",
-  "gerado_em": "2026-10-05T20:21:26+00:00",
+  "gerado_em": "2026-10-06T15:26:43+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "c630326e52d4-sujo",
+  "git_commit": "49a9cf3564d8-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/regiao_vs_imagem.tex}",
   "linhas": [

@@ -1,9 +1,9 @@
 {
   "tabela": "comparacao_criterios",
   "titulo": "Técnicas de Active Learning contra o sorteio",
-  "gerado_em": "2026-10-05T20:21:28+00:00",
+  "gerado_em": "2026-10-06T15:26:46+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "c630326e52d4-sujo",
+  "git_commit": "49a9cf3564d8-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/comparacao_criterios.tex}",
   "linhas": [
