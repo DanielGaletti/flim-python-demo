@@ -2,9 +2,9 @@
 
 | família | execuções | sem seed | sem commit |
 |---|---|---|---|
+| ganho_marginal | 2448 | 0% | 0% |
 | al_corrected_results | 2316 | 42% | 100% |
 | tabela_k_por_modelo | 1840 | 0% | 0% |
-| ganho_marginal | 1638 | 0% | 0% |
 | final_comparison_v3 | 1029 | 4% | 100% |
 | benchmark_conjunctiva | 588 | 68% | 100% |
 | sel_cs_grande | 540 | 0% | 100% |
@@ -20,7 +20,7 @@
 | sel_medoide | 216 | 0% | 100% |
 | sel_proposto | 216 | 0% | 100% |
 | final_comparison_v2 | 210 | 10% | 100% |
-| il_noc | 205 | 0% | 0% |
+| il_noc | 207 | 0% | 0% |
 | clique | 183 | 0% | 0% |
 | paper_selection_coreset | 162 | 0% | 100% |
 | onde_marcar | 150 | 0% | 0% |

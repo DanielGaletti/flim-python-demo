@@ -1,9 +1,9 @@
 {
   "tabela": "ganho_marginal_brats_FLIM_pb_colapsada",
   "titulo": "Ganho marginal de um marcador adicional — BraTS, FLIM_pb, base colapsada (Fβ₀=0)",
-  "gerado_em": "2026-10-06T15:26:52+00:00",
+  "gerado_em": "2026-10-06T16:10:33+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "49a9cf3564d8-sujo",
+  "git_commit": "db0586e77632-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/ganho_marginal_brats_FLIM_pb_colapsada.tex}",
   "linhas": [
@@ -12,18 +12,18 @@
       "rotulo": "melhor região (teto amostrado)",
       "run_ids": [
         "0dad5af6dee289ea",
-        "45f7f135d521e43f",
+        "5ab57f20e715415d",
         "b6862a03a71ac476",
-        "bcf9d808ee2a42b8"
+        "c26e14e101fb6302"
       ]
     },
     {
       "linha": 2,
       "rotulo": "argmax entropia (o AL)",
       "run_ids": [
-        "45f7f135d521e43f",
+        "5ab57f20e715415d",
         "8dd4bbfaa53e58a5",
-        "bcf9d808ee2a42b8",
+        "c26e14e101fb6302",
         "d0601081075d0715"
       ]
     },
@@ -31,9 +31,9 @@
       "linha": 3,
       "rotulo": "argmax least confidence",
       "run_ids": [
-        "45f7f135d521e43f",
         "517c17e6a9ad4b88",
-        "bcf9d808ee2a42b8",
+        "5ab57f20e715415d",
+        "c26e14e101fb6302",
         "ceb447cca55754fb"
       ]
     },
@@ -41,19 +41,19 @@
       "linha": 4,
       "rotulo": "candidato sorteado (média)",
       "run_ids": [
-        "45f7f135d521e43f",
+        "5ab57f20e715415d",
         "74b1cf93afa750e2",
         "b6862a03a71ac476",
-        "bcf9d808ee2a42b8"
+        "c26e14e101fb6302"
       ]
     },
     {
       "linha": 5,
       "rotulo": "pior região",
       "run_ids": [
-        "45f7f135d521e43f",
+        "5ab57f20e715415d",
         "6b9b62986fde522d",
-        "bcf9d808ee2a42b8",
+        "c26e14e101fb6302",
         "e40049d03bc31b0a"
       ]
     },
@@ -62,8 +62,8 @@
       "rotulo": "imagem nova inteira (orçamento MAIOR)",
       "run_ids": [
         "1a514bdd5defcf0e",
-        "45f7f135d521e43f",
-        "bcf9d808ee2a42b8",
+        "5ab57f20e715415d",
+        "c26e14e101fb6302",
         "cb1e46a88fbe9d91"
       ]
     },
@@ -71,27 +71,44 @@
       "linha": 7,
       "rotulo": "sorteio uniforme (reponderado, sem GT)",
       "run_ids": [
+        "006992bfea9c229b",
+        "0c763b8559269f74",
         "0dad5af6dee289ea",
+        "0e2af191fe8b3520",
         "17cec8d26e3d45d2",
         "18ff57816a8a4625",
         "208e81fd2d0574d9",
         "20a32e841dc42282",
         "24f8abfd14aec57a",
+        "25f34fd97244dad5",
         "29ef728873c43ed1",
         "2aaf4df998723d48",
+        "30c4ab85261520f7",
         "3228e4467f7cee3b",
         "3430488827032047",
         "35f4b0981f9e15db",
         "3d516265df4b92b3",
+        "3d9960d2fa376118",
+        "433d9bae85ffea4a",
+        "43fc853f83b9faff",
         "468282388afb0e2f",
+        "4f695b77773607b2",
+        "501fdbd21955dff5",
+        "503d96be525fa5c9",
+        "50b82e6af657602e",
         "5b132a578840ca7a",
         "5ed7a0c4bb162103",
+        "6776d7e67bf46e9d",
         "6b9b62986fde522d",
         "6ebfb4b1ffece9c4",
+        "709ba1b5fe5f49fa",
         "71fc0591c8d6e1a1",
         "74b1cf93afa750e2",
+        "74e7fc65eedbe76e",
+        "77f2ba68a4b75f2d",
         "7a34410391bf867c",
         "7c6a0cf676647a91",
+        "840796595b54ba78",
         "87ff351ab95f681e",
         "88d806cfa4cd5623",
         "893fa2e8d1969966",
@@ -103,18 +120,28 @@
         "9458b649a2d4be9a",
         "9a6c4245ad2b05d4",
         "a57e40e8c60f8628",
+        "a778f29c2c09a70a",
         "a8ff8771a9beba07",
         "a9489c7007ec8ab7",
+        "ab012a10889adf30",
+        "ad0b0804585fe228",
         "ae9530286babcd1c",
+        "b313147f56e3ac47",
         "b6862a03a71ac476",
+        "b6a915dc4ef501bf",
         "bcbc225e737248f9",
         "cab9849b931f1bec",
         "db1a90c5836d4c26",
+        "dce60300a2b49ffd",
         "e40049d03bc31b0a",
+        "e4daa6e07efca123",
+        "e9965c450ec7371f",
         "ee00afe46cd5ee0f",
+        "f2048527b0af7895",
         "f30fc4ace6c985d0",
         "f5e15650de0310fa",
-        "f9a4ca3352f9f020"
+        "f9a4ca3352f9f020",
+        "fe0cd85f76e0d75f"
       ]
     }
   ]

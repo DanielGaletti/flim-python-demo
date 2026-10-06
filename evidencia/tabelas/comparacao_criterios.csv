@@ -19,8 +19,10 @@ al_regiao,?,0.456,28,-0.032,0.0439,—,—,—,suportado
 aleatorio_objeto,?,—,0,—,—,—,—,—,sem pares suficientes
 argmax_entropia,?,—,0,—,—,—,—,—,sem pares suficientes
 argmax_lc,?,—,0,—,—,—,—,—,sem pares suficientes
+argmax_prob,?,—,0,—,—,—,—,—,sem pares suficientes
 artigo,?,—,0,—,—,—,—,—,sem pares suficientes
 base,?,—,0,—,—,—,—,—,sem pares suficientes
+contorno_sorteado,?,—,0,—,—,—,—,—,sem pares suficientes
 flim_paper,?,0.467,69,-0.015,0.4074,—,—,—,sem suporte
 flim_puro,?,—,0,—,—,—,—,—,sem pares suficientes
 il_alpha0.00,?,—,0,—,—,—,—,—,sem pares suficientes

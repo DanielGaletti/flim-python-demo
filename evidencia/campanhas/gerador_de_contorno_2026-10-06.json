@@ -45,5 +45,37 @@
   "sementes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
   "n_candidatos_por_braco": 8,
   "particao": "identica a `ganho_marginal`. O conjunto de teste nao e tocado.",
-  "determinismo": "threadpoolctl em 1 thread."
+  "determinismo": "threadpoolctl em 1 thread.",
+
+  "RESULTADO": {
+    "fechado_em": "2026-10-06",
+    "schisto": {
+      "n": "10 sementes, nenhuma descartada",
+      "primario_media": "contorno +0,0068 contra superpixel -0,0704. Delta = +0,0772, IC95% [+0,0393, +0,1151], p = 0,0013. Vence em 10 de 10 sementes.",
+      "secundario_pior_caso": "-0,0484 contra -0,2637. Delta = +0,2153, p = 0,0001.",
+      "secundario_dispersao": "0,0393 contra 0,1484. Delta = -0,1091, p < 0,0001.",
+      "secundario_kernels": "606 contra 654 kernels medianos, como o mecanismo previa.",
+      "veredito": "PRIMARIO CONFIRMADO, e sobrevive a Benjamini-Hochberg sobre os tres datasets (limiar 0,0167)."
+    },
+    "conjunctiva": {
+      "n": "5 sementes",
+      "primario_media": "Delta = +0,0452, IC95% [-0,0452, +0,1357], p = 0,2374. Vence em 4 de 5.",
+      "secundario_pior_caso": "Delta = +0,1759, p = 0,0480.",
+      "veredito": "mesma direcao, sem significancia no primario. Nao confirma nem contradiz."
+    },
+    "brats": {
+      "n": "3 sementes, 1 descartada por base colapsada",
+      "primario_media": "Delta = -0,0089, p = 0,9145. Vence em 1 de 3.",
+      "veredito": "NULO, e o nulo e PREVISTO pelo mecanismo. A arquitetura do BraTS pede noutput_channels=8 em 3 camadas, e os dois bracos acrescentam exatamente 24 kernels: o deslocamento do banco de filtros, que e o que a intervencao evita, NAO PODE OCORRER ali. O BraTS funciona como controle natural do mecanismo, nao como contraexemplo."
+    },
+    "confundidor_descartado": "Orcamento de pixels identico nos dois bracos, mediana 300 px em ambos, nos dois datasets conferidos. O ganho nao vem de anotar mais.",
+    "o_que_isto_autoriza_afirmar": "Que trocar o GERADOR DE CANDIDATOS, de superpixels para discos sobre o contorno previsto, melhora o ganho de uma anotacao adicional no Schisto, com o mesmo orcamento e o MESMO criterio de selecao (sorteio nos dois bracos), o que isola o efeito do gerador.",
+    "o_que_isto_NAO_autoriza": [
+      "Generalizar para os tres datasets: significativo em 1 de 3. A conjuntivite vai na mesma direcao sem significancia, e o BraTS e nulo por razao estrutural identificada.",
+      "Afirmar qual escore usar sobre os candidatos novos: o criterio foi FIXADO em sorteio de proposito, para isolar o gerador.",
+      "Dispensar replicacao: e o primeiro teste de uma intervencao derivada dos proprios dados deste projeto.",
+      "Reducao de tempo de especialista: anotacao simulada do ground truth."
+    ],
+    "limitacao_confirmada_do_metodo": "O gerador precisa de predicao nao trivial: com mascara prevista vazia ou cheia ele devolve conjunto vazio, enquanto o superpixel funciona sempre. E a fracao de objeto dos candidatos ficou em 0,997 no Schisto e 0,779 no BraTS, isto e, eles caem no INTERIOR e nao sobre a fronteira verdadeira, porque o modelo sub-segmenta e o contorno previsto fica por dentro do verdadeiro. O ganho acontece apesar disso, o que sugere que parte do efeito vem de o candidato ser pequeno e local (606 contra 654 kernels) e nao apenas de onde ele cai."
+  }
 }
