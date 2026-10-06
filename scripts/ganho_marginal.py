@@ -387,10 +387,22 @@ def main() -> int:
                 cs = candidatos_de_contorno(
                     prob, raio=a.raio_contorno,
                     maximo=a.n_contorno * 3, semente=semente)
+                # A entropia e a least confidence sao calculadas tambem para
+                # os candidatos de contorno, e nao zeradas: sem isso nao da
+                # para perguntar se o CRITERIO acrescenta valor sobre o
+                # GERADOR. O experimento do gerador fixa o criterio em
+                # sorteio de proposito, para isolar uma coisa de cada vez; o
+                # braco `argmax_ent_contorno` responde a pergunta seguinte,
+                # que e se o escore certo sobre a lista certa rende mais.
+                ent_px = -(prob * np.log(prob)
+                           + (1 - prob) * np.log(1 - prob))
+                lc_px = 1 - np.abs(prob - 0.5) * 2
                 for j, m in cs.items():
                     chave = (img, 100000 + j)
                     por_img_scores[chave] = dict(
-                        mask=m, entropia=0.0, lc=0.0,
+                        mask=m,
+                        entropia=float(ent_px[m].mean()),
+                        lc=float(lc_px[m].mean()),
                         prob_media=float(prob[m].mean()),
                         frac_fg=float(gt[m].mean()),
                         estrato="contorno")
@@ -420,6 +432,16 @@ def main() -> int:
                  # (sorteio) e o mesmo orcamento de pixels. A unica diferenca
                  # e o gerador, e e isso que o braco isola.
                  + [(c, "contorno_sorteado") for c in contorno])
+
+        # `argmax_ent_contorno` e a pergunta seguinte: o CRITERIO acrescenta
+        # valor sobre o gerador? Ele aplica a entropia sobre a lista de
+        # contorno, de modo que a comparacao contra `contorno_sorteado` isola
+        # o criterio, com o gerador fixo -- o espelho exato do experimento do
+        # gerador, que fixava o criterio.
+        if contorno:
+            melhor_ent = max(contorno,
+                             key=lambda c: por_img_scores[c]["entropia"])
+            plano.append((melhor_ent, "argmax_ent_contorno"))
 
         print(f"    {len(chaves)} superpixels · {len(k_obj)} tocam objeto · "
               f"avaliando {len(plano)} regioes + {len(novas)} imagens",

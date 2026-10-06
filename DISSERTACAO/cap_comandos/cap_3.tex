@@ -1,979 +1,330 @@
 \chapter{Metodologia}\label{cap_3}
 
-A metodologia proposta tem como objetivo investigar a integração de estratégias de Active Learning (\ac{AL}) em uma interface interativa (\ac{IL}), fundamentadas na abordagem de Continual Learning (\ac{CL}). Essa integração visa estabelecer um sistema de aprendizado contínuo (online), no qual o modelo atualiza seus parâmetros de forma dinâmica à medida que novos dados tornam-se disponíveis, aprimorando progressivamente seu desempenho.
-O foco central dessa abordagem é reduzir de forma significativa o custo e o esforço envolvidos na anotação manual, permitindo que um modelo especialista não apenas auxilie o usuário no processo de segmentação, mas também aprenda, em tempo real, a partir das correções fornecidas. Dessa forma, o sistema torna-se capaz de minimizar o problema do esquecimento catastrófico.
-Para viabilizar essa estratégia, será desenvolvido um framework modular que permita o armazenamento incremental do conhecimento e a atualização periódica dos modelos, reduzindo a necessidade de retreinamentos completos e maximizando a eficiência no uso de dados rotulados.
+Este capítulo descreve o funcionamento do \ac{FLIM}, os três componentes avaliados sobre ele, e o protocolo experimental. A descrição é detalhada de propósito: boa parte das conclusões desta dissertação decorre de propriedades específicas do procedimento de estimação dos filtros, e elas só ficam visíveis quando o procedimento é apresentado com precisão.
 
-%A metodologia proposta tem como objetivo investigar a integração de estratégias de Active Learning (\ac{AL}) em uma interface interativa (\ac{IL}), fundamentadas na abordagem de Continual Learning (\ac{CL}). Essa integração visa estabelecer um sistema de aprendizado contínuo (online), no qual o modelo é capaz de atualizar seus parâmetros dinamicamente à medida que novos dados tornam-se disponíveis, aprimorando progressivamente seu desempenho. O foco primordial desta abordagem reside na redução substancial do custo e do esforço associados à anotação manual de dados, permitindo que um modelo especialista não apenas auxilie o usuário na segmentação, mas também aprenda em tempo real com as correções fornecidas, mitigando simultaneamente o problema do esquecimento catastrófico (catastrophic forgetting). Para operacionalizar essa estratégia, será desenvolvido um framework modular que viabiliza o armazenamento incremental do conhecimento e a atualização periódica dos modelos, reduzindo a necessidade de retreinamentos completos e maximizando a eficiência no uso de dados rotulados.
+\section{O FLIM em detalhe}
 
-Embora existam métodos consolidados para cada um desses paradigmas de forma isolada, observa-se uma lacuna significativa na literatura no que diz respeito à sua integração eficiente. Abordagens tradicionais de Interactive Learning tendem a descartar as correções fornecidas pelo usuário após a geração da máscara final, desperdiçando um sinal de supervisão altamente valioso. Por sua vez, técnicas clássicas de Active Learning operam, em grande parte, em ciclos offline, pouco conectados ao fluxo de trabalho imediato do especialista.
-O diferencial deste trabalho consiste justamente em fechar esse ciclo: converter a interação humana, orientada pela incerteza do modelo, em um mecanismo contínuo e imediato de treinamento, eliminando a necessidade de longas interrupções para reprocessamento.
+\subsection{O que é um filtro convolucional}
 
-%Apesar da existência de métodos consolidados para cada um desses paradigmas isoladamente, identifica-se uma lacuna significativa na literatura quanto à sua unificação eficiente. As abordagens tradicionais de Interactive Learning tendem a descartar as correções do usuário após a geração da máscara final, desperdiçando um sinal de supervisão valioso. Por outro lado, técnicas clássicas de Active Learning operam majoritariamente em ciclos offline, dissociados do fluxo de trabalho imediato do especialista. O diferencial deste trabalho reside justamente no fechamento desse ciclo: transformar a interação humana, que é guiada pela incerteza do modelo, em um mecanismo de treinamento perpétuo e imediato, sem a necessidade de grandes pausas para reprocessamento.
+Uma rede convolucional reconhece padrões por meio de filtros. Um filtro é uma pequena matriz de números, tipicamente de tamanho $3 \times 3$, que é deslizada sobre a imagem. Em cada posição, calcula-se a soma dos produtos entre os valores do filtro e os valores da imagem naquela vizinhança. O resultado é alto onde a vizinhança se parece com o padrão guardado no filtro, e baixo onde não se parece.
 
-Dessa forma, as principais contribuições desta pesquisa consistem em: (i) demonstrar que a curadoria ativa baseada em incertezas, quando combinada com correção interativa, acelera a adaptação e a convergência do modelo em novos domínios; (ii) propor uma arquitetura que emprega Destilação de Conhecimento em tempo real para mitigar o esquecimento catastrófico durante o processo de interação. Essa abordagem inova ao tratar a anotação não como uma etapa passiva de construção de datasets, mas como um processo dinâmico de transferência de conhecimento entre humano e computador, permitindo manter modelos de alta performance com uma quantidade significativamente menor de dados rotulados manualmente; (iii) disponibilizar e publicar um conjunto de dados rotulado, acompanhado de suas respectivas máscaras de segmentação.
-
-%Dessa forma, as principais contribuições desta pesquisa consistem em:
-
-%\begin{enumerate}
-%\item Demonstrar que a curadoria ativa de incertezas, quando acoplada à correção interativa, acelera a convergência do modelo para novos domínios.
-%\item Propor uma arquitetura que utiliza a Destilação de conhecimento em tempo real para mitigar o esquecimento catastrófico durante a interação. Essa abordagem inova ao tratar a anotação não como uma tarefa passiva de criação de datasets, mas como um processo dinâmico de transferência de conhecimento Humano-Computador, viabilizando a manutenção de modelos de alta performance com drasticamente menos dados rotulados manualmente.
-%\item Disponibilizar e publicar um dataset rotulado com as suas respectivas máscaras de segmentação.
-%\end{enumerate}
-
-\section{Visão Geral e Arquitetura do Framework}
-
-% \textcolor{red}{As Figuras \ref{fig:metodologia_offline} e \ref{fig:metodologia_online} apresentam a visão geral do framework proposto, dividido em duas fases complementares: uma fase offline, responsável pela construção do modelo inicial, e uma fase online, onde ocorre a adaptação contínua do sistema em ambiente dinâmico.}
-
-% \subsection*{Fase Offline (Modelo Inicial)}
-
-% \textcolor{red}{A Figura \ref{fig:metodologia_offline} ilustra o processo de formação do modelo base (backbone), responsável por fornecer um ponto de partida robusto para a fase online. Essa etapa envolve:}
-
-% \textcolor{red}{\begin{enumerate}
-%     \item Coleta de Dados Rotulados: seleção de múltiplos datasets (heterogêneos ou específicos ao domínio).
-%     \item Integração dos Datasets: unificação e padronização das bases rotuladas para compor o conjunto inicial de treinamento. Se necessário, realizar Data Augmentation (Utilizando os modelos abordados na seção \ref{cap_2}).
-%     \item Treinamento do Modelo de Segmentação Inicial: ajuste de um modelo backbone supervisionado.
-%     \item Geração do Modelo Base Treinado: produção do modelo inicial, que será transferido para ambiente online.
-% \end{enumerate}}
-
-% \textcolor{red}{O objetivo desta fase é construir uma base de conhecimento sólida que permita ao sistema generalizar adequadamente antes de operar em ambiente real.}
-
-% \subsection*{Fase Online (Aprendizagem Contínua com Interação Humana)}
-
-% \textcolor{red}{A Figura \ref{fig:metodologia_online} apresenta o fluxo contínuo de aprendizado do framework, que integra Aprendizagem Ativa (AL), Aprendizagem Interativa (IL) e Aprendizagem Contínua (CL). Essa fase é responsável por adaptar o modelo ao comportamento do usuário e às características do ambiente. Ela é composta por:}
-
-% \textcolor{red}{\begin{enumerate}
-%     \item Entrada de Dados Não Rotulados: novas amostras provenientes do ambiente real.
-%     \item Estratégias de Aprendizagem Ativa: seleção de regiões clicáveis ou amostras informativas.
-%     \item Interação Humana: coleta de feedback por meio de cliques, correções ou anotações.
-%     \item Validação do Usuário: confirmação ou refinamento das sugestões do modelo.
-%     \item Aprendizagem Contínua: destilação do conhecimento incorporando novas evidências sem esquecer o conhecimento prévio.
-%     \item Treinamento Incremental: ajuste contínuo dos parâmetros com base nas interações do usuário.
-%     \item Modelo Online Atualizado: versão adaptada do modelo no ambiente real.
-%     \item Banco de Conhecimento Acumulado: armazenamento das novas informações para uso futuro.
-% \end{enumerate}}
-
-% \textcolor{red}{O fluxo online permite que o modelo se adapte em tempo real, reduzindo a dependência de grandes bases anotadas e promovendo evolução incremental contínua.}
-
-A Figura \ref{fig:metodologia} apresenta uma visão geral do framework proposto, estruturado em duas fases complementares: uma fase offline, dedicada à construção do modelo inicial, e uma fase online, voltada à adaptação contínua do sistema em um ambiente dinâmico e interativo.
-
-%\textcolor{red}{As Figuras \ref{fig:metodologia_offline} e \ref{fig:metodologia_online} apresentam a visão geral do framework proposto, estruturado em duas fases complementares: uma fase offline, que estabelece o modelo inicial, e uma fase online, na qual ocorre a adaptação contínua do sistema em um ambiente dinâmico e interativo.}
-
-Na fase offline,
-%(Figura \ref{fig:metodologia_offline}), 
-é desenvolvido o modelo base que sustenta o processo online. Inicialmente, é realizada a coleta e a integração de dados rotulados provenientes de múltiplos conjuntos de dados, possivelmente heterogêneos, que são padronizados a fim de compor um conjunto de treinamento unificado. Quando necessário, aplicam-se técnicas de data augmentation, conforme discutido na Seção \ref{cap_2}, para ampliar a diversidade e a robustez das amostras. Em seguida, o modelo de segmentação é treinado de forma supervisionada, originando o backbone que servirá como ponto de partida para a adaptação subsequente. O resultado desta etapa é, portanto, um modelo base treinado, que concentra o conhecimento essencial antes de ser transferido para operação no ambiente real.
-
-%\textcolor{red}{Na fase offline, ilustrada na Figura \ref{fig:metodologia_offline}, ocorre a formação do modelo base responsável por fornecer a fundação representacional utilizada no processo online. Inicialmente é realizada a coleta de dados rotulados provenientes de múltiplos datasets, que podem ser heterogêneos ou específicos de determinado domínio. As diferentes bases são então integradas e padronizadas para compor um conjunto de treinamento unificado, permitindo a criação de uma distribuição inicial suficientemente ampla. Quando necessário, técnicas de Data Augmentation são aplicadas, utilizando os modelos estudados na Seção \ref{cap_2}, com o objetivo de aumentar a diversidade e robustez das amostras. Em seguida, o modelo de segmentação inicial é treinado de forma supervisionada, dando origem ao backbone que servirá como ponto de partida para adaptação posterior. O produto final desta fase é o modelo base treinado, que encapsula o conhecimento fundamental antes de ser transferido para operação no ambiente real.}
-
-A fase online %(Figura \ref{fig:metodologia_online})
-corresponde ao ciclo contínuo de aprendizado e refinamento do sistema, integrando mecanismos de aprendizado ativo, interativo e contínuo. Nessa etapa, o modelo passa a receber amostras não rotuladas provenientes do ambiente real, frequentemente distintas daquelas observadas no treinamento offline. Estratégias de aprendizado ativo são então acionadas para selecionar regiões ou amostras consideradas mais informativas, priorizando aquelas associadas a maior incerteza. As amostras selecionadas são submetidas à intervenção humana, por meio de cliques, correções ou anotações, permitindo ao usuário contribuir diretamente para a evolução do modelo.
-
-%\textcolor{red}{A fase online, apresentada na Figura \ref{fig:metodologia_online}, corresponde ao ciclo contínuo de aprendizado e refino do sistema, integrando mecanismos de Aprendizagem Ativa, Aprendizagem Interativa e Aprendizagem Contínua. Nesta etapa o modelo passa a receber amostras não rotuladas oriundas do ambiente real, que apresentam características variáveis e frequentemente distintas das observadas durante o treinamento offline. A partir dessas entradas são acionadas estratégias de Aprendizagem Ativa que selecionam regiões ou amostras potencialmente informativas, priorizando aquelas que o modelo considera incertas ou ambíguas. As amostras selecionadas são então submetidas à intervenção humana, por meio de cliques, correções ou anotações diretas, permitindo que o usuário participe ativamente da construção e refinamento do conhecimento do modelo.}
-
-Após a interação, uma etapa de validação, em que o usuário confirma, rejeita ou ajusta as sugestões do sistema, garante a qualidade das supervisões incrementais. Em seguida, o mecanismo de aprendizado contínuo incorpora as novas evidências ao modelo, preservando o conhecimento já adquirido e mitigando o esquecimento catastrófico. Esse processo de atualização incremental ajusta continuamente os parâmetros do modelo, culminando em versões progressivamente mais adaptadas ao contexto online. O conhecimento acumulado ao longo do ciclo é armazenado em um repositório específico, possibilitando reuso, análise retrospectiva e continuidade da adaptação.
-
-%\textcolor{red}{Após a interação ocorre uma etapa de validação em que o usuário confirma, rejeita ou ajusta as sugestões do sistema, garantindo qualidade e precisão nas supervisões incrementais. Em seguida é ativado o mecanismo de Aprendizagem Contínua, que incorpora essas novas evidências ao modelo ao mesmo tempo em que mantém o conhecimento previamente adquirido, evitando o esquecimento catastrófico e permitindo que o sistema evolua de forma estável. O treinamento incremental ajusta continuamente os parâmetros do modelo conforme novas interações se acumulam, culminando em uma versão atualizada e mais adaptada ao contexto online. Todo conhecimento adquirido durante o processo é armazenado em um banco de conhecimento, possibilitando reuso, análise futura e continuidade da adaptação ao longo do tempo.}
-
-Esse fluxo integrado permite que o modelo evolua de maneira responsiva e incremental, reduzindo a dependência de grandes volumes de dados anotados e favorecendo a adaptação em tempo real às mudanças no ambiente e no comportamento do usuário.
-
-%\textcolor{red}{Esse fluxo integrado permite que o modelo evolua de maneira contínua e responsiva, reduzindo a dependência de grandes bases anotadas e possibilitando adaptação em tempo real a mudanças no ambiente e no comportamento do usuário.}
-
-
-\begin{figure}[h!]
-\centering
-\includegraphics[height=6cm]{cap_comandos/figuras/fluxograma_unico.png}
-\caption{Visão geral do framework proposto, integrando mecanismos de aprendizado ativo, interativo e contínuo.}
-%\caption{\textcolor{red}{Fluxo da fase offline: construção do modelo inicial a partir de múltiplos datasets rotulados, combinando dados heterogêneos para treinar o modelo base de segmentação.}}
-\label{fig:metodologia}
-\end{figure}
-
-
-%A abordagem apresentada nos fluxogramas mostra desde o treinamento do modelo até a saída melhorada.
-
-\section{Materiais e Dados Utilizados}
-\label{dados_utilizados}
-
-%\subsection{Dataset Atual: PASCAL \ac{VOC2012}}
-
-\subsection{Descrição dos Datasets}
-
-Para a validação inicial do framework, adotou-se o conjunto de dados \ac{PascalVOC2012} \cite{everingham2010pascal}. Este conjunto de dados é amplamente reconhecido na literatura de Visão Computacional e apresenta características particularmente adequadas às etapas preliminares desta pesquisa, como diversidade de classes, ampla comparabilidade com trabalhos relacionados e baixa resolução das imagens. O dataset contém 21 classes, que variam desde objetos comuns (como sofá, avião, cadeira) até categorias mais complexas. Por ser um benchmark consolidado, os resultados obtidos podem ser comparados com diversos estudos presentes na literatura, incluindo os mencionados na Seção \ref{tab:trabalhos_relacionados} e o artigo de referência \cite{zheng2021continual}, que também emprega esse conjunto de dados. Além disso, a baixa resolução das imagens reduz o custo computacional do treinamento inicial, facilitando a construção de um modelo base sólido. %ameniza o desafio de treinamento de um modelo base sólido, diminuindo o custo computacional do treinamento inicial.
-
-%Para a validação inicial do framework, adotou-se o dataset PASCAL \ac{VOC2012} \cite{everingham2010pascal}. Este conjunto de dados é amplamente reconhecido na literatura de Visão Computacional, contendo um total de 11.530 imagens anotadas. Para a tarefa de segmentação semântica, o dataset define 21 classes no total, sendo 20 classes de objetos de interesse (divididas em veículos, animais, mobília e pessoas) e uma classe adicional reservada para o fundo (background), que é rotulada como a classe 0.
-
-Outro aspecto relevante é o
-% É importante destacar que o \ac{VOC2012} apresenta um
-desbalanceamento intrínseco das classes, em que categorias como ``pessoa'' (person) apresentam frequência significativamente maior em relação à de classes como ``ovelha'' ou ``mesa de jantar''. Essa heterogeneidade é especialmente útil para avaliar a robustez do aprendizado interativo em cenários de distribuição irregular de dados. A Tabela \ref{tab:pascal_classes} ilustra esse desbalanceamento ao apresentar a quantidade de imagens em cada classe do conjunto de dados \ac{PascalVOC2012}. Já a Tabela \ref{tab:pascal_examples} apresenta exemplos de imagens do conjunto, acompanhadas de suas respectivas máscaras de segmentação.
-%A Tabela \ref{tab:pascal_classes} exemplifica as classes do Pascal \ac{VOC2012}, comparando o número de imagens por classe, mostrando o desbalanceamento da classe, que possui um número significativamente maior para classes que considera mais complexas. A tabela \ref{tab:pascal_examples} traz alguns exemplos de imagens da classe, junto a sua máscara de segmentação.
-
-
-%\begin{figure}[h!]
-%\centering
-%\begin{tabular}{cc}
-%\includegraphics[height=3.0cm]{cap_comandos/figuras/2007_000033.jpg} & \includegraphics[height=3.0cm]{cap_comandos/figuras/2007_000033.png}\\
-%\end{tabular}
-%\end{figure}
-
-
-% \begin{table}[h!]
-% \centering
-% \caption{Exemplos de Classes, estatísticas e desafios de segmentação do \ac{PASCALVoc} 2012}
-% \label{tab:pascal_classes}
-% \resizebox{\textwidth}{!}{
-% \begin{tabular}{|c|l|l|c|l|c|p{5cm}|}
-% \hline
-% \textbf{ID} & \textbf{Classe} & \textbf{Tradução} & \textbf{Quantidade} & \textbf{Exemplo Visual} & \textbf{Ground Truth} & \textbf{Desafios} \\
-% \hline
-% \hline
-% 1 & Aeroplane & Avião & 
-% \begin{tabular}{@{}c@{}}Imagens: 356\end{tabular} &
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000033.jpg} & 
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000033.png} &
-% Objeto rígido, mas com grande variação de escala (voo vs. solo). Desafios incluem reflexos metálicos e partes finas.\\
-% \hline
-% 8 & Cat & Gato & 
-% \begin{tabular}{@{}c@{}}Imagens: 500\end{tabular} &
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000528.jpg} & 
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000528.png} &
-% Alta deformabilidade. A textura da pelagem dificulta a precisão das bordas e camuflagem com o fundo é comum. \\
-% \hline
-% 10 & Cow & Vaca & 
-% \begin{tabular}{@{}c@{}}Imagens: 259\end{tabular} &
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000464.jpg} &
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000464.png} &
-% Variação de postura e agrupamento (rebanho), causando oclusão mútua. Baixo contraste com pasto. \\
-% \hline
-% 15 & Person & Pessoa & 
-% \begin{tabular}{@{}c@{}}Imagens: 177\end{tabular} &
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000733.jpg} & 
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000733.png} &
-% Classe mais frequente e complexa. Desafios extremos de articulação, vestimentas variadas e oclusão. \\
-% \hline
-% 18 & Sofa & Sofá & 
-% \begin{tabular}{@{}c@{}}Imagens: 366\end{tabular} &
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_001149.jpg} &
-% \includegraphics[width=2.5cm]{cap_comandos/figuras/2007_001149.png} &
-% Grande variabilidade intra-classe. Frequentemente ocluído por almofadas ou pessoas. \\
-% \hline
-% \end{tabular}%
-% }
-% \end{table}
-
-\begin{table}[h!]
-\centering
-\caption{Informações (classes, quantidades de amostras e desafios) do conjunto de dados \ac{PascalVOC2012}}
-%\caption{Distribuição das classes no conjunto de dados \ac{PASCALVoc} 2012: estatísticas e desafios para segmentação.}
-\label{tab:pascal_classes}
-\begin{tabular}{|c|l|c|p{9cm}|}
-\hline
-\textbf{ID} & \textbf{Classe} & \textbf{\#Quantidade} & \textbf{Desafios de Segmentação} \\
-\hline
-
-1  & Aeroplane     & 356 & Forte variação de escala, reflexos metálicos, partes finas (asas/cauda) e fundo altamente variável. \\ \hline
-2  & Bicycle       & 419 & Estruturas finas, oclusão parcial por pessoas, variedade de poses e ângulos. \\ \hline
-3  & Bird          & 599 & Alta deformabilidade, camuflagem em vegetação, variação extrema de pose e asa. \\ \hline
-4  & Boat          & 511 & Reflexos na água, contornos pouco definidos no casco e forte variação de escala. \\ \hline
-5  & Bottle        & 517 & Objetos pequenos, reflexos especulares e transparência dificultam a segmentação precisa. \\ \hline
-6  & Bus           & 421 & Estrutura rígida, porém frequentemente ocluída; confusão com carros e caminhões. \\ \hline
-7  & Car           & 1250 & Alta frequência, forte reflexão, oclusão por pessoas e veículos, variação de modelos. \\ \hline
-8  & Cat           & 500 & Alta deformabilidade, pelagem com textura irregular e contornos complexos. \\ \hline
-9  & Chair         & 776 & Estruturas finas, muitos formatos distintos, frequentemente ocluída por pessoas ou mesas. \\ \hline
-10 & Cow           & 259 & Baixo contraste com pasto, oclusão em rebanho, grande variação de pose. \\ \hline
-11 & Dining table   & 215 & Objetos sobre a mesa, variabilidade de formato e materiais. \\ \hline
-12 & Dog           & 499 & Similar ao gato: grande deformabilidade, múltiplas raças, contorno irregular pela pelagem. \\ \hline
-13 & Horse         & 287 & Movimento dinâmico, poses variadas, oclusão por cavaleiros. \\ \hline
-14 & Motorbike     & 390 & Estruturas finas e complexas, reflexos metálicos, oclusão por pilotos. \\ \hline
-15 & Person        & 1770 & Classe mais complexa: poses ilimitadas, roupas diversas, oclusão extrema, grande variedade de contextos. \\ \hline
-16 & Pottedplant   & 463 & Folhagens com bordas irregulares, textura complexa, oclusão parcial do vaso. \\ \hline
-17 & Sheep         & 354 & Pelagem volumosa dificulta contornos; oclusão em rebanho. \\ \hline
-18 & Sofa          & 366 & Alta variabilidade intra-classe; oclusão por almofadas e pessoas. \\ \hline
-19 & Train         & 421 & Estrutura longa e rígida, forte perspectiva e muitos detalhes pequenos. \\ \hline
-20 & TV/monitor    & 449 & Reflexos na tela, retângulos perfeitos confundem modelos, variação de contexto e iluminação. \\ \hline
-
-\end{tabular}
-\end{table}
-
-
-
-%\begin{figure}[htbp]
-%    \centering
-%    \caption{Exemplos de imagens e suas respectivas máscaras de segmentação (ground-truth) de cada classe do conjunto de dados PASCAL \ac{VOC2012}}
-%    \label{fig:exemplos_pascal}
-%    \begin{tabular}{ccccc}
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_000033.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_000584.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_002094.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_001698.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_006086.jpg} \\
-        
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_003143.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_004856.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_006348.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_005124.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_004405.jpg} \\ 
-        
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_004112.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_004538.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_009691.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_009612.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2008_000188.jpg} \\ 
-        
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2008_000669.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2008_003814.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2008_001905.jpg} & 
-%        \includegraphics[height=2.0cm]{cap_comandos/figuras/2008_003200.jpg} & \includegraphics[height=2.0cm]{cap_comandos/figuras/2007_003137.jpg}
-%        \\ 
-%    \end{tabular}
-%\end{figure}
-
-
-\begin{table}[h!]
-\centering
-%Exemplos de imagens e suas respectivas máscaras de segmentação (ground-truth) de cada classe do conjunto de dados PASCAL \ac{VOC2012}
-\caption{Exemplos de imagens e suas respectivas máscaras de segmentação de algumas classes do \ac{PascalVOC2012}. Esta tabela ilustra apenas um subconjunto das classes, para fins demonstrativos.}
-\label{tab:pascal_examples}
-\begin{tabular}{|c|l|c|c|}
-\hline
-\textbf{ID} & \textbf{Classe} & \textbf{Imagem Original} & \textbf{Ground Truth}\\
-\hline\hline
-
-1  & Aeroplane & 
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000033.jpg} &
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000033.png}\\\hline
-
-8  & Cat &
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000528.jpg} &
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000528.png}\\\hline
-
-10 & Cow &
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000464.jpg} &
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000464.png}\\\hline
-
-15 & Person &
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000733.jpg} &
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_000733.png}\\\hline
-
-18 & Sofa &
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_001149.jpg} &
-\includegraphics[width=2.5cm]{cap_comandos/figuras/2007_001149.png}\\\hline
-
-\end{tabular}
-\end{table}
-
-
-%A decisão de utilizar o \ac{PASCALVoc} 2012 é justificada por três principais causas:
-
-%\begin{itemize}
-%\item Comparabilidade: Por ser um dataset padrão, os dados obtidos podem ser comparados com diversos outros trabalhos existentes, alguns citados na \ref{tab:trabalhos_relacionados}, incluindo o artigo de referência \cite{zheng2021continual}, que se utiliza desse dataset.
-%\item Diversidade de classes: O Dataset possui 21 classes, que variam de objetos comuns (Sofá, Avião, Cadeira) a objetos mais complexos, possuindo multiclasses, o que é interessante para testes de Multiclasses. 
-%\item Baixa resolução das imagens: A baixa resolução das imagens ameniza o desafio de treinamento de um modelo base sólido, diminuindo o custo computacional do treinamento inicial. 
-%\end{itemize}
-
-%Devido a isso, a escolha do \ac{PASCALVoc} foi considerada ideal inicialmente, para criação de protótipos e validações metodológicas. A sua baixa complexidade permite avaliar e comparar o desempenho do mecanismo proposto, estabelecendo uma sólida abordagem para que seja escalada para desafios maiores, como o cityscapes. 
-
-%\section{Expansão para Novos Domínios (Trabalhos Futuros)}
-
-Embora o conjunto de dados \ac{PascalVOC2012} ofereça uma base sólida para validações iniciais, a generalização do framework requer sua exposição a domínios com distribuições substancialmente distintas. A literatura de Aprendizado Contínuo sugere que o fenômeno do esquecimento catastrófico tende a ser intensificado quando ocorre uma mudança abrupta no domínio das imagens (\textit{domain shift}).
-Assim, para validar a robustez das estratégias de destilação de conhecimento e a eficácia da curadoria ativa em cenários mais desafiadores, esta pesquisa expande os experimentos para dois eixos complementares: imagens médicas e cenários visuais de alta complexidade (urbanos e satelitais).
-
-%\subsection{Domínio Médico: O Custo da Especialização}
-
-A segmentação interativa em imagens médicas é um dos contextos de maior impacto socioeconômico, dada a elevada demanda por precisão e o alto custo associado ao tempo de especialistas. Diferentemente das imagens naturais, esse domínio apresenta desafios específicos, como baixo contraste, ruído característico de cada modalidade (por exemplo, speckle em ultrassom) e texturas altamente irregulares. Para avaliar a adaptabilidade do modelo, serão utilizados conjunto de dados que abrangem diferentes especialidades, conforme apresentado na Tabela \ref{tab:datasets_medicos}. Os experimentos contemplarão:
-
-%A aplicação de segmentação interativa em imagens médicas representa o cenário onde a redução do esforço de anotação gera o maior impacto socioeconômico, dado o alto custo da hora-trabalho de especialistas médicos. Diferente das imagens naturais, este domínio apresenta desafios únicos como baixo contraste, ruído inerente à modalidade de captura (ex: \textit{speckle} em ultrassom) e texturas orgânicas complexas.
-
-%Para verificar a adaptabilidade do modelo, serão utilizados datasets que cobrem desde a dermatologia até a neuro-oncologia, conforme detalhado na Tabela \ref{tab:datasets_medicos}. Os experimentos incluirão:
-
-\begin{itemize}
-
-\item \textbf{Gastroenterologia e Dermatologia:} \textbf{Kvasir-SEG} \cite{jha2020kvasir} e \textbf{ISIC 2018} \cite{codella2018skin}, com foco na precisão das fronteiras de lesões e pólipos. O conjunto de dados \textbf{Kvasir-SEG} apresenta desafios associados a bordas irregulares e artefatos de iluminação. Já o \textbf{ISIC 2018} caracteriza-se por elevada variabilidade de cor e textura da pele, impondo desafios consideráveis, incluindo interferências por sombras, presença de pelos, irregularidade dos contornos das lesões e substancial heterogeneidade interpaciente. %, traz o desafio de bordas irregulares, baixa saliência e artefatos de iluminação. Já o \textbf{ISIC 2018} constitui de extrema variação de cor e textura de pele, tendo como principais desafios questões como sobras, pelos, irregularidade da borda e alta variabilidade entre pacientes.}
-
-\item \textbf{Radiologia e Oncologia:} \textbf{BraTS} \cite{menze2014multimodal} e \textbf{LiTS} \cite{bilic2019liver}, que introduzem modalidades como ressonância magnética e tomografia, exigindo a segmentação de dados volumétricos processados em fatias 2D. A transição para ressonância magnética e tomografia desafia o modelo a lidar com dados volumétricos (processados em fatias 2D) e canais monocromáticos.
-
-\item \textbf{Ultrassonografia e Oftalmologia:} \textbf{BUSI} \cite{al2020dataset}, caracterizado por forte presença de ruído e \textbf{REFUGE2} \cite{fang2022refuge2}, direcionado à segmentação do disco óptico. O conjunto de dados \textbf{BUSI} introduz o desafio de imagens ruidosas de ultrassom, enquanto o \textbf{REFUGE2} \cite{fang2022refuge2} concentra-se na definição anatômica precisa das estruturas oculares.
-\end{itemize}
-
-
-% \begin{table}[h!]
-% \centering
-% \caption{Datasets selecionados para validação no domínio médico.}
-% \label{tab:datasets_medicos}
-% \resizebox{\textwidth}{!}{
-% \begin{tabular}{|l|p{3.5cm}|c|c|p{4cm}|}
-% \hline
-% \textbf{Dataset} & \textbf{Especialidade / Alvo} & \textbf{Classes} & \textbf{Amostras} & \textbf{Exemplo Visual} \\
-% \hline
-% \hline
-% \textbf{Kvasir-SEG} & 
-% Gastroenterologia \newline (Pólipos) & 
-% 2 & 
-% 1.000 & 
-% \includegraphics[width=2.5cm, height=2.5cm]{cap_comandos/figuras/example_kvasir.jpg} \newline \textit{Tecido orgânico} \\
-% \hline
-% \textbf{ISIC 2018} & 
-% Dermatologia \newline (Melanoma) & 
-% 2 & 
-% 2.594 & 
-% \includegraphics[width=2.5cm, height=2.5cm]{cap_comandos/figuras/example_isic.jpg} \newline \textit{Lesão pigmentada} \\
-% \hline
-% \textbf{BUSI} & 
-% Ultrassonografia \newline (Mama) & 
-% 3 & 
-% 780 & 
-% \includegraphics[width=2.5cm, height=2.5cm]{cap_comandos/figuras/example_busi.jpg} \newline \textit{Tons de cinza/Ruído} \\
-% \hline
-% \textbf{REFUGE2} & 
-% Oftalmologia \newline (Fundo de Olho) & 
-% 3 & 
-% 1.200 & 
-% \includegraphics[width=2.5cm, height=2.5cm]{cap_comandos/figuras/example_refuge.jpg} \newline \textit{Disco/Escavação} \\
-% \hline
-% \textbf{BraTS 2020} & 
-% Neuro-Oncologia \newline (MRI Cerebral) & 
-% 4 & 
-% 369 Vol.* & 
-% \includegraphics[width=2.5cm, height=2.5cm]{cap_comandos/figuras/example_brats.jpg} \newline \textit{Multimodalidade} \\
-% \hline
-% \textbf{LiTS} & 
-% Radiologia \newline (CT Fígado) & 
-% 3 & 
-% 131 Vol.* & 
-% \includegraphics[width=2.5cm, height=2.5cm]{cap_comandos/figuras/example_lits.jpg} \newline \textit{Órgãos internos} \\
-% \hline
-% \multicolumn{5}{l}{\footnotesize *Volumes 3D processados como fatias (slices) 2D.} \\
-% \end{tabular}%
-% }
-% \end{table}
-
-\begin{table}[h!]
-\centering
-\caption{Informações (especialidade, quantidades de classes, amostras total e por classe) dos conjuntos de dados selecionados para validação no domínio médico.}
-\label{tab:datasets_medicos}
-\begin{tabular}{|l|p{3cm}|c|c|p{4cm}|}
-\hline
-\textbf{Dataset} & \textbf{Especialidade} & \textbf{\#Classes} & \textbf{\#Amostras} & \textbf{\#Amostras por Classe}\\
-\hline
-
-\textbf{Kvasir-SEG} &
-Gastroenterologia (Pólipos) & 
-2 & 
-1.000 &  
-\begin{tabular}{l}
-Pólipo: 1.000\\
-Fundo: 1.000
-\end{tabular}\\\hline
-
-\textbf{ISIC 2018} & 
-Dermatologia (Lesões Melânicas) &
-2 &
-2.594 &
-\begin{tabular}{l}
-Lesão: 2.594 \\
-Fundo: 2.594
-\end{tabular} \\ \hline
-
-\textbf{BUSI} &
-Ultrassonografia (Mama) &
-3 &
-780 &
-\begin{tabular}{l}
-Normal: 133 \\
-Benigno: 437 \\
-Maligno: 210
-\end{tabular}\\\hline
-
-\textbf{REFUGE2} &
-Oftalmologia (Fundo de Olho) &
-3 &
-1.200 &
-\begin{tabular}{l}
-Disco: 1.200 \\
-Escavação: 1.200 \\
-Fundo: 1.200
-\end{tabular}\\\hline
-
-\textbf{BraTS 2020} &
-Neuro-Oncologia (Tumores Cerebrais - MRI) &
-4 &
-369 Vol.* &
-\begin{tabular}{l}
-Whole Tumor: 369 \\
-Tumor Core: 369 \\
-Enhancing: 369 \\
-Fundo: 369
-\end{tabular}\\\hline
-
-\textbf{LiTS} &
-Radiologia (Lesões Hepáticas - CT) &
-3 &
-131 Vol.* &
-\begin{tabular}{l}
-Fígado: 131 \\
-Tumor: 131 \\
-Fundo: 131
-\end{tabular}\\\hline
-
-\multicolumn{5}{l}{\footnotesize *Volumes 3D processados como fatias (slices) 2D.} \\
-
-\hline
-\end{tabular}
-\end{table}
-
-
-
-\begin{table}[h!]
-\centering
-\caption{Exemplos de imagens e suas respectivas máscaras de segmentação dos conjuntos de dados médicos}
-%\caption{Exemplos visuais dos datasets médicos}
-\label{tab:datasets_medicos_visual_estilo_github}
-\resizebox{\textwidth}{!}{
-\begin{tabular}{|l|c|c|}
-\hline
-\textbf{Dataset} & \textbf{Exemplos de Imagens} & \textbf{Máscaras de Segmentação}\\
-\hline
-
-\textbf{Kvasir-SEG} & 
-\includegraphics[width=2cm]{cap_comandos/figuras/example_kvsair.jpg} &
-\includegraphics[width=2cm]{cap_comandos/figuras/example_kvsair_mask_1.png}\\
-\hline
-
-\textbf{ISIC 2018} &  
-\includegraphics[width=2cm]{cap_comandos/figuras/example_isic_1.jpg} &
-\includegraphics[width=2cm]{cap_comandos/figuras/example_isic_mask_1.png}\\ 
-\hline
-
-\textbf{BUSI} &  
-\includegraphics[width=2cm]{cap_comandos/figuras/example_busi_1.jpg} &
-\includegraphics[width=2cm]{cap_comandos/figuras/example_busi_mask_1.png}\\
-\hline
-
-\textbf{REFUGE2} &  
-\includegraphics[width=2cm]{cap_comandos/figuras/example_refuge_1.jpg} &
-\includegraphics[width=2cm]{cap_comandos/figuras/example_refuge_mask_1.png}\\ 
-\hline
-
-\textbf{BraTS 2020} &  
-\includegraphics[width=2cm]{cap_comandos/figuras/example_brats_1.jpg} &
-\includegraphics[width=2cm]{cap_comandos/figuras/example_brats_mask_1.png}\\ 
-\hline
-
-\textbf{LiTS} &  
-\includegraphics[width=2cm]{cap_comandos/figuras/example_lits_1.jpg} &
-\includegraphics[width=2cm]{cap_comandos/figuras/example_lits_mask_1.png}\\ 
-\hline
-\end{tabular}
-}
-\end{table}
-
-
-%\subsection{Cenários Opostos: Urbano e Sensoriamento Remoto}
-
-
-Para avaliar a capacidade do modelo de lidar com múltiplas escalas, perspectivas e densidades visuais, preservando o conhecimento anteriormente adquirido, propõe-se o uso de dois domínios extremos quando comparados ao \ac{PascalVOC2012}: visão egocêntrica densa e visão aérea distante. As características desses datasets estão detalhadas na Tabela \ref{tab:datasets_cenarios}.
-
-% Para estressar a capacidade do modelo de lidar com múltiplas escalas e perspectivas sem esquecer o conhecimento prévio, propõe-se a utilização de dois extremos visuais opostos aos datasets de objetos comuns (PASCAL): a visão egocêntrica densa e a visão aérea distante. A Tabela \ref{tab:datasets_cenarios} apresenta as características destes domínios.
-
-\begin{itemize}
-
-\item \textbf{Cityscapes (cenário urbano):} dataset ao nível da rua, com alta densidade de objetos e classes finas (como postes e sinais de trânsito). O desafio reside na segmentação precisa em ambientes visualmente saturados e com múltiplas instâncias sobrepostas. % de classes finas (postes, sinais de trânsito) e na distinção entre múltiplas instâncias sobrepostas em um ambiente visualmente poluído.
-
-\item \textbf{NLPR (sensoriamento remoto):} composto por imagens aéreas e satelitais, introduz variações drásticas de escala e orientação. Esse domínio permite verificar se o modelo, ao aprender padrões vistos de cima (telhados, vegetação), é capaz de preservar sua habilidade de identificar objetos observados frontalmente, validando, assim, a eficácia da destilação de conhecimento ao longo do processo contínuo. %a inclusão da visão aérea/satelital serve para testar a invariância à rotação e a mudança drástica de escala. O objetivo é verificar se o modelo, ao aprender a identificar telhados e vegetação vistos de cima, preserva a capacidade de identificar objetos vistos de frente (aprendidos nas fases anteriores), validando a eficácia da destilação de conhecimento.
-\end{itemize}
-
-\begin{table}[h!]
-\centering
-\caption{Informações (domínio, quantidades de classes, amostras totais e por classe) dos conjuntos de dados de cenários urbanos complexos e sensoriamento remoto}
-\label{tab:datasets_cenarios}
-\begin{tabular}{|l|p{2.5cm}|p{1.75cm}|p{2.25cm}|p{4.5cm}|}
-\hline
-\textbf{Dataset} & \textbf{Domínio} & \textbf{\#Classes} & \textbf{\#Amostras} & \textbf{\#Amostras por Classe} \\ \hline
-
-\textbf{Cityscapes} &
-Urbano &
-30 (19 avaliadas) &
-25.000 &
-\begin{tabular}{l}
-rua: 2.975 \\
-calçada: 2.975 \\
-construções: 2.975 \\
-parede: 1.904 \\
-cerca: 2.237 \\
-poste: 2.975 \\
-semáforo: 2.975 \\
-placas de trânsito: 2.975 \\
-vegetação: 2.975 \\
-terreno: 2.975 \\
-céu: 2.975 \\
-pessoa: 2.975 \\
-motorista: 2.975 \\
-carro: 2.975 \\
-caminhão: 2.030 \\
-ônibus: 1.833 \\
-trem: 277 \\
-motocicleta: 2.975 \\
-bicicleta: 2.975
-\end{tabular}
-\\ \hline
-
-\textbf{NLPR} &
-Sensoriamento Remoto &
-2 &
-650 &
-\begin{tabular}{l}
-Objeto saliente: 650 \\
-Fundo: 650
-\end{tabular}
-\\ \hline
-
-\end{tabular}
-\end{table}
-
-\begin{table}[h!]
-\centering
-\caption{Exemplos de imagens e suas respectivas máscaras de segmentação dos conjuntos de dados de cenários urbanos e sensoriamento remoto}
-\label{tab:datasets_cenarios_visual}
-\begin{tabular}{|l|c|c|}
-\hline
-\textbf{Dataset} & \textbf{Exemplo Visual} & \textbf{Máscara de Segmentação} \\
-\hline
-
-\textbf{Cityscapes} &
-\includegraphics[width=3cm]{cap_comandos/figuras/cityscape_example_1.jpg} &
-\includegraphics[width=3cm]{cap_comandos/figuras/cityscape_example_mask_1.png} \\
-\hline
-
-\textbf{NLPR (Aerial)} &
-\includegraphics[width=3cm, height=3cm]{cap_comandos/figuras/example_aerial.jpg} &
-\includegraphics[width=3cm, height=3cm]{cap_comandos/figuras/nlpr_mask_example.png} \\
-\hline
-
-\end{tabular}
-\end{table}
-
-
-
-
-% \begin{table}[h!]
-% \centering
-% \caption{Datasets para cenários urbanos complexos e sensoriamento remoto.}
-% \label{tab:datasets_cenarios}
-% \resizebox{\textwidth}{!}{
-% \begin{tabular}{|l|p{3.5cm}|c|c|p{4cm}|}
-% \hline
-% \textbf{Dataset} & \textbf{Perspectiva / Domínio} & \textbf{Classes} & \textbf{Amostras} & \textbf{Exemplo Visual} \\
-% \hline
-% \hline
-% \textbf{Cityscapes} & 
-% \textbf{Visão Egocêntrica} \newline (Urbano Denso) & 
-% 30 \newline (19 avaliadas) & 
-% 5.000 (Fine) \newline 20.000 (Coarse) & 
-% \includegraphics[width=2.5cm, height=2.5cm]{cap_comandos/figuras/2007_001149.jpg} \newline \textit{Cena de rua complexa} \\
-% \hline
-% \textbf{NLPR (Aerial)} & 
-% \textbf{Visão Nadir} \newline (Aérea/Satelital) & 
-% 6-7 & 
-% 650 & 
-% \includegraphics[width=2.5cm, height=2.5cm]{cap_comandos/figuras/example_aerial.jpg} \\
-% \hline
-% \end{tabular}%
-% }
-% \end{table}
-
-Essa diversidade experimental busca responder se a arquitetura proposta pode atuar como um \textit{Foundation Model} adaptável, isto é, um modelo capaz de ser refinado progressivamente para tarefas específicas sem a necessidade de retreinamento total, acumulando e preservando conhecimento proveniente de domínios tão distintos quanto biologia, urbanismo e objetos naturais.
-
-%Essa diversidade experimental tem como objetivo final responder se a arquitetura proposta é capaz de atuar como um \textit{Foundation Model} adaptável, ou seja, um modelo que pode ser refinado para tarefas específicas sem a necessidade de ser retreinado do zero, acumulando conhecimento de biologia, urbanismo e objetos gerais simultaneamente.
-
-
-\subsection{Descrição do Protocolo Experimental}
-
-Para assegurar a robustez e a reprodutibilidade dos resultados, os experimentos serão conduzidos seguindo um protocolo padronizado, abrangendo desde a configuração inicial do treinamento até a avaliação da interação humano-computador.
-
-
-\subsubsection{Métricas de Desempenho de Segmentação}
-
-
-A qualidade da segmentação semântica será avaliada por meio de métricas consolidadas na literatura, permitindo um comparativo com o atual estado da arte:
-
-
-\begin{itemize}
-\item \textbf{\ac{IoU}:} métrica fundamental para avaliar a sobreposição entre a máscara predita ($P$) e a máscara de referência ($G$). É definida como $IoU = \frac{|P \cap G|}{|P \cup G|}$. O \textit{\ac{mIoU}} será reportado como a média do \ac{IoU} sobre todas as classes do conjunto de dados.
-\item \textbf{Pixel Accuracy (PA):} percentual de pixels classificados corretamente na imagem. Embora menos sensível ao desbalanceamento de classes que o \ac{IoU}, constitui uma métrica complementar para avaliar a consistência global da segmentação.
-\item \textbf{Dice Coefficient (F1-Score):} especialmente relevante para os conjuntos de dados médicos, o Dice Coefficient ($DSC = \frac{2|P \cap G|}{|P| + |G|}$) penaliza falsos positivos e falsos negativos de forma balanceada, sendo crucial para a avaliação de estruturas pequenas, como lesões ou tumores.
-
-\end{itemize}
-
-\subsubsection{Métricas de Desempenho do Esforço Interativo}
-
-Devido a natureza interativa do framework, torna-se necessário mensurar não apenas a qualidade final da segmentação, mas também esforço requerido para alcançá-la. Para isso, serão adotadas métricas de eficiência de anotação:
-
-\begin{itemize}
-
-\item \textbf{Número de Cliques (\ac{NoC}):} quantidades totais de interações (cliques positivos e negativos) necessárias para que a segmentação atinja um limiar de qualidade pré-definido (ex: \ac{IoU} $\ge$ 85\% ou 90\%).
-
-\item \textbf{NoC@85 e NoC@90:} métricas padronizadas que indicam o número médio de cliques para atingir 85\% e 90\% de \ac{IoU}, respectivamente. Valores menores refletem maior eficiência do processo interativo na captura da intenção do usuário. %indica um sistema de Aprendizado Ativo mais eficiente em capturar a intenção do usuário.
-
-\item \textbf{Tempo de Interação:} tempo médio (em segundos) dedicado pelo especialista (ou agente simulado) para refinamento da máscara, incluindo o tempo de inferência do modelo após interação.
-
-\end{itemize}
-
-Dentre as métricas citadas, o tempo de interação terá papel central na análise, uma vez que uma das contribuições esperadas deste trabalho é a redução do tempo requerido pelo especialista para a obtenção de segmentações de alta qualidade. %deve-se ter um enfoque maior no tempo de interação. Uma das contribuições esperadas do trabalho é a redução no tempo gasto pelo especialista para a segmentação de um modelo.}
-
-
-\subsubsection{Métrica de Desempenho do Aprendizado Contínuo} %Avaliação de Aprendizado Contínuo}
-
-Para avaliar a redução do esquecimento catastrófico, o protocolo deve considerar a métrica de \ac{BWT}. Essa métrica quantifica a influência do aprendizado de uma nova tarefa em relação ao desempenho obtido nas tarefas previamente aprendidas. Formalmente, o \ac{BWT} é definido como:
-
-%Para validar a redução do esquecimento catastrófico, o protocolo incluirá a métrica de \ac{BWT}. O \ac{BWT} mede a influência do aprendizado de uma nova tarefa em relação ao desempenho nas tarefas anteriores.
+Formalmente, para uma imagem $I$ e um filtro $K$ de tamanho $h \times w$ aplicado na posição $(x, y)$:
 
 \begin{equation}
-BWT = \frac{1}{K-1} \sum_{i=1}^{K-1} (R_{K,i} - R_{i,i})
+(I * K)(x, y) = \sum_{i=1}^{h} \sum_{j=1}^{w} I(x + i - c_h,\; y + j - c_w) \cdot K(i, j)
+\label{eq_conv}
 \end{equation}
 
-em que $R_{K,i}$ denota a acurácia obtida no conjunto de dados $i$ após o modelo concluir o aprendizado da tarefa $K$. Valores de \ac{BWT} próximos de zero indicam ausência de esquecimento relevante; valores positivos sugerem que o aprendizado de novas tarefas contribuiu para melhorar o desempenho em tarefas anteriores; já valores negativos evidenciam a presença de esquecimento catastrófico.
+onde $c_h$ e $c_w$ indicam o centro do filtro. O conjunto de filtros de uma camada define o vocabulário visual com que a rede descreve a imagem, e uma rede com várias camadas compõe padrões simples das primeiras camadas em padrões mais complexos nas seguintes.
 
-% em que $R_{K,i}$ é a acurácia no dataset $i$ após o modelo ter terminado de aprender a tarefa $K$. Um valor \ac{BWT} próximo de zero indica a ausência de um esquecimento significativo, enquanto valores mais altos indicam que o novo aprendizado ajudou nas tarefas antigas e não esqueceu o conteúdo anterior.
+A diferença entre os métodos está em como esses filtros são obtidos. Redes treinadas por retropropagação os inicializam aleatoriamente e os ajustam ao longo de milhares de iterações, calculando o quanto cada valor contribuiu para o erro e corrigindo-o na direção oposta. Esse procedimento requer grandes conjuntos anotados.
 
+\subsection{Estimação dos filtros a partir de marcadores}
 
-\subsubsection{Métrica de Desempenho do Ambiente de Simulação de Cliques}
+O \ac{FLIM} não ajusta filtros, ele os \emph{extrai} \cite{souza2020flim}. O especialista desenha marcadores sobre poucas imagens, indicando regiões de objeto e de fundo. O método recorta as vizinhanças centradas nos pixels marcados e usa essas vizinhanças, após agrupamento, como filtros.
 
-Para possibilitar a avaliação em larga escala sem demandar centenas de horas de anotação humana em tempo real, será utilizado um ambiente de simulação de cliques. Nesse ambiente, o agente opera de forma determinística: a cada iteração, a máscara predita é comparada com o ground-truth, permitindo identificar a maior região conexa de erro (seja ela um falso positivo ou um falso negativo). Em seguida, é gerado um clique no centróide dessa região de erro. Esse processo é repetido continuamente até que o número máximo de cliques definido seja atingido. Essa abordagem também permite a comparação sistemática entre diferentes estratégias de \ac{AL}, uma vez que todas são avaliadas sob condições controladas e reprodutíveis.
+Seja $M$ o conjunto de pixels marcados em uma imagem. Para cada pixel $p \in M$, define-se o \emph{patch} $\phi(p)$ como o vetor obtido empilhando os valores das bandas na vizinhança $h \times w$ de $p$:
 
-%Para viabilizar a avaliação em larga escala sem demandar centenas de horas de anotação humana em tempo real, será utilizado um ambiente de simulação de cliques. Nesse ambiente, o agente opera de forma determinística: a cada iteração, a máscara predita é comparada com o \textit{ground-truth}, permitindo identificar a maior região conexa de erro (seja ela um falso positivo ou um falso negativo). Em seguida, é gerado um clique no centroide dessa região de erro. Esse ciclo será repetindo diversas vezes, até que o máximo de cliques definido seja atingido. Dessa forma, também será possível comparar diversas estratégias de \textit{Active Learning}
+\begin{equation}
+\phi(p) \in \mathbb{R}^{h \cdot w \cdot b}
+\label{eq_patch}
+\end{equation}
 
+onde $b$ é o número de bandas da entrada daquela camada. Para a primeira camada, $b$ é o número de canais da imagem; para as seguintes, é o número de filtros da camada anterior.
 
+O procedimento ocorre em dois níveis de agrupamento.
 
-\section{Experimentos e Resultados Preliminares}
-%\section{Configuração Experimental e Resultados Preliminares}
-\label{base_experimental}
+\paragraph{Primeiro nível, por marcador.} Os marcadores são separados em componentes conexas: um traço isolado do pincel é uma componente, e dois traços que se encostam formam uma só. Para cada componente $m$, os patches dos seus pixels são agrupados por $k$-médias em $n_m$ grupos, e os centróides resultantes tornam-se candidatos a filtro:
 
-O ponto de partida para este trabalho foi a metodologia proposta por \citeonline{zheng2021continual}, cuja abordagem interativa se mostrou alinhada aos objetivos aqui estabelecidos. No estudo citado, os autores apresentam um \textit{framework} que mantém uma janela de interação contínua com o especialista, permitindo a indicação de regiões de erro ou omissão para serem utilizadas como sinais de supervisão no refinamento do modelo. Um desafio inerente a essa abordagem, ilustrado na Figura \ref{fig:framwork_final}, refere-se à ambiguidade semântica na primeira inferência. Como o modelo base é treinado para segmentação geral, tende a segmentar todas as classes conhecidas presentes na cena. Nesse contexto, a participação do usuário torna-se essencial não apenas para o refinamento de bordas, mas também para a delimitação explícita da instância de interesse, suprimindo segmentações indesejadas por meio de cliques negativos.
+\begin{equation}
+C_m = \operatorname{kmeans}\big(\{\phi(p) : p \in m\},\; n_m\big)
+\label{eq_nivel1}
+\end{equation}
 
-%O ponto de partida para este trabalho foi a metodologia proposta por \citeonline{zheng2021continual}, cuja abordagem de implementação interativa se mostrou próxima dos nossos objetivos. No trabalho citado, é apresentado um framework que possui uma janela interativa com o especialista, \textcolor{red}{indicando regiões de erro ou omissão, para que sejam propagados como sinais de supervisão para o refinamento do modelo. Um desafio interente a essa abordagem inicial, mostrado na figura  \ref{fig:framwork_final}, é a ambiguidade semântica na primeira inferência. Como o modelo base é treinado para segmentação geral, ele tende a segmentar todas as classes conhecidas presentes na cena. Por isso, a interação do usuário torna-se crucial, não apenas para refinar bordas, mas para especificar a instância de interesse, suprimindo as demais detecções através de cliques negativos. } %afim de propagar os cliques de lugares não segmentados para o modelo. 
+O parâmetro $n_m$, chamado \texttt{nkernels\_per\_marker} na implementação, é definido na arquitetura. Nos experimentos deste trabalho ele vale 3 no conjunto de parasitas, 5 no BraTS e 15 no conjunto de conjuntivite.
 
-Apesar da relevância conceitual da metodologia, a implementação disponibilizada no GitHub por \citeonline{zheng2021continual} baseava-se em uma versão obsoleta do TensorFlow, o que dificultou sua reprodutibilidade em hardwares modernos, especialmente GPUs que requerem suporte ao CUDA 11.8 ou superior (Compute Cabaility sm\_120). Para contornar essa limitação, adotou-se a reimplementação completa e modernização da metodologia em Pytorch (versão 2.8), juntamente com a atualização da versão do Python de 3.7 para 3.12. Essa escolha possibilitou o uso eficiente do hardware recente e a integração com o ecossistema \textit{torchvision}, facilitando análises comparativas entre diferentes modelos de segmentação e oferecendo maior flexibilidade ao processo interativo. %decisão permitiu não só o aproveitamento do hardware com barramentos modernos, mas também a integração com o ecossistema torchvision, falicitando análises de outros modelos de segmentação para comparativo de resultados e escolha interativa do usuário.
+\paragraph{Segundo nível, global.} Os candidatos de todas as componentes e de todas as imagens anotadas são reunidos em um único conjunto $C = \bigcup_m C_m$, que então é reduzido ao número de canais de saída da camada, $n_{\text{out}}$:
 
-A Tabela \ref{tab:hardware} apresenta a configuração de hardware utilizada nos experimentos iniciais:
+\begin{equation}
+K = \operatorname{kmeans}(C,\; n_{\text{out}})
+\label{eq_nivel2}
+\end{equation}
 
-%Para os experimentos iniciais, a tabela \ref{tab:hardware} mostra os componentes utilizados para realização inicial dos experimentos e treinos: 
+Os centróides resultantes, após normalização, são os filtros da camada. A saída da camada serve de entrada para o mesmo procedimento na camada seguinte, de modo que a estimação avança camada a camada sem nenhum passo de retropropagação.
 
-\begin{table}[h!]
-\centering
-\caption{Configuração de hardware utilizada nos experimentos.}
-\label{tab:hardware}
-\begin{tabular}{|l|l|}
-\hline
-\textbf{Componente} & \textbf{Especificação} \\
-\hline
-Processador (CPU) & AMD Ryzen 5 5600X \\
-Memória RAM & 32 GB DDR4 3200 Mhz \\
-Placa de Vídeo (GPU) & NVIDIA GeForce RTX 5070 12 GB \\
-Placa-mãe & Asus ROG Strix 570 \\
-Sistema Operacional & Windows 11 Pro \\
-\hline
-\end{tabular}
-\end{table}
+\subsection{Os dois regimes do segundo agrupamento}
 
-Além disso, utilizou-se a versão 25.7 do Conda para criação de um ambiente reprodutível contendo todas as dependências necessárias. O arquivo \textit{environment.yml}, disponibilizado juntamente com o código-fonte, permite a instalação automatizada do ambiente experimental, garantindo consistência entre execuções e facilitando a replicação dos experimentos. %criando um ambiente com as configurações necessárias, na qual estão disponíveis no código gerado, dentro do arquivo criado \textit{environment.yml}, que ao ser executado instalará todas as dependências necessárias.
+A Equação \ref{eq_nivel2} tem um comportamento que é central para os resultados deste trabalho. A implementação só executa o agrupamento quando há mais candidatos do que vagas:
 
-%Também foi utilizado a versão 25.7 do conda, criando um ambiente com as configurações necessárias, na qual estão disponíveis no código gerado, dentro do arquivo criado \textit{environment.yml}, que ao ser executado instalará todas as dependências necessárias.
+\begin{equation}
+K =
+\begin{cases}
+C, & \text{se } |C| \leq n_{\text{out}} \\[4pt]
+\operatorname{kmeans}(C, n_{\text{out}}), & \text{se } |C| > n_{\text{out}}
+\end{cases}
+\label{eq_regimes}
+\end{equation}
 
+Quando o número de candidatos não excede o número de vagas, os próprios candidatos tornam-se os filtros, sem agrupamento algum, e o número de canais da camada é reduzido para $|C|$. Acrescentar um marcador, nesse regime, acrescenta filtros e deixa os anteriores intactos.
 
-\subsection{Algoritmo de Segmentação}
+Quando o número de candidatos excede as vagas, o agrupamento precisa escolher como particionar o conjunto. Acrescentar um marcador acrescenta candidatos, a partição é refeita sobre o conjunto ampliado, e os centróides se deslocam. Nenhum filtro é preservado por construção.
 
-A fase inicial de desenvolvimento e validação do \textit{framework} interativo foi construída sobre a arquitetura DeepLabV3-ResNet50. A escolha dessa arquitetura deve-se à sua boa relação entre velocidade de inferência e desempenho, tanto em cenários biomédicos quanto em imagens naturais.
+A razão entre candidatos e vagas difere bastante entre os conjuntos de dados usados aqui. Com cerca de cinquenta componentes de marcador distribuídas em três imagens, o conjunto de parasitas produz aproximadamente 150 candidatos para 200 vagas, operando abaixo do limite. O BraTS produz cerca de 250 candidatos para 8 vagas, e o conjunto de conjuntivite cerca de 750 para 16. Nos dois últimos casos há dezenas de candidatos disputando cada vaga, e o agrupamento é intenso.
 
-O modelo DeepLabV3-ResNet50 foi inicialmente treinado do zero, utilizando um subconjunto do \ac{PascalVOC2012} composto por 2913 imagens. Embora esse modelo tenha sido suficiente para validar o fluxo de interação com o especialista, a lógica de refinamento baseada em cliques mostrou-se limitada, desde o processo de interpretação dos cliques até a etapa de atualização da máscara, além de o comportamento multiclasse inicial ter se revelado menos consistente do que o desejado. Suspeita-se que, para essa configuração, o número de épocas adotado (50 épocas) tenha sido insuficiente para alcançar um modelo de segmentação mais estável. Com o objetivo de garantir comparabilidade com o estado da arte e oferecer uma base sólida para a etapa de aprendizado contínuo, optou-se por reestruturar o modelo de segmentação, mantendo a arquitetura DeepLabV3, mas com um processo de treinamento mais rigoroso e centrado na robustez do backbone ResNet-50.
+\subsection{O decodificador adaptativo}\label{sec_decoder}
 
-%e modificação do refinamento, até mesmo a segmentação inicial multiclasse. Acredita-se que, para esse modelo, o número de épocas necessárias para o treinamento deva ser maior, visto que foi realizado o treinamento com 50 épocas.
+O codificador produz mapas de ativação, não uma máscara. A conversão é feita por um decodificador adaptativo \cite{soares2026flim}, que atribui a cada canal de ativação um peso em $\{-1, +1\}$ conforme uma heurística que estima se aquele canal responde ao objeto ou ao fundo, e combina os canais por uma convolução ponto a ponto:
 
-%Para garantir que os resultados fossem comparáveis ao estado da arte e que a avaliação da aprendizagem contínua partisse de uma base de alta performance, foi realizada a alteração do modelo de segmentação para a arquitetura DeepLabV3, com um backbone ResNet-50.
+\begin{equation}
+S(x, y) = \sum_{c=1}^{n_{\text{out}}} w_c \cdot A_c(x, y), \qquad w_c \in \{-1, +1\}
+\label{eq_decoder}
+\end{equation}
 
+onde $A_c$ é o mapa de ativação do canal $c$. Os pesos são recalculados para cada imagem de entrada, o que dá ao decodificador o caráter adaptativo. Nenhum parâmetro é ajustado por gradiente.
 
-Essa transição resultou em um modelo substancialmente mais estável e preciso. O treinamento da nova base foi realizado novamente do zero, utilizando 1464 imagens com anotações a nível de pixel. Para determinar o ponto ideal de parada, foi implementado um mecanismo dinâmico de monitoramento de perda, que encerrava o treinamento após cinco épocas consecutivas sem redução significativa do erro, estratégia empregada para evitar sobreajuste (\textit{overfitting}) e otimizar o uso de recursos computacionais.
+O mapa $S$ é normalizado para o intervalo $[0, 1]$ e binarizado por limiarização de Otsu, seguida de um filtro que remove componentes conexas fora de uma faixa de área esperada para o objeto.
 
-%Essa transição de modelo proporcionou uma base muito mais robusta e precisa. O treinamento da base foi realizada novamente do zero, considerando 1464 imagens e suas respectivas segmentações a nível de pixel. Para o número de épocas, foi criada um sistema de medição dinâmico, que verificava a variação da perda do modelo conforme o passar das épocas e, ao realizar 5 épocas sem uma perda expressiva, o modelo finalizava seu treinamento, afim de não permitir a criação de overfitting. 
+\section{Métricas}
 
+\subsection{Qualidade da segmentação}
 
-\subsection{Descrição dos Experimentos e Discussão dos Resultados}
-%\subsection{Experimentos e Resultados}
-\label{subsec:experiments}
+A métrica principal é o \fbeta, que combina precisão e revocação com peso maior para a precisão, seguindo o trabalho de referência:
 
-Os experimentos iniciais foram concebidos para avaliar duas hipóteses centrais: %realizados em primeiro momento foram desenhados para avaliar duas hipóteses centrais: 
+\begin{equation}
+F_\beta = \frac{(1 + \beta^2) \cdot P \cdot R}{\beta^2 \cdot P + R}, \qquad \beta^2 = 0{,}3
+\label{eq_fbeta}
+\end{equation}
 
-\begin{itemize}
-\item A eficácia do método de refinamento adaptativo em um modelo especialista;
-\item A capacidade do sistema de reter e transferir conhecimento entre as instâncias de uma mesma classe, no contexto do aprendizado contínuo.
-\end{itemize}
+onde $P$ é a precisão e $R$ a revocação, calculadas pixel a pixel sobre a máscara binarizada.
 
-Conforme apresentado na Subseção \ref{base_experimental}, os experimentos foram conduzidos utilizando o modelo de segmentação DeepLabV3-ResNet50 e o conjunto de dados \ac{PascalVOC2012}. A avaliação quantitativa da performance foi realizada por meio da métrica \ac{IoU}, enquanto a interação do usuário foi simulada de forma determínistica. O código utilizado para todas as verificações encontra-se disponível em: \href{https://github.com/DanielGaletti/CLIS_Updated}{Github}
- 
-%Conforme dito na subseção \ref{base_experimental}, os experimentos foram conduzidos utilizando o modelo de segmentação DeepLabV3-ResNet50 e o dataset \ac{PascalVOC2012}. A performance foi medida quantitativamente através da métrica de \ac{IoU}, e a interação do usuário foi simulada de forma determinística. O código para verificação das implementações se encontra disponível em: \href{https://github.com/DanielGaletti/CLIS_Updated}{Github}
+Reporta-se também a \ac{IoU}, razão entre a interseção e a união das máscaras predita e verdadeira:
 
-A primeira etapa experimental consistiu em analisar como a segmentação se modifica mediante a aplicação de alguns poucos cliques no modelo interativo. A Figura \ref{fig:framwork_initial} ilustra a interface exibida ao especialista, contendo a segmentação inicial produzida pelo modelo DeepLabV3-ResNet50 (Figura \ref{fig:framwork_final}a). Nesse cenário, a classe de interesse foi ``sofá'' (ID 18). Observa-se que o modelo apresenta um comportamento generalista: embora o objetivo seja segmentar apenas o sofá, o modelo identifica corretamente diversas outras classes presentes na cena, como consequência natural de seu treinamento multiclasse no conjunto de dados \ac{PascalVOC2012}. Esse comportamento não constitui um erro; ao contrário, evidencia um dos principais desafios da segmentação interativa, orientar o modelo para o foco específico do usuário, filtrando predições semanticamente válidas, porém irrelevantes para a tarefa em execução.
-Após a inserção dos cliques necessários para indicar os objetos que não pertencem à classe ``sofá'' (Figura \ref{fig:framwork_final}b), o sistema executa um novo ciclo de retreinamento e retorna a máscara segmentada atualizada, incorporando as correções (Figura \ref{fig:framwork_final}c).
+\begin{equation}
+\text{IoU} = \frac{|\hat{Y} \cap Y|}{|\hat{Y} \cup Y|}
+\label{eq_iou}
+\end{equation}
 
-%A primeira execução foi verificar a alteração da segmentação quando realizado alguns poucos cliques no modelo interativo. A figura \ref{fig:framwork_initial} mostra a interface que aparece ao especialista, com a segmentação inicial realizada pelo modelo DeepLabV3-ResNet50. Para esse teste, a classe definida foi "sofá" (ID 18). Uma observação da predição realizada pelo modelo é o comportamento generalista. Embora a tarefa esteja focada em segmentar sofá, o modelo, devido ao seu treinamento abrangente no dataset, identificou corretamente outras classes de objetos que reconhece na cena. Esse resultado não representa um erro, mas uma evidência do desafio fundamental da segmentação interativa: a necessidade de guiar o modelo a um propósito na qual ele encontre o interesse específico do usuário, ignorando outros objetos semanticamente válidos.
+A acurácia pixel a pixel é reportada por completude, mas não discrimina neste domínio: como os objetos ocupam pequena fração da imagem, predizer tudo como fundo já produz acurácia superior a $0{,}97$.
 
-\begin{figure}[h!]
-\centering
-\caption{Ilustração do \textit{framework} em execução e dos resultados obtidos, considerando a classe de interesse (``sofá'') do conjunto de dados \ac{PascalVOC2012}: (a) segmentação inicial obtida pelo modelo DeepLabV3-ResNet50, em que outras classes de objetos são reconhecidos na cena, (b) cliques necessários indicando os objetos que não fazem parte da classe de interesse para realizar novo refinamento, (c) segmentação final obtido pelo refinamento do modelo após cliques do usuário} % gerado ao considerar exclusivamente a classe ``sofá''.}
-%\caption{Framework executado e imagem segmentada considerando apenas a classe sofá.}
-\label{fig:framwork_final}
-\begin{tabular}{ccc}
-\includegraphics[height=3.75cm]{cap_comandos/figuras/initial_segmentation.jpg}
-&
-\includegraphics[height=3.75cm]{cap_comandos/figuras/clicked_segmentation.jpg}
-&
-\includegraphics[height=3.75cm]{cap_comandos/figuras/final_segmentation.jpg}\\
-(a) & (b) & (c)\\
-\end{tabular}
-\label{fig:framwork_initial}
-%{\small Fonte: Autoria Própria}
-\end{figure}
+\subsection{Esforço de interação}
 
+Para a avaliação interativa usa-se o \ac{NoC}, número de cliques necessários para que a \ac{IoU} ultrapasse um alvo $\tau$, com um teto $N_{\max}$ de interações:
 
-%\begin{figure}[H]
-%\centering
-%\caption{Framework executado e imagem segmentada considerando apenas a classe sofá.}
-%\includegraphics[width=0.5\textwidth]{cap_comandos/figuras/initial_segmentation.jpg}
-%\label{fig:framwork_initial}
-%{\small Fonte: Autoria Própria}
-%\end{figure}
+\begin{equation}
+\text{NoC@}\tau = \min\{\,n \leq N_{\max} : \text{IoU}_n \geq \tau\,\},
+\quad \text{ou } N_{\max} \text{ se nenhum } n \text{ satisfaz}
+\label{eq_noc}
+\end{equation}
 
-%\begin{figure}[H]
-%\caption{Imagem segmentada considerando outros objetos que não apenas sofá}
-%\includegraphics[width=0.5\textwidth]{cap_comandos/figuras/clicked_segmentation.jpg}
-%\label{fig:framwork_clicked}
-%{\small Fonte:  Autoria Própria}
-%\end{figure}
+Imagens que não atingem o alvo entram na média com o valor do teto. Por isso a taxa de sucesso é reportada ao lado do \ac{NoC} em todas as tabelas: um método poderia exibir contagem baixa simplesmente por desistir antes, e a contagem isolada premiaria esse comportamento.
 
+\section{Aprendizado ativo}
 
+Os critérios de aquisição avaliados pertencem a duas famílias. Seja $P(x,y) \in (0,1)$ a probabilidade predita de o pixel $(x,y)$ pertencer ao objeto.
 
-%Após realizados os cliques necessários apontando os objetos que não fazem parte da classe ``sofá'', o sistema realiza um novo refinamento, devolvendo a imagem segmentada, considerando os cliques do usuário, como pode ser visto na \ref{fig:framwork_final}.
+\subsection{Critérios de incerteza}
 
-%\begin{figure}[H]
-%\centering
-%\caption{Modelo refina a imagem e realiza o aprendizado contínuo}
-%\includegraphics[width=0.5\textwidth]{cap_comandos/figuras/final_segmentation.jpg}
-%\label{fig:framwork_final}
-%{\small Fonte:  Autoria Própria}
-%\end{figure}
+A \textbf{entropia} mede a indecisão do modelo, atingindo o máximo quando a probabilidade predita é $0{,}5$:
 
-A partir dos cliques fornecidos pelo usuário, a segmentação da imagem é progressivamente refinada, até que não haja mais necessidade de indicar objetos que não pertencem à classe de interesse. Ao finalizar a interação no \textit{framework}, o conhecimento obtido durante o refinamento é destilado de volta para o modelo, de modo que as imagens subsequentes já se beneficiem das correções aprendidas, influenciando positivamente novas segmentações.
+\begin{equation}
+H(x,y) = -\big[P \log P + (1-P)\log(1-P)\big]
+\label{eq_entropia}
+\end{equation}
 
-%A partir dos cliques, a segmentação da imagem atual é melhorada, até o ponto em que não é mais necessário apontarmos os objetos fora da segmentação específica. Quando fechamos o framework, o conhecimento obtido pelo refinamento é destilado para o modelo, afim de que nas imagens posteriores, ele cause impactos na nova segmentação.
+O \textbf{least confidence} mede a distância à decisão, com a mesma intuição e escala diferente:
 
-Entretanto, para que esse impacto pudesse ser avaliado de maneira objetiva, seria insuficiente depender apenas de testes manuais, cuja comparação seria predominantemente visual. Para superar essa limitação, foi desenvolvida uma simulação que registra e compara os valores de \ac{IoU} ao longo das interações que o especialista teria com a imagem, permitindo mensurar quantitativamente os efeitos do refinamento adaptativo.
+\begin{equation}
+\text{LC}(x,y) = 1 - |2P - 1|
+\label{eq_lc}
+\end{equation}
 
-%Contudo, para que esse impacto seja visualizado, seria necessário que o teste manual fosse realizado ao longo de algumas imagens e a comparação seria apenas visual. Portanto, foi criado uma simulação que compara os \ac{IoU} ao longo das interações que o especialista teria com a imagem.
+Para pontuar uma \emph{região} $r$, toma-se a média do critério sobre seus pixels:
 
-O primeiro experimento simulado teve como objetivo avaliar o comportamento do sistema quando submetido a um modelo já proficiente na tarefa de segmentação. A hipótese central era que a estratégia de aprendizado adaptativo deveria realizar ajustes finos sem comprometer o conhecimento previamente adquirido, evitando, portanto, o fenômeno conhecido como ``esquecimento catastrófico''. Para esse teste, foram selecionadas imagens das classes ``Avião'' e ``Sofá'', para as quais o modelo treinado apresentava desempenho inicial característico de um especialista. Os resultados dessa primeira simulação estão apresentados na Tabela \ref{tab:exp1_results}.
+\begin{equation}
+s(r) = \frac{1}{|r|} \sum_{(x,y) \in r} H(x,y)
+\label{eq_score_regiao}
+\end{equation}
 
-%O primeiro experimento simulado visou avaliar o comportamento do sistema, quando interagido com um modelo que demonstra boa proficiência na segmentação. A hipótese era que a estratégia de aprendizagem adaptativa deveria ser capaz de realizar ajustes finos sem degradar o conhecimento que o modelo base já possuia, um fenômeno conhecido como ``esquecimento catastrófico''. Para esse teste, foram selecionados imagens das classes ``Avião'' e ``Sofá'', na qual o modelo treinado apresentava uma performance inicial de especialista. 
+\subsection{Critérios de diversidade}
 
-%O resultados da primeira simulação podem ser analisados através da tabela \ref{tab:exp1_results}
+Os critérios de diversidade não olham a incerteza, e sim a representatividade no espaço de atributos. Cada candidato é descrito por um vetor obtido pela média das ativações do codificador dentro da sua máscara.
 
+O \textbf{CoreSet} seleciona o candidato mais distante do que já foi anotado, que é o passo guloso do $k$-center:
 
-\begin{table}[h!]
-\centering
-\caption{Resultados do experimento de refinamento adaptativo, mostrando o impacto das interações simuladas no \ac{IoU} inicial e final, bem como a variação percentual para cada classe avaliada.}
-%\caption{Resultados do Experimento do Refinamento Adaptativo.}
-\label{tab:exp1_results}
-\begin{tabular}{|l|c|c|c|c|}
-\hline
-\textbf{Experimento} & \textbf{Classe} & \textbf{\ac{IoU} Inicial} & \textbf{\ac{IoU} Final} & \textbf{Variação (\%)} \\
-\hline
-Exp1\_Avião & Avião (1) & 0.9586 & 0.9329 & -2.77\% \\
-Exp3\_Sofa & Sofá (18) & 0.9888 & 0.9827 & -0.61\% \\
-\hline
-\end{tabular}
-\end{table}
+\begin{equation}
+r^{\ast} = \arg\max_{r \notin A} \; \min_{a \in A} \; \lVert f(r) - f(a) \rVert_2
+\label{eq_coreset}
+\end{equation}
 
+onde $A$ é o conjunto já anotado e $f(\cdot)$ o vetor de atributos. O \textbf{medoide} faz o oposto, escolhendo o candidato mais típico:
 
-Os dados apresentados na tabela evidenciam a eficácia da abordagem de refinamento adaptativo. Em ambos os cenários, o sistema alcançou um \ac{IoU} inicial superior a 95\%, indicando que o modelo já possuía um desempenho de nível especialista antes das interações. Nessa condição, o mecanismo de adaptação emprega uma taxa de aprendizado suave ($2 \times 10^{-5}$), utilizada sempre que o \ac{IoU} inicial ultrapassa 90\%; taxas mais agressivas ($1 \times 10^{-4}$) são reservadas para casos em que o desempenho inicial é inferior a esse limiar. Assim, conforme ilustrado na Tabela \ref{tab:exp1_results}, o refinamento ocorreu integralmente sob o regime de aprendizado suave.
-Como consequência, a variação no desempenho pós-refinamento foi mínima: uma redução de apenas -2.77\% para a classe ``Avião'' e -0.61\% para a classe ``Sofá''. Esses valores reforçam a estabilidade do método, demonstrando que o modelo é capaz de incorporar as correções fornecidas pelo especialista sem comprometer o conhecimento previamente adquirido, mitigando, portanto, o risco de esquecimento catastrófico.
+\begin{equation}
+r^{\ast} = \arg\min_{r} \; \frac{1}{|R|}\sum_{q \in R} \lVert f(r) - f(q) \rVert_2
+\label{eq_medoide}
+\end{equation}
 
-%Os dados da tabela demonstram o sucesso na abordagem adaptativa. Em ambos os casos, o sistema identificou corretamente, com um \ac{IoU} superior a 95\%. O sistema está programado para simular com uma taxa de aprendizado gentil ($2 \times 10^{-5}$), para quando o \ac{IoU} estiver com valor superior a 90\%, enquanto usa uma taxa agressiva ($1 \times 10^{-4}$) quando o valor é menor que 90\%. Conforme visto no \ac{IoU} inicial da \ref{tab:exp1_results}, o valor utilizado para essa simulação foi o de aprendizado gentil.
+Esses dois critérios são de imagem por construção na literatura, pois comparam imagens inteiras. A extensão ao nível de região, feita neste trabalho, substitui a média global das ativações pela média dentro da máscara de cada região, mantendo o mesmo espaço.
 
-%Como resultado, a variação na performance após o refinamento foi mínima: Uma queda de -2.77\% nas imagens contendo avião e de 0.61\% para o sofá. Esses valores mostram a segurança e estabilidade do modelo, que consegue preservar o conhecimento de um modelo especialista, enquanto refina e incorpora as correções do especialista de forma interativa, evitando o esquecimento catastrófico.
+\subsection{Geração dos candidatos}
 
-O segundo experimento teve como objetivo avaliar a capacidade do modelo de reter e transferir conhecimento entre instâncias da mesma classe. Para isso, o modelo foi refinado utilizando uma imagem de Avião (A) e, posteriormente, sua performance inicial foi medida em uma segunda imagem da mesma classe (B), comparando-a com o desempenho obtido em uma imagem que não havia sido submetida ao refinamento. Os resultados confirmam a capacidade de retenção e transferência de conhecimento, conforme apresentado na Tabela \ref{tab:exp2_results}.
+A pontuação só ordena a lista de candidatos que recebe, de modo que o procedimento que gera essa lista é parte do método, e não detalhe de implementação. Dois geradores são comparados nesta dissertação.
 
-%O segundo experimento foi criado para testar a capacidade do modelo de manter e transferir o conhecimento no modelo. A abordagem consistiu em refinar o modelo com uma imagem de Avião (A) e, em seguida, medir sua performance inicial em uma segunda imagem de Avião (B), comprando-se com a performance de uma imagem que não passou por um refinamento com o especialista. Os resultados obtidos confirmam a capacidade de reter o conhecimento, como mostra a tabela \ref{tab:exp2_results}:
+O primeiro, usual na literatura, particiona a imagem em superpixels pelo algoritmo \ac{SLIC}, e cada superpixel é um candidato. O segundo, proposto aqui, define cada candidato como um disco de raio $\rho$ centrado em um ponto do contorno predito:
 
+\begin{equation}
+\partial \hat{Y} = \hat{Y} \setminus \operatorname{erosão}(\hat{Y}), \qquad
+r_i = \{(x,y) : \lVert (x,y) - c_i \rVert_2 \leq \rho,\; c_i \in \partial \hat{Y}\}
+\label{eq_contorno}
+\end{equation}
 
-\begin{table}[h!]
-\centering
-\caption{Resultados do experimento de aprendizado contínuo, comparando o desempenho do modelo original e do modelo refinado na generalização para uma segunda imagem da mesma classe.}
-%\caption{Resultados do Experimento de Aprendizagem Contínua.}
-\label{tab:exp2_results}
-\begin{tabular}{|l|p{7cm}|c|}
-\hline
-\textbf{Cenário} & \textbf{Descrição} & \textbf{\ac{IoU} Inicial (Imagem B)} \\ \hline
-Controle    & Modelo original avaliado na imagem B & 0.9842 \\ 
-Experimental & Modelo refinado com A, avaliado na imagem B & 0.9844 \\ \hline
-\end{tabular}
-\end{table}
+onde $\hat{Y}$ é a máscara predita. Os centros $c_i$ são amostrados sobre o contorno com espaçamento mínimo de $2\rho$, para que os discos se toquem sem se sobrepor. O contorno usado é o \emph{predito}, e não o verdadeiro, de modo que o procedimento não depende de anotação prévia.
 
+\section{Aprendizado contínuo}
 
-O modelo refinado na primeira imagem não apenas preservou seu desempenho original, como apresentou uma ligeira melhoria em relação ao modelo de controle. Esse resultado indica uma transferência de conhecimento positiva: além de evitar o esquecimento, o modelo foi capaz de generalizar o refinamento recebido, tornando-se marginalmente mais eficaz ao processar uma segunda instância da mesma classe.
+\subsection{O esquecimento no FLIM}\label{sec_cl_flim}
 
-%O modelo, que foi refinado na primeira imavem, não apenas manteve sua performance, como apresentou uma melhoria, mesmo que mínima, em relação ao modelo de controla. Isso nos mostra que a transferência de conhecimento foi positiva. O novo modelo não apenas evitou o esquecimento, mas foi vapaz de generalizar a aprendizagem, tornando ligeiramente mais eficaz numa segunda instância. 
+Os métodos consolidados de \ac{CL} supõem um modelo treinado por gradiente, e atuam sobre o deslocamento dos pesos durante o ajuste. Como o \ac{FLIM} não possui otimizador, nenhum deles se aplica diretamente.
 
+O fenômeno análogo, contudo, está na Equação \ref{eq_nivel2}. Sejam $C_t$ o conjunto de candidatos na rodada $t$ e $K_t$ o banco de filtros resultante. Acrescentar marcadores produz $C_{t+1} \supset C_t$, e como o agrupamento é refeito sobre o conjunto ampliado, não há garantia de que $K_{t+1}$ preserve qualquer elemento de $K_t$. Além disso, $K_t$ é compartilhado por todas as imagens, inclusive as não anotadas, de modo que a perturbação é global.
 
-\subsection{Considerações Finais}
-%\subsection{Discussão dos Resultados}
+\subsection{O mecanismo de retenção}
 
-Os experimentos conduzidos com o modelo de base treinado\footnote{cujos pesos estão disponibilizados em \href{https://drive.google.com/drive/folders/1DDUn92UvHF2amcSak7gqQct19w3JMUq-?usp=drive_link}{Google Drive}}, fornecem evidências consistentes em favor da proposta de integração entre \ac{IL} e \ac{CL}. A metodologia de refinamento demonstrou ser uma estratégia robusta para a interação entre especialistas e modelos de segmentação, contribuindo não apenas para o ajuste fino das predições, mas também para a mitigação eficaz do esquecimento catastrófico.
+A intervenção proposta interpola o banco em vez de substituí-lo. Para cada centróide novo $k \in K_{t+1}$, localiza-se o centróide anterior mais próximo e produz-se uma combinação convexa:
 
-Os resultados apontam, de forma preliminar, que o sistema apresenta características desejáveis de aprendizado contínuo: ele é capaz de reter conhecimento previamente adquirido e, em alguns casos, até aprimorá-lo, transferindo essas melhorias para novas instâncias e tarefas subsequentes.
+\begin{equation}
+\tilde{k} = (1 - \alpha)\,\operatorname{anc}(k) + \alpha\,k,
+\qquad
+\operatorname{anc}(k) = \arg\min_{k' \in K_t} \lVert k - k' \rVert_2
+\label{eq_retencao}
+\end{equation}
 
-%Os experimentos, que se utilizaram de um modelo de base treinado (Na qual os pesos salvos do treino estão disponíveis em \href{https://drive.google.com/drive/folders/1DDUn92UvHF2amcSak7gqQct19w3JMUq-?usp=drive_link}{Google Drive}), mostraram fortes evidências que suportam o objetivo de melhoria através da mistura de \ac{IL} e \ac{CL}. A metodologia de refinamento provou-se uma abordagem robusca para a interação com modelos de segmentação com especialistas, resolvendo, também, o esquecimento catastrófico.
+O parâmetro $\alpha \in [0,1]$ é a taxa de plasticidade. Com $\alpha = 1$ o procedimento reproduz o \ac{FLIM} original. Com $\alpha = 0$ o banco passa a conter apenas direções já presentes em $K_t$, e nenhuma informação nova entra. Valores intermediários deslocam o banco parcialmente na direção da nova estimativa.
 
-%O sistema e os experimentos mostraram, em primeiro momento, que o sistema exibe propriedades de aprendizagem contínua, sendo capaz de reter e até mesmo aprimorar o conhecimento para aplicação em novas tarefas.
+A âncora é tomada por centróide \emph{novo}, e não por centróide anterior. A direção importa: ancorar no sentido oposto obrigaria a saída a ter o tamanho do banco anterior, o que conflita com o ajuste automático do número de canais descrito na Equação \ref{eq_regimes} e invalida as estatísticas de normalização recalculadas a cada rodada.
 
+\section{Aprendizado interativo}
 
-\section{Cronograma de Atividades}
+\subsection{O usuário simulado}
 
-A Tabela \ref{tab:cronograma} apresenta o cronograma de execução das atividades do projeto ao longo dos meses de pesquisa. Dentre as principais atividades, estão:
+Avaliar refinamento interativo exige um procedimento reprodutível que decida onde o especialista clicaria. Adota-se o protocolo consolidado por \cite{xu2016deep_arxiv}, no qual o clique vai ao centro do maior erro.
 
-\begin{enumerate}
+O erro é separado em dois tipos. O falso negativo, $\text{FN} = Y \setminus \hat{Y}$, indica região de objeto que o modelo não detectou e gera clique de objeto. O falso positivo, $\text{FP} = \hat{Y} \setminus Y$, indica região de fundo marcada como objeto e gera clique de fundo. Entre as componentes conexas desses dois conjuntos, escolhe-se a de maior área.
 
-\item \textbf{Revisão Bibliográfica e Estado da Arte:} levantamento e estudo aprofundado de técnicas de segmentação semântica, \ac{AL}, \ac{VLM}s e demais avanços relevantes na literatura, acompanhado da atualização contínua do fichamento.
+Dentro da componente escolhida, o clique \textbf{não} vai ao centróide. Vai ao ponto de máxima transformada de distância:
 
-%\item \textbf{Revisão Bibliográfica e Estado da Arte:} Estudo aprofundado de técnicas de segmentação semântica, \ac{VLM}s, entendimento do estado atual da arte referente as segmentações semânticas, juntamente com atualização constante do fichamento.
+\begin{equation}
+c^{\ast} = \arg\max_{(x,y) \in E} \; D_E(x,y)
+\label{eq_clique}
+\end{equation}
 
-\item \textbf{Cumprimento de Créditos:} conclusão das disciplinas obrigatórias e eletivas do programa de pós-graduação.
+onde $E$ é a componente de erro e $D_E(x,y)$ é a distância euclidiana de $(x,y)$ à borda de $E$. Essa escolha não é arbitrária. O centróide de uma região côncava pode cair fora dela, o que produziria um clique com rótulo errado; e mesmo em região convexa o centróide não é necessariamente o ponto mais afastado da borda. O ponto de máxima distância está, por construção, no interior e o mais longe possível da franja, onde a atribuição de rótulo seria ambígua.
 
-\item \textbf{Desenvolvimento do Ambiente Experimental:} configuração do ambiente de desenvolvimento (PyTorch, CUDA, bibliotecas auxiliares) e preparação/curadoria dos conjuntos de dados utilizados na literatura.
+O clique é materializado como um disco de raio 5 pixels, valor medido nos 31 conjuntos de marcadores reais disponíveis, recortado de modo a não ultrapassar a fronteira do objeto. Não há sorteio em nenhuma etapa do laço, de forma que o \ac{NoC} é determinístico dado o codificador inicial.
 
-%\item \textbf{Desenvolvimento do Ambiente Experimental:} Configuração do ambiente de desenvolvimento (PyTorch, CUDA), preparação e curadoria dos datasets utilizados pela literatura.
+\subsection{O laço}
 
-\item \begin{sloppypar}\textbf{Treinamento dos modelos de base:} treinamento e \textit{fine-tuning} dos modelos (e.g. DeepLabV3-ResNet50) nos conjuntos de dados, %(e.g. \ac{PascalVOC2012}),
-visando gerar modelos especialistas %(`m2\_deeplab.pth`)
-com desempenhos iniciais robustos, além de possibilitar comparações entre custo-benefício das arquiteturas. Retreinamentos são realizados conforme necessários durante o processo.\end{sloppypar}
+A cada iteração, o modelo prediz, o usuário simulado escolhe o clique, o marcador é acrescentado, o codificador é reestimado com a plasticidade configurada, e a \ac{IoU} é medida novamente. O laço termina quando a \ac{IoU} ultrapassa o alvo ou quando o teto de cliques é atingido.
 
-%\item \textbf{Treinamento do Modelo de Base:} Treinamento (fine-tuning) de modelos DeepLabV3-ResNet50 e DeepLabV3-ResNet50 no conjunto de dados \ac{PascalVOC2012} para gerar um modelo especialista (`m2\_deeplab.pth`) com alta proficiência inicial e criar comparativos entre o custo-benefício de cada modelo de segmentação, realizando retreinamentos a medida que era necessário.
+O laço possui dois pontos em que os componentes se encaixam. O \ac{AL} pode reordenar os candidatos a clique, em lugar de sempre tomar o maior erro, e o \ac{CL} controla como o clique é incorporado, pelo parâmetro $\alpha$ da Equação \ref{eq_retencao}.
 
-\item \textbf{Implementação e validação do primeiro modelo interativo:} desenvolvimento de um protótipo inicial para validação do \textit{framework} e execução dos primeiros experimentos de interação.
+\section{A plataforma interativa}
 
-%\item \textbf{Implementação e validação de um primeiro modelo interativo:} Desenvolvimento de um modelo teste para validação do framework e experimentos iniciais.
+Os experimentos descritos neste capítulo são executados em lote, com usuário simulado. Para observar o comportamento do sistema com uma pessoa real no laço, foi desenvolvida uma aplicação que roda localmente e integra os três componentes em um fluxo único.
 
-\item \textbf{Tratamento de dados nos conjuntos de dados planejados:} aplicação de técnicas de aumento de dados e de segmentação (e.g. por superpixels), nos conjuntos de dados.
+\subsection{O ciclo}
 
-%\item \textcolor{red}{\textbf{Tratamento de dados nos datasets planejados:} Aplicação de aumento de dados (superpixel) nos datasets que é planejado utilizar e possuem poucos dados. }
+A aplicação opera em rodadas. A cada rodada, o estado consiste no conjunto de marcadores acumulados, no codificador estimado a partir deles, e na curva de qualidade registrada até ali.
 
-\item \textbf{Aplicação de estratégias de \ac{AL}:} implementação de diferentes estratégias de \ac{AL} na interface interativa e validação de seu impacto no processo de anotação e desempenho.
+O \ac{AL} atua na etapa de sugestão: a aplicação calcula o mapa de probabilidade, pontua as regiões candidatas, e apresenta ao especialista a de maior incerteza. O especialista decide se aceita a sugestão ou se marca outro ponto, e informa se a região é objeto ou fundo. O \ac{IL} atua na incorporação: o toque é materializado como disco de raio 5, acrescentado ao conjunto de marcadores, e o codificador é reestimado. O \ac{CL} atua no controle da reestimação, pelo parâmetro de plasticidade da Equação \ref{eq_retencao}, que pode ser alterado \emph{entre} rodadas.
 
-%\item \textcolor{red}{\textbf{Aplicação de estratégias de \ac{AL}:} Implementação de estratégias de \ac{AL} na interface e validação.}
+Essa última possibilidade é deliberada. Alterar a plasticidade no meio de uma sessão permite comparar os dois comportamentos sobre a mesma imagem e o mesmo histórico de cliques, o que torna a diferença visível sem exigir duas sessões separadas.
 
-\item \textbf{Implementação e validação da metodologia interativa final:} desenvolvimento e testes da metodologia completa de refinamento adaptativo, incluindo a lógica de \textit{Knowledge Distillation} para redução do esquecimento catastrófico no cenário de aprendizagem contínua.
+\subsection{O que a tela registra}
 
-%\item \textbf{Implementação e Validação da Metodologia Interativa:} Desenvolvimento e teste da metodologia de refinamento adaptativo, incluindo a implementação da lógica de Knowledge Distillation para mitigar o esquecimento catastrófico.
+Além da máscara corrente, a aplicação mantém a curva de qualidade por clique e três indicadores: a qualidade inicial, a melhor qualidade alcançada, e o número de cliques que \emph{pioraram} o resultado. O último indicador é o motivo de a tela existir. Com plasticidade máxima, que corresponde ao comportamento original, ele cresce ao longo da sessão, e o especialista observa diretamente o fenômeno descrito na Seção \ref{sec_cl_flim}: anotar mais não implica melhorar.
 
-\item \textbf{Criação do ambiente online:} desenvolvimento de um servidor e de uma interface online (\ac{API}) para interação com o backbone, permitindo validação remota e em tempo real da metodologia proposta.
+\subsection{Limite de uso dos números da aplicação}
 
-%\item \textcolor{red}{\textbf{Criação de um ambiente online:} Criação de um servidor e uma interface online (API) que consome e alimenta o backbone, afim de validar o modelo de forma interativa online.}
+A qualidade exibida na tela é calculada contra a anotação de referência do conjunto de dados, que existe porque se trata de ambiente de demonstração. Em uso real não haveria essa referência, e o especialista julgaria pela própria máscara.
 
-\item \textbf{Análise experimental e discussão dos resultados:} execução dos experimentos de validação, tanto de segurança do refinamento quanto de aprendizado contínuo, coleta de métricas, análise crítica dos resultados e disponibilização do código no GitHub/Drive.
+Os valores apresentados pela aplicação não são usados em nenhuma afirmação desta dissertação. Eles vêm de execução única, sem repetição e sem controle de partição, e servem para inspeção qualitativa. Todas as medições relatadas no Capítulo \ref{cap_4} vêm das campanhas em lote, com semente, partição e registro.
 
-%\item \textbf{Análise Experimental e de Resultados:} Execução dos experimentos de validação (segurança do refinamento e aprendizagem contínua), coleta de métricas e análise crítica dos resultados para validação das hipóteses. Subida dos códigos para o Github e para o Drive, deixando disponível.
+\section{Protocolo experimental}
 
-\item \textbf{Escrita do relatório final e etapas de revisão:} consolidação de toda a pesquisa na dissertação final e elaboração de artigos científicos com os principais resultados para submissão em conferências ou periódicos.
+\subsection{Partições}
 
-%\item \textbf{Escrita do Relatório Final e Etapas de Correção:} Consolidação de toda a pesquisa no documento final da dissertação e preparação de um artigo científico com os principais resultados para submissão em conferência ou periódico.
+Cada conjunto de dados é dividido em três partes disjuntas: um conjunto de onde saem as imagens a anotar, um conjunto de validação usado nas medições de diagnóstico, e um conjunto de teste. A divisão é feita uma vez, com semente fixa, e mantida em todas as campanhas, de modo que resultados de campanhas diferentes sejam comparáveis.
 
-\end{enumerate}
+O conjunto de teste não é usado em nenhuma decisão de método. Ele existe para ser tocado uma única vez, na configuração final.
 
+\subsection{Repetições e unidade de análise}
 
-%======================================================================
-% tabela: cronograma
-\begin{table}[h!]
-\begin{center}
-\caption{Cronograma de execução das atividades do projeto de pesquisa.}
-\label{tab:cronograma}
-\setlength{\tabcolsep}{0pt}
-%======================================================================
+Cada condição é repetida com dez sementes. Uma semente determina quais imagens são sorteadas para anotação e quais traços são gerados sobre elas, mantendo fixos a partição e o conjunto de validação.
 
-\begin{tabular}{|c|l|l|l|l|l|l|l|l|l|l|l|l|}
-\hline\hline
-\multicolumn{1}{|c|}{~\textbf{Atividades}~} & \multicolumn{12}{c|}{\textbf{Bimestre}}\\ 
-\cline{2-13}
-\multicolumn{1}{|c|}{} &
-\multicolumn{1}{c|}{$1^{o}$} &
-\multicolumn{1}{c|}{$2^{o}$} &
-\multicolumn{1}{c|}{$3^{o}$} &
-\multicolumn{1}{c|}{$4^{o}$} &
-\multicolumn{1}{c|}{$5^{o}$} &
-\multicolumn{1}{c|}{$6^{o}$} &
-\multicolumn{1}{c|}{$7^{o}$} &
-\multicolumn{1}{c|}{$8^{o}$} &
-\multicolumn{1}{c|}{$9^{o}$} &
-\multicolumn{1}{c|}{$10^{o}$} &
-\multicolumn{1}{c|}{$11^{o}$} &
-\multicolumn{1}{c|}{$12^{o}$}
-\\\hline\hline
-% \textcolor[gray]{0.6}{\p}
-1 & \p & \p & \p & \p & \p & \p & \p & \p & \p & \p & \p & \p\\\hline
-2 & \p & \p & \p & \p & \p & \p & & & & & &\\\hline 
-3 & & & \p & \p & & & & & & & &\\\hline 
-4 & & & & \p & \p & & & & & & &\\\hline 
-5 & & & & & & \p & & & & & &\\\hline
-6 & & & & & & & \p & \p & & & &\\\hline
-7 & & & & & & & \p & \p & & & &\\\hline
-8 & & & & & & & & \p & \p & & &\\\hline
-9 & & & & & & & & & \p & \p & &\\\hline
-10 & & & & \p & \p & \p & \p & \p & \p & \p & \p &\\\hline
-11 & & & \p & \p & \p & \p & \p & \p & \p & \p & \p & \p \\\hline
-\end{tabular}
-%======================================================================
-\end{center}
-\end{table}
-%======================================================================
+A unidade independente de análise é a semente. Quando a mesma condição é avaliada com mais de um decodificador, os decodificadores de uma mesma semente compartilham o codificador e não constituem observações independentes; eles são colapsados por média antes de qualquer teste. Tratá-los como independentes multiplicaria artificialmente o tamanho amostral.
 
-\section{Resultados Esperados e Considerações Finais}
+A consequência dessa escolha merece registro explícito: os intervalos de confiança descrevem a variação sob sorteio das imagens de treino \emph{naquele} conjunto de validação, e não generalizam para o conjunto de dados como um todo.
 
-Como resultados previstos, tem-se:
+\subsection{Testes estatísticos}
 
-i) o desenvolvimento e a disponibilização pública de um conjunto de dados dedicado à anotação interativa, composto por sequências temporais de cliques e respectivas máscaras de segmentação, de modo a estabelecer uma referência metodológica para estudos em colaboração humano-modelo e permitir comparações sistemáticas com abordagens subsequentes; ii) a incorporação de estratégias de \ac{AL} voltadas à otimização do processo de interação, de forma que o sistema seja capaz de direcionar o especialista para regiões de elevada incerteza preditiva, priorizando áreas que maximizem o ganho informacional por interação; iii) a implementação, análise comparativa e avaliação empírica de diferentes técnicas de \ac{AL}, com foco na quantificação do custo de interação do usuário, expresso em número de cliques necessários por imagem; iv) o desenvolvimento de uma interface online integrada à infraestrutura de servidores e contêineres Docker, assegurando persistência do refinamento do modelo e capacidade de operação em tempo real; v) a produção e submissão de publicações científicas em eventos e periódicos especializados da área; vi) a disponibilização aberta das ferramentas e do framework desenvolvido, visando permitir reprodutibilidade, extensibilidade e avaliação independente pela comunidade científica.
+As comparações são pareadas. Dentro de cada célula, os braços compartilham a partição, as imagens e os traços, de modo que a diferença entre eles isola o tratamento. Usa-se o teste $t$ pareado bicaudal, com nível de significância de $0{,}05$.
 
-Como contribuições previstas, espera-se uma redução substancial do custo associado ao processo de anotação manual, ao promover uma interação mais eficiente entre especialista e modelo, sustentada por mecanismos de priorização baseados em incerteza. Adicionalmente, prevê-se o estabelecimento de um benchmark público contendo sequências de interações humanas, possibilitando a mensuração objetiva do custo de anotação, em termos de esforço cognitivo e número de cliques, e permitindo avaliações quantitativas rigorosas entre diferentes algoritmos de segmentação interativa e estratégias de \ac{AL}.
+Quando uma campanha produz múltiplas comparações, aplica-se a correção de Benjamini-Hochberg sobre a família de testes, e o número de comparações que sobrevivem é reportado junto com os valores não corrigidos.
 
-%Como resultados esperados, projeta-se ter: i-) Construção e publicação de um dataset de anotação interativa, contendo sequências de cliques e máscaras, para criar uma referência de algoritmos de colaboração humano-máquina e comparar com outras abordagens futuras. ii-) Inserção de \ac{AL} com algumas abordagens para otimizar a colaboração humano-máquina, onde o sistema guia ativamente o utilizador para as reigões de maior incerteza do modelo, fornecendo as coordenadas onde a interface tem maiores dificuldades. iii-) Análise e aplicação de estratégias de diferentes \ac{AL} para comparar o custo de cliques do usuário. iv-) Criação de uma interface online, mantendo o refinamento salvo para uso em tempo real, através de integração com servidores e docker. v-) publicação e divulgação dos trabalhos científicos em revistas e conferências da área de pesquisa. vi-) Disponibilizar as ferramentas e frameworks para uso na comunidade científica.
+Resultados sobre proporções, como a taxa de sucesso do laço interativo, usam o teste exato de McNemar sobre os pares discordantes, já que pares concordantes não carregam informação sobre a diferença entre os braços.
 
-%Como contribuições, espera-se reduzir o custo de anotação e otimizar o processo dela, permitindo que a tarefa seja realizada com uma fração do esforço, através de alguns cliques estratégicos.  Também espera-se disponibilizar um benchmark público, contendo sequências de cliques, para metrificação do custo de cliques do especialista, permitindo a validação e comparação quantitativa de diferentes algoritmos de anotação interativa, como também permitindo que seja implementadas diferentes abordagens de \ac{AL}.
+\subsection{Pré-registro}
 
+Cada campanha é precedida de um documento que declara, antes da execução: a hipótese, o desfecho primário, os desfechos secundários, o critério que falsearia a hipótese, o número de repetições, e o que o experimento não autorizará afirmar. O documento é versionado junto com o código.
 
-% ===========================================================
+Essa disciplina tem motivo prático. Em um espaço com muitos critérios, conjuntos de dados e orçamentos, encontrar uma combinação aparentemente favorável é quase certo mesmo quando nenhum efeito existe. Declarar antes o que contaria como evidência é o que distingue um achado de um acidente. Quatro resultados aparentemente favoráveis foram descartados por esse procedimento ao longo deste trabalho, conforme relatado no Capítulo \ref{cap_4}.
 
-% Reunião 07/11/2025
+Análises não previstas no pré-registro são permitidas e reportadas, mas identificadas como exploratórias, e qualquer afirmação derivada delas exige confirmação em repetições inéditas.
 
-% Destacar / deixar claro quais são as contribuições, tentar destacar o que é o diferencial
+\subsection{Procedência dos resultados}
 
-%Mencionar qual dos 37 datasets a gente pretende estar utilizando
+Toda execução avaliada é gravada em um registro único, com uma linha por execução, contendo a configuração, a semente, as imagens usadas, as métricas obtidas e o identificador do commit que produziu o resultado. O identificador de cada execução é derivado dos campos que a definem, de modo que reexecutar a mesma configuração produz o mesmo identificador e a duplicata se torna detectável.
 
-%Uma tabela para cada dataset que vamos utilizar dentro da metologia (Quantidade de amostras em cada classe, figuras) -- Não precisa colocar em tabela, colocar em texto / imagem 
+As tabelas desta dissertação são geradas a partir desse registro por um programa, sem etapa manual. Cada tabela gerada acompanha um arquivo que lista os identificadores das execuções que produziram cada linha, o que torna a pergunta sobre a origem de um número respondível de forma direta.
 
-% Colocar exemplos de figuras de diversos datasets
+\subsection{Reprodutibilidade numérica}
 
-% Mencionar nas contribuições -> Além das publicações das estratégias, a publicação do dataset
+A estimação dos filtros envolve agrupamento por $k$-médias, cuja implementação recorre a bibliotecas de álgebra linear que distribuem o cálculo em várias linhas de execução. A ordem em que as somas parciais são reduzidas varia entre execuções, o que altera o resultado no último dígito representável.
 
-% Melhorar as imagens de abstract no começo da metodologia
+No regime em que o agrupamento não ocorre, descrito pela Equação \ref{eq_regimes}, essa variação não tem efeito. No regime em que ocorre, ela é suficiente para que o agrupamento convirja para uma partição diferente, e o efeito se amplifica entre camadas, já que cada camada recebe como entrada as ativações da anterior.
 
-% Organizar a base experimental -> deixar concentrado em experimentos e resultados preliminares
+Todas as campanhas são executadas com as bibliotecas limitadas a uma única linha de execução, condição sob a qual duas execuções idênticas produzem resultados idênticos. A verificação desse comportamento é relatada no Capítulo \ref{cap_4}.
 
-% ===========================================================
+\section{Materiais}
 
+\subsection{Conjuntos de dados}
 
-% ===========
+Três conjuntos são usados, escolhidos por apresentarem propriedades distintas quanto ao tamanho relativo do objeto, que a investigação mostrou ser determinante.
 
-%Reunião 18/11
+O conjunto de \textbf{parasitas} contém imagens de microscopia de ovos de \textit{Schistosoma mansoni}, em cores, com resolução de $400 \times 400$ pixels. O objeto ocupa cerca de 3\% da imagem. Estão disponíveis marcadores desenhados por dois especialistas, usados nas comparações que envolvem anotação real.
 
-%  Alterar a questão dos datasets: 
-%  Tabela com as informações
-%  Figura com exemplos
+O conjunto \textbf{BraTS} \cite{menze2014multimodal} contém cortes de ressonância magnética cerebral, em tons de cinza, com resolução de $240 \times 240$ pixels.
 
-% Falar mais sobre algumas estratégias de Active Learning (Pretendemos testar com o básico / clássico, mas também falar sobre a contribuição sobre uma nova proposta de active learning (ensamble)).
-% Mencionar no capítulo 3 sobre quais estratégias de AL a gente pretende abordar, falar sobre o ensamble
+O conjunto de \textbf{conjuntivite} contém fotografias oculares em cores e alta resolução, nas quais o objeto ocupa fração bem maior da imagem, com área mediana de aproximadamente 89 mil pixels.
 
-% Ver se os dados dos datasets futuros são anotados
+\subsection{Levantamento de domínios candidatos}
+
+A escolha dos três conjuntos acima partiu de um levantamento mais amplo de domínios em que a segmentação interativa reduziria esforço de anotação de forma significativa. O critério de seleção considerou a diversidade de desafios que cada domínio impõe, e não apenas a disponibilidade dos dados.
+
+Em gastroenterologia e dermatologia, o Kvasir-SEG \cite{jha2020kvasir} apresenta bordas irregulares de pólipos e artefatos de iluminação, enquanto o ISIC 2018 \cite{codella2018skin} caracteriza-se por alta variabilidade de cor e textura da pele, com interferência de sombras, presença de pelos e heterogeneidade entre pacientes.
+
+Em radiologia e oncologia, o BraTS \cite{menze2014multimodal} e o LiTS \cite{bilic2019liver} introduzem modalidades volumétricas processadas em fatias bidimensionais, com canais monocromáticos e contraste baixo entre tecidos.
+
+Em ultrassonografia e oftalmologia, o BUSI \cite{al2020dataset} impõe ruído característico da modalidade, e o REFUGE2 \cite{fang2022refuge2} exige definição anatômica precisa de estruturas oculares.
+
+Dos domínios levantados, três foram efetivamente usados nos experimentos. A razão é que a investigação revelou, ao longo do trabalho, que a propriedade determinante para o comportamento dos métodos avaliados não é a modalidade de aquisição, e sim a \emph{fração da imagem ocupada pelo objeto}, que controla a razão entre candidatos a filtro e canais disponíveis descrita na Equação \ref{eq_regimes}. Os três conjuntos escolhidos cobrem essa propriedade em faixas bem separadas, de cerca de 3\% a mais de 20\%, o que se mostrou mais informativo do que acrescentar domínios com fração semelhante.
+
+\subsection{Modelos de comparação}
+
+Além do \ac{FLIM} com decodificador adaptativo, foram treinados cinco modelos de referência para contextualizar os valores obtidos: SAMNet, MSCNet, MEANet, UNet e uma variante UNet com codificador \ac{FLIM}. Esses modelos são treinados por retropropagação e com conjuntos anotados completos, de modo que não constituem comparação direta quanto ao esforço de anotação; servem para situar a ordem de grandeza da qualidade atingível em cada domínio.
+
+\subsection{Ambiente}
+
+Os experimentos foram executados em ambiente nativo, com a biblioteca de agrupamento do \textit{scikit-learn}. Uma implementação alternativa de $k$-médias, mais rápida, está disponível na biblioteca original mas não foi utilizada, porque produz centróides diferentes e portanto filtros diferentes, o que tornaria os resultados incomparáveis entre si.
+
+A avaliação não emprega o delineamento por árvores dinâmicas descrito no trabalho de referência, por indisponibilidade do executável na plataforma utilizada. Em seu lugar, usa-se limiarização de Otsu seguida de filtro de área, conforme descrito na Seção \ref{sec_decoder}. Os valores reproduzidos, portanto, não são diretamente comparáveis aos publicados, e essa limitação acompanha toda comparação com o trabalho original.
