@@ -1834,3 +1834,118 @@ def tabela_noc(recs=None, experimento: str = "il_noc",
                  d_txt, p_txt, mc_txt],
                 ids)
     return t
+
+
+# ── o gerador de candidatos ─────────────────────────────────────────────────
+
+def tabela_gerador(recs=None, experimento: str = "ganho_marginal",
+                   rotulo: str = "contorno") -> Tabela:
+    """
+    Trocar o gerador de candidatos, com o critério e o orçamento fixos.
+
+    Os dois braços sorteiam o candidato e gastam os mesmos ~300 px. A única
+    diferença é de onde vem a lista: superpixels SLIC num caso, discos
+    centrados no contorno previsto no outro. Não há escore envolvido, de
+    propósito, porque misturar gerador e critério mediria duas coisas.
+
+    A unidade de análise é a SEMENTE. Os dois decodificadores de uma mesma
+    semente compartilham o encoder e não são observações independentes, então
+    entram colapsados por média antes do teste. Tratá-los como independentes
+    dobraria o n artificialmente, que é o erro que este projeto já cometeu uma
+    vez ao reportar n=42 onde o n real era 6.
+
+    As colunas de pior caso e de dispersão não são exploração: foram
+    declaradas no pré-registro com o mecanismo escrito antes de rodar. O
+    candidato de contorno é pequeno e local, acrescenta menos filtros novos, e
+    o diagnóstico de ganho marginal havia medido correlação negativa entre
+    filtros acrescentados e ganho.
+    """
+    recs = ev.carregar() if recs is None else recs
+    sub = [r for r in recs if r["experimento"] == experimento
+           and rotulo in r.get("fonte", "")
+           and "smoke" not in r.get("fonte", "")]
+    if not sub:
+        raise ValueError(f"nenhuma execução de {experimento}/{rotulo}")
+
+    por = collections.defaultdict(lambda: collections.defaultdict(dict))
+    ids = collections.defaultdict(list)
+    for r in sub:
+        v = ag._num(r.get("fb"))
+        if v is None:
+            continue
+        d = por[r["dataset"]][(int(r["seed"]), r["decoder_paper"])]
+        d.setdefault(r["criterio"], []).append(v)
+        ids[r["dataset"]].append(r["run_id"])
+
+    t = Tabela(
+        f"gerador_{rotulo}",
+        "Gerador de candidatos: contorno previsto contra superpixel",
+        ["dataset", "n (sementes)", "Δ médio", "IC95%", "vitórias",
+         "p", "Δ pior caso", "p ", "Δ dispersão", "p  "],
+        alinhamento="lrrrrrrrrr",
+        nota=("Δ é a variação de Fβ na validação ao acrescentar **uma** "
+              "anotação, do braço de contorno menos o braço de superpixel. "
+              "Os dois sorteiam o candidato e gastam os mesmos ~300 px: a "
+              "**única** diferença é o gerador da lista, e por isso a "
+              "comparação isola o gerador e não diz nada sobre qual escore "
+              "usar. A unidade é a **semente**; os dois decodificadores de "
+              "uma semente compartilham o encoder e entram colapsados por "
+              "média. Pior caso e dispersão foram declarados no "
+              "pré-registro, com o mecanismo escrito antes de rodar: o "
+              "candidato de contorno é pequeno e local, acrescenta menos "
+              "filtros, e o ganho marginal mede correlação negativa entre "
+              "filtros acrescentados e ganho. O nulo do BraTS é **previsto**: "
+              "a arquitetura dele fixa o banco em 8 filtros por camada, os "
+              "dois braços acrescentam exatamente 24, e o deslocamento que a "
+              "intervenção evita não pode ocorrer. Semente cuja base "
+              "degenerou (Fβ=0) sai, porque Δ a partir de zero não pode ser "
+              "negativo."))
+
+    for ds in ("schisto", "brats", "conjunctiva"):
+        if ds not in por:
+            continue
+        A, B, PA, PB, SA, SB = [], [], [], [], [], []
+        for (s, dec), c in sorted(por[ds].items()):
+            if not {"base", "sorteado", "contorno_sorteado"} <= set(c):
+                continue
+            bz = c["base"][0]
+            if bz <= 0:
+                continue
+            ca = [x - bz for x in c["contorno_sorteado"]]
+            cb = [x - bz for x in c["sorteado"]]
+            A.append((s, sum(ca) / len(ca)))
+            B.append((s, sum(cb) / len(cb)))
+            PA.append((s, min(ca)))
+            PB.append((s, min(cb)))
+            if len(ca) > 1 and len(cb) > 1:
+                import statistics as _st
+                SA.append((s, _st.stdev(ca)))
+                SB.append((s, _st.stdev(cb)))
+
+        def _por_semente(pares):
+            d = collections.defaultdict(list)
+            for s, v in pares:
+                d[s].append(v)
+            return [sum(v) / len(v) for _, v in sorted(d.items())]
+
+        a, b = _por_semente(A), _por_semente(B)
+        if len(a) < 3:
+            continue
+        pa, pb = _por_semente(PA), _por_semente(PB)
+        tp = ag.teste_pareado(a, b)
+        tw = ag.teste_pareado(pa, pb)
+        ic = (f"[{_fmt(tp['ic95'][0], 4)}, {_fmt(tp['ic95'][1], 4)}]"
+              if tp["ic95"] else "—")
+        if SA and SB:
+            sa, sb = _por_semente(SA), _por_semente(SB)
+            ts = ag.teste_pareado(sa, sb)
+            d_txt, p_txt = _fmt(ts["delta"], 4), _fmt(ts["p"], 4)
+        else:
+            d_txt, p_txt = "—", "—"
+        t.adicionar(
+            [NOME_DATASET.get(ds, ds), len(a), _fmt(tp["delta"], 4), ic,
+             f"{sum(1 for x, y in zip(a, b) if x > y)} de {len(a)}",
+             _fmt(tp["p"], 4), _fmt(tw["delta"], 4), _fmt(tw["p"], 4),
+             d_txt, p_txt],
+            sorted(set(ids[ds])))
+    return t

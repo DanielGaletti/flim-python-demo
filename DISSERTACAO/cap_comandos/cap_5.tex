@@ -1,0 +1,63 @@
+\chapter{Conclusão}\label{cap_5}
+
+Esta dissertação investigou se estratégias de aprendizado ativo e contínuo transferem para o \ac{FLIM}, um modelo cujos filtros são estimados diretamente de marcadores desenhados pelo especialista, sem retropropagação. A pergunta surge de uma propriedade do trabalho de referência reproduzido aqui: a seleção das poucas imagens a anotar depende do ground truth de todo o conjunto disponível, o que os próprios autores declaram. Como essa dependência contraria a situação que motiva o método, convinha verificar quanto do benefício se recupera com critérios que dispensam a anotação prévia.
+
+\section{Respostas às questões de pesquisa}
+
+A resposta direta é que os critérios conhecidos não transferem, e a investigação permitiu descrever por quê com alguma precisão.
+
+Na seleção de imagens, nenhum critério avaliado apresentou superioridade sobre a escolha aleatória que sobrevivesse à correção para múltiplas comparações. O resultado se manteve em três conjuntos de dados, quatro orçamentos de anotação e sete decodificadores. O oracle, que lê o ground truth e representa o teto do procedimento do trabalho de referência, também não se destacou de forma consistente.
+
+Na seleção de regiões, a situação é mais informativa. Existe margem considerável a ser capturada, entre 0,133 e 0,303 de Fβ separando a melhor região examinada da região sorteada, com significância nas seis combinações de conjunto de dados e decodificador. Os critérios não a alcançam, e a medição do comportamento deles mostra duas razões distintas. Os critérios de incerteza localizam o objeto com enriquecimento expressivo sobre a taxa de base, mas pousam no interior em vez da fronteira. Os critérios de diversidade, avaliados no nível de região pela primeira vez neste trabalho, não localizam o objeto quando ele ocupa pequena fração da imagem, porque a distribuição de aparência sobre a qual a diversidade é calculada é dominada pelo fundo.
+
+A razão mais consequente, contudo, não está nos critérios. Regiões que atravessam a fronteira do objeto, que são as que a comparação com os marcadores reais dos especialistas mostra terem valor entre 0,126 e 0,166 de Fβ, representam de 2\% a 12\% do conjunto de candidatos gerado por superpixels. Como um critério apenas ordena a lista que recebe, nenhuma escolha de escore resolveria essa limitação.
+
+Quanto ao aprendizado contínuo, o fenômeno do esquecimento catastrófico existe no \ac{FLIM} e assume forma própria. Sem otimizador, não há deslocamento de pesos por gradiente, e os três grupos de métodos consolidados na literatura, que atuam sobre esse deslocamento, não se aplicam. O que ocorre é que a anotação adicional amplia o conjunto de candidatos a filtro, o agrupamento que os reduz ao número de canais é refeito, e os filtros em uso se deslocam. Como o banco é compartilhado por todas as imagens, a perturbação é global. O mecanismo de retenção proposto resolve o problema que se propõe a resolver, verificado por teste, mas não se converteu em ganho mensurável em nenhum dos regimes avaliados, e a hipótese de que a retenção total preservaria qualidade foi falseada pelo critério declarado antes da execução.
+
+\section{Contribuições}
+
+A principal contribuição é a caracterização do motivo pelo qual as técnicas não transferem, acompanhada da medição de cada elo do argumento. Diferentemente de um relato de que a combinação não funciona, o trabalho localiza o mecanismo no procedimento de estimação dos filtros, mede a magnitude do dano que uma anotação mal posicionada causa, e identifica onde está o gargalo.
+
+A segunda contribuição decorre da primeira. Se o gargalo está na geração dos candidatos e não na sua pontuação, a intervenção pertinente é trocar o gerador. Substituindo superpixels por discos centrados no contorno previsto pelo modelo, com critério de seleção e orçamento de anotação mantidos fixos, o ganho de uma anotação adicional aumentou 0,0772 de Fβ no conjunto de parasitas, com intervalo de confiança entre 0,0393 e 0,1151 e vantagem em todas as dez repetições, resultado que sobrevive à correção para múltiplas comparações sobre os três conjuntos. O comportamento nos demais conjuntos é compatível com o mecanismo: no BraTS, cuja arquitetura fixa o banco em oito filtros por camada, ambos os braços acrescentam o mesmo número de filtros e o efeito desaparece, de modo que esse conjunto funciona como controle.
+
+A terceira contribuição é de natureza metodológica e tem alcance além deste trabalho. O treinamento do codificador não era reprodutível entre execuções quando o número de candidatos ultrapassava o limite da arquitetura, com divergência de até 0,134 nos pesos, e a causa foi localizada na interação entre o agrupamento e a ordem de redução em bibliotecas de álgebra linear com múltiplas linhas de execução. Além disso, verificou-se que os parâmetros de pós-processamento publicados não transferem entre domínios: a faixa de área adequada ao conjunto de parasitas elimina toda componente prevista no conjunto de conjuntivite, e corrigi-la elevou o Fβ mediano de 0,024 para 0,594.
+
+Por fim, a plataforma interativa desenvolvida integra os três componentes em um fluxo único, no qual o aprendizado ativo propõe a região, o especialista a rotula, e o parâmetro de plasticidade do banco de filtros pode ser alterado entre interações. Ela permite observar o fenômeno descrito neste trabalho em tempo real, incluindo o caso em que sucessivas anotações não melhoram o modelo.
+
+\section{Limitações}
+
+Os resultados estão sujeitos a limitações que convém enunciar sem atenuação.
+
+A anotação é simulada a partir do ground truth. Nenhum resultado deste trabalho autoriza afirmações sobre redução de tempo de especialista, que exigiriam avaliação com pessoas. No experimento de esforço interativo, o usuário simulado acerta sempre, o que constitui um limite superior otimista para qualquer sistema real.
+
+A avaliação não emprega o delineamento por árvores dinâmicas usado no trabalho de referência, por indisponibilidade do executável na plataforma utilizada. Os valores reproduzidos, portanto, não são diretamente comparáveis aos publicados.
+
+O ganho do gerador de contorno é significativo em um dos três conjuntos de dados. No conjunto de conjuntivite o efeito vai na mesma direção sem atingir significância, e no BraTS é nulo por razão estrutural identificada. Trata-se do primeiro teste de uma intervenção derivada dos próprios dados do projeto, o que pede replicação independente antes de generalização.
+
+A comparação que isola o gerador fixa o critério de seleção em sorteio nos dois braços. Nada se afirma, portanto, sobre qual escore deveria ser aplicado sobre os candidatos gerados pelo novo procedimento.
+
+O teto medido na seleção de região é um máximo sobre os candidatos examinados, e não um teto absoluto, já que apenas parte dos superpixels de cada imagem foi avaliada. O valor deve ser lido como estimativa conservadora da margem disponível.
+
+As repetições de cada campanha compartilham a partição e o conjunto de validação, variando as imagens de treino e os traços. Os intervalos de confiança descrevem a variação sob sorteio das imagens de treino naquele conjunto de validação, e não generalizam para o conjunto de dados como um todo.
+
+Por fim, não existe neste trabalho um controle direto que isole borda de interior com imagens, orçamento e procedimento idênticos. A comparação disponível opõe a anotação dos especialistas, que recai próxima à borda, a cliques uniformes no interior do objeto, que incluem posições próximas à fronteira. O contraste real é provavelmente maior que o medido, mas isso é inferência e não medição.
+
+\section{Trabalhos futuros}
+
+Os resultados sugerem cinco continuações, ordenadas pelo que cada uma esclareceria.
+
+A primeira separa duas explicações que o experimento do gerador deixa confundidas. Os candidatos de contorno são, ao mesmo tempo, mais bem posicionados e menores, e acrescentam menos filtros ao banco. Como a correlação entre filtros acrescentados e ganho é negativa, parte do efeito pode decorrer do tamanho e não da posição. Um experimento que variasse as duas propriedades independentemente, comparando discos de contorno com discos de mesmo tamanho posicionados no interior, resolveria a questão.
+
+A segunda é a ablação da capacidade do banco de filtros. A hipótese de que o dano decorre do deslocamento dos centróides prevê que ele deve crescer conforme a razão entre candidatos e canais disponíveis aumenta. Variar o número de canais no mesmo conjunto de dados, com os mesmos marcadores, testaria essa previsão de forma direta, desde que se verifique que o procedimento permanece válido quando o número de filtros deixa de ser consequência dos padrões disponíveis.
+
+A terceira trata da subsegmentação. Os candidatos gerados sobre o contorno previsto caem no interior do objeto verdadeiro porque o contorno previsto se situa dentro do real. Uma correção que compensasse esse viés poderia aproximar os candidatos da fronteira, mas exigiria justificar a magnitude da correção por evidência independente, e não por ajuste contra a métrica avaliada.
+
+A quarta é o controle direto de borda contra interior, ausente neste trabalho, com imagens, orçamento e procedimento idênticos nos dois braços.
+
+A quinta é a avaliação com especialistas humanos. Todas as conclusões sobre esforço de anotação apoiam-se em usuário simulado, e a região que o modelo considera incerta pode ser também mais difícil de rotular para uma pessoa, o que reduziria o benefício observado em simulação.
+
+\section{Considerações finais}
+
+O percurso desta investigação ilustra uma dificuldade recorrente em pesquisa aplicada: a de distinguir um resultado de um artefato. Quatro achados que haviam atingido significância em análises exploratórias não se sustentaram quando submetidos a repetições inéditas ou quando o número de repetições foi completado, e um deles foi falseado não apenas na hipótese como no mecanismo que lhe fora atribuído. O protocolo de pré-registro, com hipótese, desfecho primário e critério de falseamento declarados antes da execução, foi o que permitiu identificá-los.
+
+Esse aspecto não é acessório ao resultado. Em um espaço de busca com muitos critérios, muitos conjuntos de dados e muitos orçamentos, encontrar uma combinação que pareça funcionar é quase certo mesmo quando nada funciona. O que distingue um achado de um acidente é ter declarado, antes de olhar, o que contaria como evidência.

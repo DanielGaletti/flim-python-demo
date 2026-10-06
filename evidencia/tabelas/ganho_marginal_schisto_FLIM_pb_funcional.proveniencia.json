@@ -1,9 +1,9 @@
 {
   "tabela": "ganho_marginal_schisto_FLIM_pb_funcional",
   "titulo": "Ganho marginal de um marcador adicional — Parasitas, FLIM_pb, base funcional",
-  "gerado_em": "2026-10-06T16:10:31+00:00",
+  "gerado_em": "2026-10-06T16:49:57+00:00",
   "gerado_por": "flim_al/tabelas.py",
-  "git_commit": "db0586e77632-sujo",
+  "git_commit": "61fb120a1094-sujo",
   "registro": "evidencia/execucoes/execucoes.csv",
   "input_latex": "\\input{generated/tables/ganho_marginal_schisto_FLIM_pb_funcional.tex}",
   "linhas": [
