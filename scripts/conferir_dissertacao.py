@@ -111,6 +111,63 @@ def main() -> int:
         problemas.append(("\\ac de sigla não declarada em abrev/",
                           sem_declarar))
 
+    # ── erros que so aparecem na compilacao ────────────────────────────────
+    #
+    # Estes nao sao estilo: sao defeitos que o BibTeX ou o LaTeX rejeitam, e
+    # que nenhuma leitura do .tex revela. O primeiro derrubou a primeira
+    # tentativa de compilar esta dissertacao no Overleaf.
+    autores = []
+    for b_ in bibs:
+        with open(b_, encoding="utf-8") as fh:
+            texto = fh.read()
+        for m in re.finditer(r"@\w+\{([^,]+),(.*?)(?=\n@|\Z)", texto, re.S):
+            chave = m.group(1).strip()
+            for campo in ("author", "editor"):
+                c = re.search(campo + r"\s*=\s*\{(.*?)\}\s*,?\s*\n",
+                              m.group(2), re.S)
+                if not c:
+                    continue
+                v = c.group(1)
+                # No BibTeX a virgula separa sobrenome de nome DENTRO de um
+                # autor; quem separa autores e " and ". Uma lista escrita com
+                # virgulas vira um nome so, e o BibTeX para com "Too many
+                # commas in name".
+                if " and " not in v and v.count(",") >= 2:
+                    autores.append((chave, campo, v.strip()[:60]))
+    if autores:
+        problemas.append(
+            ("lista de autores com virgula em vez de \" and \" (o BibTeX para)",
+             autores))
+
+    # `\ref` para um label que existe mas em arquivo nao incluido no main
+    principal = [f for f in texs
+                 if re.search(r"\\begin\{document\}", corpo[f])]
+    if len(principal) == 1:
+        p = principal[0]
+        # Procurar o CAMINHO no texto do principal, e nao so dentro de
+        # `\include` ou `\input`: a lista de siglas entra por
+        # `\listasiglas{abrev/Abreviaturas}`, e classes ABNT tem varios
+        # comandos assim. Casar so os dois comandos acusava a lista de siglas
+        # como orfa, que e falso.
+        orfaos = []
+        for f in texs:
+            if f == p:
+                continue
+            rel = os.path.relpath(f, a.raiz).replace(os.sep, "/")
+            if rel.startswith("tabelas/"):
+                continue        # tabelas entram pelos capitulos, nao pelo main
+            if rel[:-4] in corpo[p] or rel in corpo[p]:
+                continue
+            # tambem vale ser incluido por um capitulo
+            if any(rel[:-4] in corpo[o] or rel in corpo[o]
+                   for o in texs if o != f):
+                continue
+            orfaos.append(os.path.basename(f))
+        if orfaos:
+            problemas.append(
+                ("arquivo .tex que nao e incluido pelo documento principal",
+                 orfaos))
+
     travessoes = []
     for f, t in corpo.items():
         for n, linha in enumerate(t.split("\n"), 1):
