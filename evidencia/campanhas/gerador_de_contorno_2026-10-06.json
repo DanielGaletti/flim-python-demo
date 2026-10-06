@@ -1,81 +1,113 @@
 {
-  "id": "gerador_de_contorno_2026-10-06",
-  "declarado_em": "2026-10-06T00:00:00+00:00",
-  "git_commit": "441dbd6",
-  "tipo": "CONFIRMATORIO. A intervencao e no GERADOR DE CANDIDATOS, nao no criterio. Primeiro experimento deste projeto a mexer no gerador.",
-
-  "de_onde_veio": {
-    "medida_1": "`onde_o_criterio_aponta`, 3 datasets x 10 sementes: apenas 2% a 12% dos superpixels SLIC ATRAVESSAM a fronteira do objeto. O SLIC e construido para que suas bordas coincidam com as bordas da imagem, entao seus segmentos ficam ou todos dentro ou todos fora.",
-    "medida_2": "`artigo_vs_regiao`, markers REAIS dos especialistas A e B: anotar na borda vale +0,126 a +0,166 de Fbeta sobre anotar em outro lugar dentro do objeto, 6 de 6 celulas, p <= 0,0041.",
-    "conclusao": "A anotacao valiosa e a que o gerador por superpixel quase nunca oferece. Nenhum escore conserta isso, porque escore so ORDENA o que esta na lista. Por isso a intervencao e no gerador."
+ "id": "gerador_de_contorno_2026-10-06",
+ "declarado_em": "2026-10-06T00:00:00+00:00",
+ "git_commit": "441dbd6",
+ "tipo": "CONFIRMATORIO. A intervencao e no GERADOR DE CANDIDATOS, nao no criterio. Primeiro experimento deste projeto a mexer no gerador.",
+ "de_onde_veio": {
+  "medida_1": "`onde_o_criterio_aponta`, 3 datasets x 10 sementes: apenas 2% a 12% dos superpixels SLIC ATRAVESSAM a fronteira do objeto. O SLIC e construido para que suas bordas coincidam com as bordas da imagem, entao seus segmentos ficam ou todos dentro ou todos fora.",
+  "medida_2": "`artigo_vs_regiao`, markers REAIS dos especialistas A e B: anotar na borda vale +0,126 a +0,166 de Fbeta sobre anotar em outro lugar dentro do objeto, 6 de 6 celulas, p <= 0,0041.",
+  "conclusao": "A anotacao valiosa e a que o gerador por superpixel quase nunca oferece. Nenhum escore conserta isso, porque escore so ORDENA o que esta na lista. Por isso a intervencao e no gerador."
+ },
+ "a_intervencao": "Candidato = disco centrado em um ponto do contorno PREVISTO pelo modelo, com raio 10 (~314 px, casando com o orcamento de 300 px do braco de superpixel). Atravessa a fronteira prevista por construcao e nao usa ground truth.",
+ "desenho_que_isola_o_gerador": "O braco `contorno_sorteado` usa o MESMO criterio do braco `sorteado` (sorteio puro) e o MESMO orcamento de pixels. A unica diferenca entre os dois e o gerador. Nao ha escore envolvido, de proposito: misturar gerador e criterio mediria duas coisas.",
+ "hipotese": "Gerar os candidatos sobre o contorno previsto, em vez de por superpixel, melhora o Delta Fbeta de acrescentar uma anotacao.",
+ "teste_primario": "Delta Fbeta(validacao) de `contorno_sorteado` contra `sorteado`, pareado por (decoder, semente), t pareado bicaudal, alfa=0,05, SEPARADO por dataset. Sem agregacao entre datasets.",
+ "secundarios_declarados_com_mecanismo": {
+  "pior_caso": "minimo do Delta por semente. O mecanismo preve reducao de RISCO mais que ganho de media, e esta e a coluna que mede isso.",
+  "dispersao": "desvio-padrao do Delta entre candidatos, dentro de cada semente.",
+  "kernels": "Delta de kernels acrescentados. No piloto o contorno acrescentou +6 a +12 filtros contra +45 a +55 do superpixel, e `ganho_marginal` mediu rho(Delta kernels, Delta Fbeta) = -0,314 com p = 0,0008. Se o mecanismo vale, o contorno deve acrescentar menos filtros E ter menos variancia.",
+  "ATENCAO": "Se SO o resultado de dispersao aparecer, ele NAO sera reportado como resultado. Este projeto ja teve uma hipotese de dispersao gerada post-hoc que falhou em confirmatorio (p=0,082 virou p=0,5674). Dispersao aqui so vale com confirmatorio proprio em sementes ineditas."
+ },
+ "limitacao_medida_no_piloto": {
+  "o_que": "O gerador depende de a predicao estar aproximadamente certa.",
+  "evidencia": "Teste sintetico: com predicao exata, 100% dos candidatos atravessam a fronteira; com predicao deslocada, 75%. No piloto real, na semente 0 do Schisto, onde o encoder base tem Fbeta 0,391, os candidatos sairam com fracao de objeto 0,975 / 0,000 / 0,000 / 0,981, isto e, NAO atravessaram a fronteira verdadeira, porque o contorno previsto estava no lugar errado.",
+  "consequencia": "Espera-se que o gerador ajude onde o modelo base ja e razoavel e nao ajude onde ele e ruim. Isso e verificavel: a fracao de objeto de cada candidato fica gravada na `variante`, e o Fbeta da base tambem. A correlacao entre Fbeta da base e ganho do contorno sera reportada como ANALISE DECLARADA, nao post-hoc.",
+  "tambem": "Com predicao degenerada (toda objeto ou todo fundo) o gerador devolve VAZIO, enquanto o superpixel funciona sempre. E uma desvantagem real do metodo e sera reportada."
+ },
+ "o_que_falsearia": "p >= 0,05 no primario em todos os datasets, ou Delta negativo.",
+ "o_que_NAO_sera_afirmado": [
+  "Que isto resolve o AL de regiao no FLIM. E uma intervencao no gerador, testada uma vez, derivada de medidas do proprio projeto; pede replicacao independente.",
+  "Reducao de tempo de especialista: a anotacao e simulada do ground truth.",
+  "Que o criterio deixou de importar. Este experimento FIXA o criterio em sorteio para isolar o gerador, e nao diz nada sobre qual escore usar sobre os candidatos novos."
+ ],
+ "datasets": [
+  "schisto",
+  "brats",
+  "conjunctiva"
+ ],
+ "decoders": [
+  "labeled_marker",
+  "decoder_2"
+ ],
+ "sementes": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "n_candidatos_por_braco": 8,
+ "particao": "identica a `ganho_marginal`. O conjunto de teste nao e tocado.",
+ "determinismo": "threadpoolctl em 1 thread.",
+ "RESULTADO": {
+  "fechado_em": "2026-10-06",
+  "schisto": {
+   "n": "10 sementes, nenhuma descartada",
+   "primario_media": "contorno +0,0068 contra superpixel -0,0704. Delta = +0,0772, IC95% [+0,0393, +0,1151], p = 0,0013. Vence em 10 de 10 sementes.",
+   "secundario_pior_caso": "-0,0484 contra -0,2637. Delta = +0,2153, p = 0,0001.",
+   "secundario_dispersao": "0,0393 contra 0,1484. Delta = -0,1091, p < 0,0001.",
+   "secundario_kernels": "606 contra 654 kernels medianos, como o mecanismo previa.",
+   "veredito": "PRIMARIO CONFIRMADO, e sobrevive a Benjamini-Hochberg sobre os tres datasets (limiar 0,0167)."
   },
-
-  "a_intervencao": "Candidato = disco centrado em um ponto do contorno PREVISTO pelo modelo, com raio 10 (~314 px, casando com o orcamento de 300 px do braco de superpixel). Atravessa a fronteira prevista por construcao e nao usa ground truth.",
-
-  "desenho_que_isola_o_gerador": "O braco `contorno_sorteado` usa o MESMO criterio do braco `sorteado` (sorteio puro) e o MESMO orcamento de pixels. A unica diferenca entre os dois e o gerador. Nao ha escore envolvido, de proposito: misturar gerador e criterio mediria duas coisas.",
-
-  "hipotese": "Gerar os candidatos sobre o contorno previsto, em vez de por superpixel, melhora o Delta Fbeta de acrescentar uma anotacao.",
-
-  "teste_primario": "Delta Fbeta(validacao) de `contorno_sorteado` contra `sorteado`, pareado por (decoder, semente), t pareado bicaudal, alfa=0,05, SEPARADO por dataset. Sem agregacao entre datasets.",
-
-  "secundarios_declarados_com_mecanismo": {
-    "pior_caso": "minimo do Delta por semente. O mecanismo preve reducao de RISCO mais que ganho de media, e esta e a coluna que mede isso.",
-    "dispersao": "desvio-padrao do Delta entre candidatos, dentro de cada semente.",
-    "kernels": "Delta de kernels acrescentados. No piloto o contorno acrescentou +6 a +12 filtros contra +45 a +55 do superpixel, e `ganho_marginal` mediu rho(Delta kernels, Delta Fbeta) = -0,314 com p = 0,0008. Se o mecanismo vale, o contorno deve acrescentar menos filtros E ter menos variancia.",
-    "ATENCAO": "Se SO o resultado de dispersao aparecer, ele NAO sera reportado como resultado. Este projeto ja teve uma hipotese de dispersao gerada post-hoc que falhou em confirmatorio (p=0,082 virou p=0,5674). Dispersao aqui so vale com confirmatorio proprio em sementes ineditas."
+  "conjunctiva": {
+   "n": "5 sementes",
+   "primario_media": "Delta = +0,0452, IC95% [-0,0452, +0,1357], p = 0,2374. Vence em 4 de 5.",
+   "secundario_pior_caso": "Delta = +0,1759, p = 0,0480.",
+   "veredito": "mesma direcao, sem significancia no primario. Nao confirma nem contradiz."
   },
-
-  "limitacao_medida_no_piloto": {
-    "o_que": "O gerador depende de a predicao estar aproximadamente certa.",
-    "evidencia": "Teste sintetico: com predicao exata, 100% dos candidatos atravessam a fronteira; com predicao deslocada, 75%. No piloto real, na semente 0 do Schisto, onde o encoder base tem Fbeta 0,391, os candidatos sairam com fracao de objeto 0,975 / 0,000 / 0,000 / 0,981, isto e, NAO atravessaram a fronteira verdadeira, porque o contorno previsto estava no lugar errado.",
-    "consequencia": "Espera-se que o gerador ajude onde o modelo base ja e razoavel e nao ajude onde ele e ruim. Isso e verificavel: a fracao de objeto de cada candidato fica gravada na `variante`, e o Fbeta da base tambem. A correlacao entre Fbeta da base e ganho do contorno sera reportada como ANALISE DECLARADA, nao post-hoc.",
-    "tambem": "Com predicao degenerada (toda objeto ou todo fundo) o gerador devolve VAZIO, enquanto o superpixel funciona sempre. E uma desvantagem real do metodo e sera reportada."
+  "brats": {
+   "n": "3 sementes, 1 descartada por base colapsada",
+   "primario_media": "Delta = -0,0089, p = 0,9145. Vence em 1 de 3.",
+   "veredito": "NULO, e o nulo e PREVISTO pelo mecanismo. A arquitetura do BraTS pede noutput_channels=8 em 3 camadas, e os dois bracos acrescentam exatamente 24 kernels: o deslocamento do banco de filtros, que e o que a intervencao evita, NAO PODE OCORRER ali. O BraTS funciona como controle natural do mecanismo, nao como contraexemplo."
   },
-
-  "o_que_falsearia": "p >= 0,05 no primario em todos os datasets, ou Delta negativo.",
-
-  "o_que_NAO_sera_afirmado": [
-    "Que isto resolve o AL de regiao no FLIM. E uma intervencao no gerador, testada uma vez, derivada de medidas do proprio projeto; pede replicacao independente.",
-    "Reducao de tempo de especialista: a anotacao e simulada do ground truth.",
-    "Que o criterio deixou de importar. Este experimento FIXA o criterio em sorteio para isolar o gerador, e nao diz nada sobre qual escore usar sobre os candidatos novos."
+  "confundidor_descartado": "Orcamento de pixels identico nos dois bracos, mediana 300 px em ambos, nos dois datasets conferidos. O ganho nao vem de anotar mais.",
+  "o_que_isto_autoriza_afirmar": "Que trocar o GERADOR DE CANDIDATOS, de superpixels para discos sobre o contorno previsto, melhora o ganho de uma anotacao adicional no Schisto, com o mesmo orcamento e o MESMO criterio de selecao (sorteio nos dois bracos), o que isola o efeito do gerador.",
+  "o_que_isto_NAO_autoriza": [
+   "Generalizar para os tres datasets: significativo em 1 de 3. A conjuntivite vai na mesma direcao sem significancia, e o BraTS e nulo por razao estrutural identificada.",
+   "Afirmar qual escore usar sobre os candidatos novos: o criterio foi FIXADO em sorteio de proposito, para isolar o gerador.",
+   "Dispensar replicacao: e o primeiro teste de uma intervencao derivada dos proprios dados deste projeto.",
+   "Reducao de tempo de especialista: anotacao simulada do ground truth."
   ],
-
-  "datasets": ["schisto", "brats", "conjunctiva"],
-  "decoders": ["labeled_marker", "decoder_2"],
-  "sementes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-  "n_candidatos_por_braco": 8,
-  "particao": "identica a `ganho_marginal`. O conjunto de teste nao e tocado.",
-  "determinismo": "threadpoolctl em 1 thread.",
-
-  "RESULTADO": {
-    "fechado_em": "2026-10-06",
-    "schisto": {
-      "n": "10 sementes, nenhuma descartada",
-      "primario_media": "contorno +0,0068 contra superpixel -0,0704. Delta = +0,0772, IC95% [+0,0393, +0,1151], p = 0,0013. Vence em 10 de 10 sementes.",
-      "secundario_pior_caso": "-0,0484 contra -0,2637. Delta = +0,2153, p = 0,0001.",
-      "secundario_dispersao": "0,0393 contra 0,1484. Delta = -0,1091, p < 0,0001.",
-      "secundario_kernels": "606 contra 654 kernels medianos, como o mecanismo previa.",
-      "veredito": "PRIMARIO CONFIRMADO, e sobrevive a Benjamini-Hochberg sobre os tres datasets (limiar 0,0167)."
-    },
-    "conjunctiva": {
-      "n": "5 sementes",
-      "primario_media": "Delta = +0,0452, IC95% [-0,0452, +0,1357], p = 0,2374. Vence em 4 de 5.",
-      "secundario_pior_caso": "Delta = +0,1759, p = 0,0480.",
-      "veredito": "mesma direcao, sem significancia no primario. Nao confirma nem contradiz."
-    },
-    "brats": {
-      "n": "3 sementes, 1 descartada por base colapsada",
-      "primario_media": "Delta = -0,0089, p = 0,9145. Vence em 1 de 3.",
-      "veredito": "NULO, e o nulo e PREVISTO pelo mecanismo. A arquitetura do BraTS pede noutput_channels=8 em 3 camadas, e os dois bracos acrescentam exatamente 24 kernels: o deslocamento do banco de filtros, que e o que a intervencao evita, NAO PODE OCORRER ali. O BraTS funciona como controle natural do mecanismo, nao como contraexemplo."
-    },
-    "confundidor_descartado": "Orcamento de pixels identico nos dois bracos, mediana 300 px em ambos, nos dois datasets conferidos. O ganho nao vem de anotar mais.",
-    "o_que_isto_autoriza_afirmar": "Que trocar o GERADOR DE CANDIDATOS, de superpixels para discos sobre o contorno previsto, melhora o ganho de uma anotacao adicional no Schisto, com o mesmo orcamento e o MESMO criterio de selecao (sorteio nos dois bracos), o que isola o efeito do gerador.",
-    "o_que_isto_NAO_autoriza": [
-      "Generalizar para os tres datasets: significativo em 1 de 3. A conjuntivite vai na mesma direcao sem significancia, e o BraTS e nulo por razao estrutural identificada.",
-      "Afirmar qual escore usar sobre os candidatos novos: o criterio foi FIXADO em sorteio de proposito, para isolar o gerador.",
-      "Dispensar replicacao: e o primeiro teste de uma intervencao derivada dos proprios dados deste projeto.",
-      "Reducao de tempo de especialista: anotacao simulada do ground truth."
-    ],
-    "limitacao_confirmada_do_metodo": "O gerador precisa de predicao nao trivial: com mascara prevista vazia ou cheia ele devolve conjunto vazio, enquanto o superpixel funciona sempre. E a fracao de objeto dos candidatos ficou em 0,997 no Schisto e 0,779 no BraTS, isto e, eles caem no INTERIOR e nao sobre a fronteira verdadeira, porque o modelo sub-segmenta e o contorno previsto fica por dentro do verdadeiro. O ganho acontece apesar disso, o que sugere que parte do efeito vem de o candidato ser pequeno e local (606 contra 654 kernels) e nao apenas de onde ele cai."
+  "limitacao_confirmada_do_metodo": "O gerador precisa de predicao nao trivial: com mascara prevista vazia ou cheia ele devolve conjunto vazio, enquanto o superpixel funciona sempre. E a fracao de objeto dos candidatos ficou em 0,997 no Schisto e 0,779 no BraTS, isto e, eles caem no INTERIOR e nao sobre a fronteira verdadeira, porque o modelo sub-segmenta e o contorno previsto fica por dentro do verdadeiro. O ganho acontece apesar disso, o que sugere que parte do efeito vem de o candidato ser pequeno e local (606 contra 654 kernels) e nao apenas de onde ele cai.",
+  "SENSIBILIDADE_2026-10-06": {
+   "o_que_motivou": "Conferencia do numero de candidatos por semente no registro canonico. O desenho declarou `n_candidatos_por_braco = 8`, mas o braco de contorno entregou menos em tres sementes: 3 no schisto (semente 2), 3 no brats (semente 1) e 1 na conjuntivite (semente 4). O braco de superpixel entregou 8 em todas.",
+   "por_que_isso_importa": "O desfecho primario e a MEDIA dos candidatos, que e estimador nao viesado da media do braco qualquer que seja n. Mas os dois secundarios pre-registrados nao sao: `pior caso` e um MINIMO, e o minimo de 8 sorteios e, por construcao, mais extremo que o minimo de 1 ou 3 tirados da mesma distribuicao. O vies empurra na direcao que a tabela reporta, entao precisava ser medido.",
+   "como_foi_medido": "Subamostragem sem reposicao do braco de superpixel ao MESMO n do braco de contorno, dentro de cada semente, B=2000, seguida do mesmo t pareado por semente. Reusa o registro canonico; nenhuma execucao nova.",
+   "schisto": {
+    "pior_caso_declarado": "Delta = +0,2153, p = 0,0001",
+    "pior_caso_com_n_casado": "Delta = +0,2085, p = 0,0002",
+    "dispersao_declarada": "Delta = -0,1091, p = 0,0000",
+    "dispersao_com_n_casado": "Delta = -0,1078, p = 0,0000",
+    "veredito": "SOBREVIVE. O efeito nao era artefato de n."
+   },
+   "brats": {
+    "pior_caso_declarado": "Delta = -0,1063, p = 0,2703",
+    "pior_caso_com_n_casado": "Delta = -0,1281, p = 0,2013",
+    "veredito": "nulo nos dois, como o mecanismo previa."
+   },
+   "conjunctiva": {
+    "pior_caso_declarado": "Delta = +0,1759, p = 0,0480",
+    "pior_caso_com_n_casado": "Delta = +0,1369, p = 0,1032",
+    "veredito": "NAO SOBREVIVE. Cruza o limiar de 0,05 quando o n e casado. A semente 4 entregou UM unico candidato de contorno, e minimo de 1 sorteio contra minimo de 8 nao e comparacao. Este secundario nao deve ser apresentado como significativo."
+   },
+   "o_desfecho_primario_nao_muda": "schisto Delta = +0,0772, p = 0,0013, 10 de 10; brats Delta = -0,0089, p = 0,9145; conjunctiva Delta = +0,0452, p = 0,2374. A media nao depende de n, e nenhum deles se move.",
+   "o_que_isto_autoriza": "Manter o resultado principal do schisto como esta. Reportar o pior caso da conjuntivite como NAO significativo. E acrescentar a limitacao: o gerador de contorno pode entregar MENOS candidatos que o pedido, nao so zero, e qualquer estatistica de extremo ou de dispersao sobre os candidatos precisa casar o n antes de comparar.",
+   "status": "ANALISE DE SENSIBILIDADE de desfecho pre-registrado, nao desfecho novo. Deve ser rotulada assim onde for reportada."
   }
+ }
 }

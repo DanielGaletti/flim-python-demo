@@ -1,0 +1,47 @@
+{
+ "id": "criterio_sobre_contorno_2026-10-06",
+ "tipo": "ANALISE EXPLORATORIA, SEM PRE-REGISTRO",
+ "aviso": "Estas comparacoes nao foram pre-registradas. Orientam o proximo passo; nao autorizam afirmacao. Os quatro p nao receberam correcao para multiplas comparacoes.",
+ "pergunta": "A campanha do gerador mostrou que trocar superpixel por faixa de contorno vale +0,0772 no schisto, sorteando o candidato nos dois bracos. Esta analise pergunta se, DENTRO da lista de contorno, escolher pelo escore bate sortear.",
+ "dados": "evidencia/bruto/criterio_sobre_contorno_schisto.csv",
+ "dataset": "schisto",
+ "unidade_de_analise": "a SEMENTE. Os dois decodificadores de uma semente compartilham o encoder e entram colapsados por media. Semente com base degenerada (Fbeta=0) sai, porque Delta a partir de zero nao pode ser negativo.",
+ "teste": "t pareado bicaudal sobre as sementes",
+ "RESULTADO": {
+  "argmax_ent_contorno_vs_contorno_sorteado": {
+   "o_que_compara": "criterio sobre contorno vs sorteio no contorno",
+   "n_sementes": 10,
+   "delta": "+0.0262",
+   "ic95": "[+0.0055, +0.0468]",
+   "vitorias": "9 de 10",
+   "p": "0.0185"
+  },
+  "argmax_entropia_vs_sorteado": {
+   "o_que_compara": "criterio sobre superpixel vs sorteio no superpixel",
+   "n_sementes": 10,
+   "delta": "+0.0987",
+   "ic95": "[+0.0204, +0.1771]",
+   "vitorias": "8 de 10",
+   "p": "0.0191"
+  },
+  "contorno_sorteado_vs_sorteado": {
+   "o_que_compara": "sorteio no contorno vs sorteio no superpixel  (replica do gerador)",
+   "n_sementes": 10,
+   "delta": "+0.0772",
+   "ic95": "[+0.0393, +0.1151]",
+   "vitorias": "10 de 10",
+   "p": "0.0013"
+  },
+  "argmax_ent_contorno_vs_sorteado": {
+   "o_que_compara": "criterio sobre contorno vs sorteio no superpixel  (efeito total)",
+   "n_sementes": 10,
+   "delta": "+0.1033",
+   "ic95": "[+0.0657, +0.1409]",
+   "vitorias": "10 de 10",
+   "p": "0.0002"
+  }
+ },
+ "verificacao_interna": "A linha contorno_sorteado_vs_sorteado reproduz o +0,0772 publicado em `gerador_contorno`, com o mesmo p e as mesmas 10 vitorias: calculo novo, campanha nova, numero antigo.",
+ "observacao": "Os dois efeitos sao praticamente aditivos: 0,0772 do gerador mais 0,0262 do criterio da 0,1034, contra 0,1033 medidos no efeito total. Sugere que gerador e escore operam por caminhos diferentes, coerente com o diagnostico de que o gerador resolve O QUE esta na lista e o escore resolve QUAL item da lista. E observacao, nao afirmacao.",
+ "nao_contradiz": "A linha argmax_entropia_vs_sorteado NAO contradiz o resultado de que nenhum criterio de AL supera o sorteio. Aquele e sobre selecao de IMAGEM com treino completo, medida no TESTE; este e sobre uma anotacao marginal, medida na VALIDACAO. Sao perguntas diferentes."
+}

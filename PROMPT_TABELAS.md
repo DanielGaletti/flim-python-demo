@@ -558,6 +558,76 @@ há um controle borda contra interior isolado neste conjunto. O que há é o
 | BraTS | 3 | −0,0089 | [−0,3263; +0,3084] | 1 de 3 | 0,9145 | −0,1063 | 0,2703 | +0,0464 | 0,1376 |
 | Conjuntivite | 5 | +0,0452 | [−0,0452; +0,1357] | 4 de 5 | 0,2374 | +0,1759 | 0,0480 | −0,0577 | 0,1492 |
 
+**Leia a análise de sensibilidade antes de escrever esta tabela.** Está em
+`RESULTADO/SENSIBILIDADE_2026-10-06` dentro de
+`evidencia/campanhas/gerador_de_contorno_2026-10-06.json`.
+
+O desenho declarou 8 candidatos por braço, mas o gerador de contorno entregou
+**menos** em três sementes: 3 no Schisto (semente 2), 3 no BraTS (semente 1) e
+**1** na conjuntivite (semente 4). O braço de superpixel entregou 8 em todas.
+Isso não afeta o desfecho primário, porque a média é estimador não viesado
+qualquer que seja n. Mas **afeta os dois secundários**, porque `pior caso` é um
+**mínimo**, e o mínimo de 8 sorteios é por construção mais extremo que o mínimo
+de 1, mesmo que a distribuição seja a mesma. O viés empurra na direção que a
+tabela reporta.
+
+Refazendo com o braço de superpixel subamostrado ao mesmo n (sem reposição,
+B = 2000, mesmo t pareado por semente):
+
+| dataset | desfecho | como está na tabela | com n casado | veredito |
+|---|---|---|---|---|
+| Parasitas | pior caso | +0,2153 (p = 0,0001) | +0,2085 (p = 0,0002) | sobrevive |
+| Parasitas | dispersão | −0,1091 (p = 0,0000) | −0,1078 (p = 0,0000) | sobrevive |
+| BraTS | pior caso | −0,1063 (p = 0,2703) | −0,1281 (p = 0,2013) | nulo nos dois |
+| Conjuntivite | pior caso | +0,1759 (p = **0,0480**) | +0,1369 (p = **0,1032**) | **NÃO sobrevive** |
+
+Consequência para o texto: o resultado do Schisto fica como está, inclusive os
+secundários. **O pior caso da conjuntivite não pode ser apresentado como
+significativo.** E entra uma limitação do método que ainda não estava escrita:
+o gerador de contorno pode entregar **menos** candidatos que o pedido, não só
+zero, e qualquer estatística de extremo ou de dispersão sobre os candidatos
+precisa casar o n antes de comparar.
+
+Isso é **análise de sensibilidade de um desfecho pré-registrado**, não um
+desfecho novo. Rotule assim onde reportar.
+
+### O critério ainda ajuda depois de trocar o gerador (EXPLORATÓRIO)
+
+Campanha `criterio`, Schisto, 10 sementes completas, decodificadores
+colapsados por semente. Dados brutos em
+`evidencia/bruto/criterio_sobre_contorno_schisto.csv`, agregados em
+`evidencia/campanhas/criterio_sobre_contorno_2026-10-06.json`, reproduzíveis
+com `python scripts/criterio_sobre_contorno.py`. **Não há pré-registro para
+estas comparações**, então isto é exploratório: orienta o próximo passo, não
+autoriza afirmação.
+
+| comparação | n | Δ | IC95% | vitórias | p |
+|---|---|---|---|---|---|
+| critério sobre contorno vs sorteio no contorno | 10 | +0,0262 | [+0,0055; +0,0468] | 9 de 10 | 0,0185 |
+| critério sobre superpixel vs sorteio no superpixel | 10 | +0,0987 | [+0,0204; +0,1771] | 8 de 10 | 0,0191 |
+| sorteio no contorno vs sorteio no superpixel | 10 | +0,0772 | [+0,0393; +0,1151] | 10 de 10 | 0,0013 |
+| **critério sobre contorno vs sorteio no superpixel (efeito total)** | 10 | **+0,1033** | [+0,0657; +0,1409] | **10 de 10** | **0,0002** |
+
+Duas leituras, nessa ordem de importância:
+
+1. **A terceira linha reproduz exatamente o +0,0772 publicado**, com o mesmo
+   p e as mesmas 10 vitórias. É verificação interna: o cálculo novo, sobre a
+   campanha nova, devolve o número antigo.
+2. **Os dois efeitos são praticamente aditivos.** 0,0772 do gerador mais
+   0,0262 do critério dá 0,1034, contra 0,1033 medidos no efeito total. Isso
+   sugere que gerador e escore operam por caminhos diferentes, o que é
+   coerente com o diagnóstico: o gerador resolve *o que está na lista* e o
+   escore resolve *qual item da lista*.
+
+Ressalvas que precisam acompanhar: um único dataset; sem pré-registro; os
+quatro p não receberam correção para múltiplas comparações (com
+Benjamini-Hochberg sobre os quatro, todos ainda passariam, mas isso é
+verificação post-hoc). E a segunda linha **não contradiz** o resultado de que
+nenhum critério de AL supera o sorteio: aquele é sobre **seleção de imagem com
+treino completo, medida no teste**, e este é sobre **uma anotação marginal,
+medida na validação**. São perguntas diferentes, e o texto precisa manter a
+distinção.
+
 Este é o único resultado positivo robusto do trabalho, e vale escrever com
 cuidado:
 
