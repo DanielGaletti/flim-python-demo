@@ -34,7 +34,7 @@
 \usepackage{float}
 
 %Pack imagens
-\graphicspath{ {./cap_comandos/figuras} }
+\graphicspath{{./figuras/}}
 
 \usepackage{caption}
 \usepackage{subcaption}
@@ -202,7 +202,7 @@ Semantic segmentation is a fundamental task in Computer Vision, but its progress
 % ---
 % inserir lista de abreviaturas e siglas
 % ---
-\listasiglas{abrev/Abreviaturas}
+\listasiglas{pretextual/abreviaturas}
 % ---
 
 % ---
@@ -219,15 +219,15 @@ Semantic segmentation is a fundamental task in Computer Vision, but its progress
 % ----------------------------------------------------------
 % Introdução
 % ----------------------------------------------------------
-\include{cap_introducao/introducao}
+\include{capitulos/1_introducao}
 
 % ----------------------------------------------------------
 % Capitulo com exemplos de comandos inseridos de arquivo externo 
 % ----------------------------------------------------------
-\include{cap_comandos/cap_2}
-\include{cap_comandos/cap_3}
-\include{cap_comandos/cap_4}
-\include{cap_comandos/cap_5}
+\include{capitulos/2_fundamentos}
+\include{capitulos/3_metodologia}
+\include{capitulos/4_resultados}
+\include{capitulos/5_conclusao}
 
 \bookmarksetup{startatroot}% 
 % ---
@@ -244,7 +244,7 @@ Semantic segmentation is a fundamental task in Computer Vision, but its progress
 % ----------------------------------------------------------
 % Referências bibliográficas
 % ----------------------------------------------------------
-\bibliography{bib/abntex2-modelo-references}
+\bibliography{referencias/referencias}
 
 \end{document}
 

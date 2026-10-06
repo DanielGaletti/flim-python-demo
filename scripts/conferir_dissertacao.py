@@ -80,7 +80,7 @@ def main() -> int:
         siglas += [(s, f) for s in re.findall(r"\\ac\s*\{([^}]*)\}", t)]
 
     declaradas = set()
-    for f in glob.glob(os.path.join(a.raiz, "abrev", "*.tex")):
+    for f in glob.glob(os.path.join(a.raiz, "pretextual", "*.tex")):
         with open(f, encoding="utf-8") as fh:
             declaradas |= set(re.findall(r"\\acro\s*\{([^}]*)\}", fh.read()))
 
@@ -139,6 +139,45 @@ def main() -> int:
             ("lista de autores com virgula em vez de \" and \" (o BibTeX para)",
              autores))
 
+    # Arquivo referenciado que nao existe, ou existe com outra caixa.
+    #
+    # O Overleaf compila em Linux, que diferencia maiuscula de minuscula; o
+    # Windows nao. Uma figura gravada como `Oracle_Superpixel.PNG` e
+    # referenciada como `.png` compila na maquina local e falha no Overleaf,
+    # com um erro que fala de arquivo inexistente e nao de caixa. Conferir
+    # isto e o que uma maquina sem pdflatex ainda consegue fazer.
+    no_disco = set()
+    for r_, _, fs in os.walk(a.raiz):
+        for f in fs:
+            no_disco.add(os.path.relpath(os.path.join(r_, f), a.raiz)
+                         .replace(os.sep, "/"))
+    por_minuscula = {d.lower(): d for d in no_disco}
+
+    # onde o \includegraphics procura
+    graf = re.search(r"\\graphicspath\s*\{\s*\{([^}]*)\}", "\n".join(
+        corpo.values()))
+    pasta_fig = (graf.group(1).lstrip("./").rstrip("/") + "/") if graf else ""
+
+    faltando = []
+    for f, t in corpo.items():
+        alvos = []
+        for cmd, suf in (("include", ".tex"), ("input", ""),
+                         ("listasiglas", ".tex"), ("bibliography", ".bib")):
+            for m in re.findall(r"\\" + cmd + r"\s*\{([^}]+)\}", t):
+                alvos.append(m if m.endswith((".tex", ".bib")) else m + suf)
+        for m in re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", t):
+            alvos.append(pasta_fig + m)
+        for alvo in alvos:
+            if alvo in no_disco:
+                continue
+            outra = por_minuscula.get(alvo.lower())
+            faltando.append((os.path.basename(f), alvo,
+                             f"no disco e {outra}" if outra else "nao existe"))
+    if faltando:
+        problemas.append(
+            ("arquivo referenciado que falta, ou com a caixa trocada "
+             "(o Overleaf compila em Linux)", faltando))
+
     # `\ref` para um label que existe mas em arquivo nao incluido no main
     principal = [f for f in texs
                  if re.search(r"\\begin\{document\}", corpo[f])]
@@ -156,6 +195,8 @@ def main() -> int:
             rel = os.path.relpath(f, a.raiz).replace(os.sep, "/")
             if rel.startswith("tabelas/"):
                 continue        # tabelas entram pelos capitulos, nao pelo main
+            if rel.startswith("notas/"):
+                continue        # anotacao de reuniao, nao faz parte do texto
             if rel[:-4] in corpo[p] or rel in corpo[p]:
                 continue
             # tambem vale ser incluido por um capitulo

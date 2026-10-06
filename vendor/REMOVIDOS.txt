@@ -205,3 +205,25 @@ travessao e subscrito). A classe `ufscar.cls` carrega [utf8]{inputenc} com
 
 As tabelas vivas passaram a converter esses simbolos na geracao, em
 `flim_al/tabelas._SIMBOLOS_TEX`.
+
+
+================================================================================
+2026-10-06  DISSERTACAO/cap_comandos/Segmentation.png
+================================================================================
+
+Era copia byte a byte de `cap_comandos/figuras/Segmentation.png`, verificado
+com `cmp`. As duas estavam na arvore porque o `\graphicspath` aponta para
+`figuras/`, e quem acrescentou a figura deixou uma copia tambem ao lado do
+capitulo, por garantia. A compilacao sempre usou a de `figuras/`.
+
+Nao e perda: o conteudo continua em `DISSERTACAO/figuras/Segmentation.png`.
+
+--------------------------------------------------------------------------------
+
+Na mesma reorganizacao, 56 figuras que nenhum `\includegraphics` referencia
+foram MOVIDAS, nao removidas, para `DISSERTACAO/figuras/nao_usadas/`. Sao em
+quase toda a sua extensao exemplos do PascalVOC2012 (`2007_*.jpg/png`,
+`2008_*`), da epoca da qualificacao com DeepLabV3-ResNet50, que o texto
+deixou de citar quando a dissertacao passou para o FLIM. Ficam fora do
+`\graphicspath`, entao nao entram na compilacao; para voltar a usar alguma,
+mover um nivel para cima.
