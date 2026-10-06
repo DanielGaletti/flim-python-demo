@@ -114,9 +114,17 @@ pré-registro, teste pareado e correção de Benjamini-Hochberg:
   significativo, mas **aleatório−artigo também dá 7/7**, e **AL−aleatório dá
   0 de 7**. O dano vem de tirar o clique da borda, não da escolha do AL.
 - **Dispersão** (confirmatório `confirmatorio_estabilidade_2026-10-01`,
-  10 sementes inéditas, 24 células): entropy contra sorteio, Δ desvio
-  −0.0059, **p=0.8765 → FALSEADO**. Na média, CoreSet fica −0.0606 abaixo do
-  sorteio (p=0.0020).
+  10 sementes inéditas): entropy contra sorteio, teste primário com **um
+  conjunto de teste por célula, n=16**: Δ desvio −0.0186, **p=0.5674 →
+  FALSEADO**. Na média, CoreSet fica −0.0606 abaixo do sorteio (p=0.0020).
+
+  > **Errata de 2026-10-05**, registrada em `RESULTADO/ERRATA_2026-10-05` do
+  > JSON da campanha. A versão anterior deste parágrafo dizia *24 células* e
+  > *p=0.8765*; as duas estavam erradas. 4 das 12 células do teste primário
+  > misturavam dois conjuntos de teste, o que infla o desvio por troca de
+  > conjunto e não por efeito do critério. Nos três cortes limpos o p é 0.83
+  > (schisto+brats, 8 células), 0.24 (conjuntivite, 4 células) e 0.5674
+  > (tudo, 16 células). **O erro afetou o número, não o veredito.**
 
 **Formulação correta:** não há evidência de superioridade nas condições
 avaliadas. Ausência de significância **não** é prova de equivalência.
@@ -127,8 +135,9 @@ Vale mais que um ganho pequeno, e é argumento de método:
 
 1. Ganho da conjuntivite na densidade: p=0.0016 na exploratória, **p=0.586**
    no confirmatório.
-2. Entropia menos dispersa: p=0.082 post-hoc com 3 sementes, **p=0.8765** com
-   10 sementes inéditas.
+2. Entropia menos dispersa: p=0.082 post-hoc com 3 sementes, **p=0.5674** no
+   teste primário com 10 sementes inéditas (ver a errata acima; o p=0.8765
+   que este item trazia antes vinha de células contaminadas).
 
 ### O diagnóstico do ganho marginal — onde está o mecanismo
 
