@@ -123,14 +123,43 @@ def test_ausencia_vira_travessao_nao_zero():
     assert tb._fmt(0.0) == "0.000"
 
 
-def test_gravar_produz_os_quatro_arquivos(tmp_path):
-    t = tb.Tabela("teste", "T", ["a", "b"])
+def test_gravar_produz_os_cinco_arquivos(tmp_path):
+    """
+    O quinto arquivo é a nota, e ela é obrigatória.
+
+    A nota carrega as ressalvas que dão sentido aos números: qual é a unidade
+    de análise, o que não pode ser lido como método, qual comparação é
+    pareada. Antes ela existia só no markdown e não chegava ao LaTeX, de modo
+    que a tabela entrava na dissertação como um bloco de valores sem o aviso
+    que a acompanha.
+    """
+    t = tb.Tabela("teste", "T", ["a", "b"], nota="uma **ressalva** qualquer")
     t.adicionar(["x", "1"], ["id1", "id2"])
     escritos = t.gravar(str(tmp_path))
-    assert set(escritos) == {"csv", "md", "tex", "proveniencia"}
+    assert set(escritos) == {"csv", "md", "tex", "nota.tex", "proveniencia"}
     prov = json.load(open(escritos["proveniencia"], encoding="utf-8"))
     assert prov["linhas"][0]["run_ids"] == ["id1", "id2"]
     assert prov["input_latex"] == r"\input{generated/tables/teste.tex}"
+
+    nota = open(escritos["nota.tex"], encoding="utf-8").read()
+    assert r"\textbf{ressalva}" in nota, "o negrito do markdown nao virou TeX"
+
+
+def test_latex_nao_emite_simbolo_que_o_pdflatex_recusa(tmp_path):
+    """
+    `ufscar.cls` usa [utf8]{inputenc} com [T1]{fontenc}, que resolve
+    acentuação latina mas não letra grega: um α solto para a compilação com
+    "Unicode character not set up for use with LaTeX". Como o Overleaf usa
+    pdflatex, a conversão tem de acontecer na geração.
+    """
+    t = tb.Tabela("s", "T", ["Δ Fβ", "ρ"], nota="α e ≠ e − e ₀")
+    t.adicionar(["—", "0.5"], ["id1"])
+    saida = t.latex() + t.latex_nota()
+    corpo = "\n".join(l for l in saida.split("\n")
+                      if not l.lstrip().startswith("%"))
+    for ch in "αβρΔσμχ≠≥≤×−–—₀₁²³":
+        assert ch not in corpo, f"{ch!r} sobrou em linha de codigo LaTeX"
+    assert r"$\Delta$" in corpo and r"$\beta$" in corpo
 
 
 # ── a trava: tabela x registro ──────────────────────────────────────────────
