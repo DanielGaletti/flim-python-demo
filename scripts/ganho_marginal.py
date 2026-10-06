@@ -187,6 +187,13 @@ def main() -> int:
     ap.add_argument("--n_cand", type=int, default=None,
                     help="corta o numero de candidatos sorteados (piloto)")
     ap.add_argument("--n_imagem_nova", type=int, default=2)
+    ap.add_argument("--n_contorno", type=int, default=0,
+                    help="candidatos gerados como disco sobre o CONTORNO "
+                         "previsto, em vez de superpixel. Testa o gerador, "
+                         "nao o criterio")
+    ap.add_argument("--raio_contorno", type=int, default=10,
+                    help="raio do disco de contorno. 10 da ~314 px, que casa "
+                         "com o orcamento de 300 px do braco de superpixel")
     ap.add_argument("--px_regiao", type=int, default=PX_REGIAO)
     ap.add_argument("--decoders", nargs="+", default=None)
     ap.add_argument("--rotulo", default="diagnostico")
@@ -355,7 +362,46 @@ def main() -> int:
                     estrato="objeto" if frac > 0 else "fundo",
                 )
 
-        chaves = list(por_img_scores)
+        # ── candidatos gerados sobre o CONTORNO previsto ───────────────────
+        # Medido em `onde_o_criterio_aponta`: so 2% a 12% dos superpixels
+        # atravessam a fronteira do objeto, porque o SLIC alinha suas bordas
+        # com as bordas da imagem. E `artigo_vs_regiao` mediu que anotar na
+        # borda vale +0,126 a +0,166. A anotacao valiosa e a que o gerador por
+        # superpixel quase nunca oferece, e nenhum escore conserta isso,
+        # porque escore so ordena o que esta na lista.
+        #
+        # Aqui o candidato e um disco centrado em cima do contorno previsto.
+        # Atravessa por construcao, e nao usa ground truth: o contorno e o
+        # PREVISTO pelo modelo.
+        contorno = []
+        if a.n_contorno > 0:
+            from flim_al.region_al import candidatos_de_contorno
+            for img in base:
+                gt = gts[img]
+                H, W = gt.shape
+                prob = SV._mapa_prob(modelo, img)
+                if prob.shape != (H, W):
+                    prob = np.array(Image.fromarray(
+                        (prob * 255).astype(np.uint8)).resize(
+                            (W, H), Image.BILINEAR)) / 255.0
+                cs = candidatos_de_contorno(
+                    prob, raio=a.raio_contorno,
+                    maximo=a.n_contorno * 3, semente=semente)
+                for j, m in cs.items():
+                    chave = (img, 100000 + j)
+                    por_img_scores[chave] = dict(
+                        mask=m, entropia=0.0, lc=0.0,
+                        prob_media=float(prob[m].mean()),
+                        frac_fg=float(gt[m].mean()),
+                        estrato="contorno")
+                    contorno.append(chave)
+            rc = np.random.default_rng(semente * 613 + 11)
+            if len(contorno) > a.n_contorno:
+                contorno = [contorno[i] for i in
+                            rc.permutation(len(contorno))[:a.n_contorno]]
+
+        chaves = [c for c in por_img_scores
+                  if por_img_scores[c]["estrato"] != "contorno"]
         # Os dois argmax GLOBAIS: e a regiao que o criterio escolheria de fato.
         top_ent = max(chaves, key=lambda c: por_img_scores[c]["entropia"])
         top_lc = max(chaves, key=lambda c: por_img_scores[c]["lc"])
@@ -369,7 +415,11 @@ def main() -> int:
 
         plano = ([(top_ent, "argmax_entropia"), (top_lc, "argmax_lc"),
                    (top_prob, "argmax_prob")]
-                 + [(c, "sorteado") for c in sorteio])
+                 + [(c, "sorteado") for c in sorteio]
+                 # `contorno_sorteado` usa o MESMO criterio do `sorteado`
+                 # (sorteio) e o mesmo orcamento de pixels. A unica diferenca
+                 # e o gerador, e e isso que o braco isola.
+                 + [(c, "contorno_sorteado") for c in contorno])
 
         print(f"    {len(chaves)} superpixels · {len(k_obj)} tocam objeto · "
               f"avaliando {len(plano)} regioes + {len(novas)} imagens",

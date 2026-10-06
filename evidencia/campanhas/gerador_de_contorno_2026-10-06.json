@@ -1,0 +1,49 @@
+{
+  "id": "gerador_de_contorno_2026-10-06",
+  "declarado_em": "2026-10-06T00:00:00+00:00",
+  "git_commit": "441dbd6",
+  "tipo": "CONFIRMATORIO. A intervencao e no GERADOR DE CANDIDATOS, nao no criterio. Primeiro experimento deste projeto a mexer no gerador.",
+
+  "de_onde_veio": {
+    "medida_1": "`onde_o_criterio_aponta`, 3 datasets x 10 sementes: apenas 2% a 12% dos superpixels SLIC ATRAVESSAM a fronteira do objeto. O SLIC e construido para que suas bordas coincidam com as bordas da imagem, entao seus segmentos ficam ou todos dentro ou todos fora.",
+    "medida_2": "`artigo_vs_regiao`, markers REAIS dos especialistas A e B: anotar na borda vale +0,126 a +0,166 de Fbeta sobre anotar em outro lugar dentro do objeto, 6 de 6 celulas, p <= 0,0041.",
+    "conclusao": "A anotacao valiosa e a que o gerador por superpixel quase nunca oferece. Nenhum escore conserta isso, porque escore so ORDENA o que esta na lista. Por isso a intervencao e no gerador."
+  },
+
+  "a_intervencao": "Candidato = disco centrado em um ponto do contorno PREVISTO pelo modelo, com raio 10 (~314 px, casando com o orcamento de 300 px do braco de superpixel). Atravessa a fronteira prevista por construcao e nao usa ground truth.",
+
+  "desenho_que_isola_o_gerador": "O braco `contorno_sorteado` usa o MESMO criterio do braco `sorteado` (sorteio puro) e o MESMO orcamento de pixels. A unica diferenca entre os dois e o gerador. Nao ha escore envolvido, de proposito: misturar gerador e criterio mediria duas coisas.",
+
+  "hipotese": "Gerar os candidatos sobre o contorno previsto, em vez de por superpixel, melhora o Delta Fbeta de acrescentar uma anotacao.",
+
+  "teste_primario": "Delta Fbeta(validacao) de `contorno_sorteado` contra `sorteado`, pareado por (decoder, semente), t pareado bicaudal, alfa=0,05, SEPARADO por dataset. Sem agregacao entre datasets.",
+
+  "secundarios_declarados_com_mecanismo": {
+    "pior_caso": "minimo do Delta por semente. O mecanismo preve reducao de RISCO mais que ganho de media, e esta e a coluna que mede isso.",
+    "dispersao": "desvio-padrao do Delta entre candidatos, dentro de cada semente.",
+    "kernels": "Delta de kernels acrescentados. No piloto o contorno acrescentou +6 a +12 filtros contra +45 a +55 do superpixel, e `ganho_marginal` mediu rho(Delta kernels, Delta Fbeta) = -0,314 com p = 0,0008. Se o mecanismo vale, o contorno deve acrescentar menos filtros E ter menos variancia.",
+    "ATENCAO": "Se SO o resultado de dispersao aparecer, ele NAO sera reportado como resultado. Este projeto ja teve uma hipotese de dispersao gerada post-hoc que falhou em confirmatorio (p=0,082 virou p=0,5674). Dispersao aqui so vale com confirmatorio proprio em sementes ineditas."
+  },
+
+  "limitacao_medida_no_piloto": {
+    "o_que": "O gerador depende de a predicao estar aproximadamente certa.",
+    "evidencia": "Teste sintetico: com predicao exata, 100% dos candidatos atravessam a fronteira; com predicao deslocada, 75%. No piloto real, na semente 0 do Schisto, onde o encoder base tem Fbeta 0,391, os candidatos sairam com fracao de objeto 0,975 / 0,000 / 0,000 / 0,981, isto e, NAO atravessaram a fronteira verdadeira, porque o contorno previsto estava no lugar errado.",
+    "consequencia": "Espera-se que o gerador ajude onde o modelo base ja e razoavel e nao ajude onde ele e ruim. Isso e verificavel: a fracao de objeto de cada candidato fica gravada na `variante`, e o Fbeta da base tambem. A correlacao entre Fbeta da base e ganho do contorno sera reportada como ANALISE DECLARADA, nao post-hoc.",
+    "tambem": "Com predicao degenerada (toda objeto ou todo fundo) o gerador devolve VAZIO, enquanto o superpixel funciona sempre. E uma desvantagem real do metodo e sera reportada."
+  },
+
+  "o_que_falsearia": "p >= 0,05 no primario em todos os datasets, ou Delta negativo.",
+
+  "o_que_NAO_sera_afirmado": [
+    "Que isto resolve o AL de regiao no FLIM. E uma intervencao no gerador, testada uma vez, derivada de medidas do proprio projeto; pede replicacao independente.",
+    "Reducao de tempo de especialista: a anotacao e simulada do ground truth.",
+    "Que o criterio deixou de importar. Este experimento FIXA o criterio em sorteio para isolar o gerador, e nao diz nada sobre qual escore usar sobre os candidatos novos."
+  ],
+
+  "datasets": ["schisto", "brats", "conjunctiva"],
+  "decoders": ["labeled_marker", "decoder_2"],
+  "sementes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "n_candidatos_por_braco": 8,
+  "particao": "identica a `ganho_marginal`. O conjunto de teste nao e tocado.",
+  "determinismo": "threadpoolctl em 1 thread."
+}

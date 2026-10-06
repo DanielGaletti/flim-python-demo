@@ -1574,7 +1574,10 @@ class H(BaseHTTPRequestHandler):
                      "/api/comp/proxima", "/api/comp/treinar",
                      "/api/comp/prever", "/api/comp/premarcar",
                      "/api/regiao/iniciar", "/api/regiao/responder",
-                     "/api/onde/comparar", "/api/comp/dica"):
+                     "/api/onde/comparar", "/api/comp/dica",
+                     "/api/ciclo/iniciar", "/api/ciclo/sugerir",
+                     "/api/ciclo/responder", "/api/ciclo/clicar",
+                     "/api/ciclo/encerrar"):
                 # A resposta é montada dentro do lock mas ENVIADA fora dele.
                 # Enviando dentro, o cliente recebe e dispara a requisição
                 # seguinte antes de o `finally` liberar a flag — e leva um 409
@@ -1613,6 +1616,34 @@ class H(BaseHTTPRequestHandler):
                                 body.get("bracos"),
                                 int(body.get("n_segments", 220)),
                                 int(body.get("semente", 0)))
+                        elif p.startswith("/api/ciclo/"):
+                            # O ciclo AL + IL + CL: o AL sugere a regiao, a
+                            # pessoa rotula, e o CL decide quanto o banco de
+                            # filtros pode mudar. Cada clique retreina, por
+                            # isso entra no mesmo lock das acoes longas.
+                            #
+                            # `sys.modules[__name__]` pelo mesmo motivo do
+                            # `onde`: este servidor roda como __main__, e
+                            # deixar o modulo importar `flim_app.server` lhe
+                            # daria uma copia nova, de estado vazio.
+                            from flim_app import ciclo as CIC
+                            SVmod = sys.modules[__name__]
+                            acao = p.rsplit("/", 1)[1]
+                            if acao == "iniciar":
+                                resultado = CIC.iniciar(
+                                    SVmod, body.get("id"),
+                                    body.get("alpha"))
+                            elif acao == "sugerir":
+                                resultado = CIC.sugerir(SVmod)
+                            elif acao == "responder":
+                                resultado = CIC.responder(
+                                    SVmod, int(body.get("rotulo", 1)))
+                            elif acao == "clicar":
+                                resultado = CIC.clicar(
+                                    SVmod, int(body["x"]), int(body["y"]),
+                                    int(body.get("rotulo", 1)))
+                            else:
+                                resultado = CIC.encerrar(SVmod)
                         elif p == "/api/regiao/iniciar":
                             resultado = acao_regiao_iniciar(
                                 body.get("id"), int(body.get("k", 6)))

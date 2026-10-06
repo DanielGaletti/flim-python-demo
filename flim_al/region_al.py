@@ -1239,3 +1239,126 @@ def score_regions_by_medoide(ids, F):
     F = np.asarray(F, dtype=np.float64)
     d = np.sqrt(((F[:, None, :] - F[None, :, :]) ** 2).sum(-1)).mean(axis=1)
     return {int(r): float(-d[i]) for i, r in enumerate(ids)}
+
+
+# ── gerador de candidatos: faixa de contorno ────────────────────────────────
+#
+# Por que trocar o gerador, e nao o criterio
+#
+#   Medido em `onde_o_criterio_aponta` (3 datasets, 10 sementes): apenas 2% a
+#   12% dos superpixels SLIC ATRAVESSAM a fronteira do objeto. O SLIC e
+#   construido para que suas bordas COINCIDAM com as bordas da imagem, entao
+#   seus segmentos ficam ou todos dentro ou todos fora do objeto.
+#
+#   Medido em `artigo_vs_regiao` (markers reais dos especialistas A e B):
+#   anotar na borda vale +0,126 a +0,166 de Fbeta sobre anotar em outro lugar
+#   dentro do objeto, em 6 de 6 celulas, p <= 0,0041.
+#
+#   Juntando as duas medidas: a anotacao valiosa e a que o gerador quase nunca
+#   oferece. Nenhum escore resolve isso, porque escore so ordena o que esta na
+#   lista. E por isso que a intervencao certa e no gerador.
+#
+# O desenho que isola o efeito
+#
+#   O candidato e `faixa ∩ superpixel`: a MESMA segmentacao SLIC, a mesma
+#   compacidade espacial, e a unica diferenca e a intersecao com uma faixa
+#   centrada no contorno PREVISTO. Fixando o criterio em sorteio e variando so
+#   o gerador, o que sobra e o efeito do gerador.
+#
+#   O contorno e o PREVISTO pelo modelo, nao o do ground truth. Sem isso o
+#   gerador usaria a resposta, e nao seria aplicavel.
+
+def faixa_de_contorno(prob, raio: int = 6, limiar: float = 0.5):
+    """
+    Faixa booleana centrada no contorno da predicao.
+
+    Dilata a fronteira da mascara prevista em `raio` pixels para cada lado, o
+    que da uma faixa de largura ~2*raio em cima da transicao. `raio` default 6
+    e um pouco maior que o pincel real do FLIM (raio 5, medido nos 31 markers
+    dos usuarios), para que caiba um toque inteiro dentro da faixa.
+
+    Devolve mascara vazia quando a predicao nao tem fronteira, isto e, quando
+    ela e toda objeto ou toda fundo. Isso acontece com encoder degenerado, e e
+    informativo: este gerador PRECISA de uma predicao nao trivial, enquanto o
+    SLIC funciona sempre. E uma limitacao real e deve ser reportada.
+    """
+    import numpy as np
+    from scipy import ndimage
+
+    pred = np.asarray(prob) > limiar
+    if not pred.any() or pred.all():
+        return np.zeros(pred.shape, dtype=bool)
+    # fronteira = o que esta na mascara mas nao no seu interior erodido
+    interior = ndimage.binary_erosion(pred, iterations=1, border_value=0)
+    fronteira = pred & ~interior
+    if not fronteira.any():
+        return np.zeros(pred.shape, dtype=bool)
+    return ndimage.binary_dilation(fronteira, iterations=int(raio))
+
+
+def candidatos_de_contorno(prob, raio: int = 6, espacamento: int = None,
+                           limiar: float = 0.5, maximo: int = 60,
+                           semente: int = 0):
+    """
+    Candidatos como DISCOS centrados em pontos do contorno previsto.
+
+    Por que disco no contorno, e nao pedaco de superpixel
+        A primeira versao deste gerador cortava a faixa de contorno pelos
+        superpixels, e falhou num teste sintetico: 0% dos candidatos
+        atravessavam a fronteira. A razao e que o SLIC e construido para que
+        suas bordas COINCIDAM com as bordas da imagem, entao
+        `faixa ∩ superpixel` devolve pedacos que voltam a ficar de um lado so.
+        Reusar o SLIC desfazia o proposito do gerador.
+
+        Um disco centrado EM CIMA do contorno cobre os dois lados por
+        construcao, e nao depende de nenhuma segmentacao. E tambem o que o
+        especialista faz: a caracterizacao dos 31 markers reais deste projeto
+        mediu pincel circular de raio 5, com os toques de objeto a ~12 px
+        dentro da borda.
+
+    Parametros
+        raio         raio do disco. Default 6, um pouco acima do pincel real.
+        espacamento  distancia minima entre centros. Default 2*raio, para que
+                     os candidatos se toquem sem se empilhar.
+        maximo       teto de candidatos, para o custo nao explodir em objeto de
+                     contorno longo.
+        semente      ordem de varredura dos pontos do contorno. Nao escolhe
+                     candidato melhor, so decide por onde comecar a espacar.
+
+    Devolve {indice: mascara booleana}, vazio quando a predicao nao tem
+    fronteira. Esse caso e informativo e deve ser reportado: este gerador
+    PRECISA de uma predicao nao trivial, enquanto o SLIC funciona sempre.
+    """
+    import numpy as np
+    from scipy import ndimage
+
+    pred = np.asarray(prob) > limiar
+    if not pred.any() or pred.all():
+        return {}
+    interior = ndimage.binary_erosion(pred, iterations=1, border_value=0)
+    fronteira = pred & ~interior
+    ys, xs = np.nonzero(fronteira)
+    if len(ys) == 0:
+        return {}
+
+    esp = int(espacamento if espacamento else 2 * raio)
+    rng = np.random.default_rng(semente)
+    ordem = rng.permutation(len(ys))
+
+    H, W = pred.shape
+    centros = []
+    for i in ordem:
+        y, x = int(ys[i]), int(xs[i])
+        if all((y - cy) ** 2 + (x - cx) ** 2 >= esp * esp
+               for cy, cx in centros):
+            centros.append((y, x))
+            if len(centros) >= maximo:
+                break
+
+    yy, xx = np.ogrid[:H, :W]
+    saida = {}
+    for j, (cy, cx) in enumerate(centros):
+        m = (yy - cy) ** 2 + (xx - cx) ** 2 <= raio * raio
+        if m.sum() >= 20:
+            saida[j] = m
+    return saida
