@@ -84,6 +84,24 @@ onde $A_c$ é o mapa de ativação do canal $c$. Os pesos são recalculados para
 
 O mapa $S$ é normalizado para o intervalo $[0, 1]$ e binarizado por limiarização de Otsu, seguida de um filtro que remove componentes conexas fora de uma faixa de área esperada para o objeto.
 
+A Figura~\ref{fig_pipeline} acompanha uma imagem por todas essas etapas, da entrada ao erro por pixel. É útil retê-la, porque cada resultado dos capítulos seguintes é uma medida tomada sobre o último painel.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{flim_pipeline.png}
+\caption[O \acs{FLIM} de ponta a ponta numa imagem]{O método de ponta a ponta. A imagem de entrada passa pelo codificador, que produz o mapa de saliência; a limiarização de Otsu com filtro de área produz a máscara binária; a comparação com a anotação de referência dá o $F_\beta$ e o \ac{IoU}. O último painel decompõe o erro em falso positivo e falso negativo.}
+\label{fig_pipeline}
+\end{figure}
+
+Vale também fixar o que é um marcador, já que ele é a única entrada de supervisão do método. A Figura~\ref{fig_markers} contrasta o traço desenhado por um especialista com o traço sintético usado nas campanhas que precisam de mais imagens anotadas do que as 31 para as quais existe marcação real.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{flim_markers.png}
+\caption[Marcador real e marcador sintético]{O que o método recebe como supervisão. À esquerda o traço real de um especialista; à direita o traço sintético gerado a partir da anotação de referência. A distinção importa porque marcador real existe apenas para 31 imagens do conjunto de parasitas, e comparações entre braços de origens diferentes mediriam quem desenhou o traço em vez do efeito em estudo.}
+\label{fig_markers}
+\end{figure}
+
 \section{Métricas}
 
 \subsection{Qualidade da segmentação}
@@ -119,53 +137,166 @@ Para a avaliação interativa usa-se o \ac{NoC}, número de cliques necessários
 Imagens que não atingem o alvo entram na média com o valor do teto. Por isso a taxa de sucesso é reportada ao lado do \ac{NoC} em todas as tabelas: um método poderia exibir contagem baixa simplesmente por desistir antes, e a contagem isolada premiaria esse comportamento.
 
 \section{Aprendizado ativo}
+\label{sec_al_metodo}
 
-Os critérios de aquisição avaliados pertencem a duas famílias. Seja $P(x,y) \in (0,1)$ a probabilidade predita de o pixel $(x,y)$ pertencer ao objeto.
+\subsection{O problema que o aprendizado ativo resolve}
+
+Anotar uma imagem para segmentação custa caro. Quem anota precisa ser um especialista, o traço precisa acompanhar a fronteira do objeto, e o tempo gasto cresce com a quantidade de imagens. O conjunto de parasitas usado aqui tem 1220 lâminas; anotar todas é inviável na prática e desnecessário em princípio, porque muitas são parecidas entre si e o modelo não aprende nada de novo com a segunda cópia de algo que já viu.
+
+O \ac{AL} parte dessa observação. Em vez de anotar tudo ou sortear ao acaso, ele usa o modelo já treinado para decidir o que vale a pena anotar em seguida. O procedimento é um laço:
+
+\begin{enumerate}
+    \item treina-se um modelo com o pouco que já está anotado, o conjunto $A$;
+    \item aplica-se esse modelo ao que ainda não foi anotado, o conjunto $U$, chamado \emph{pool};
+    \item uma função de aquisição $s(\cdot)$ atribui uma pontuação a cada candidato de $U$;
+    \item o candidato de maior pontuação vai para o especialista, que o anota;
+    \item ele passa de $U$ para $A$, e o laço recomeça.
+\end{enumerate}
+
+A função de aquisição é o que distingue um método de \ac{AL} de outro. Todo o resto do laço é igual.
+
+\subsection{O custo de pontuar o pool, e por que ele importa aqui}
+\label{sec_custo_pool}
+
+Há um detalhe que a literatura de \ac{AL} costuma tratar como secundário e que, no caso do \ac{FLIM}, é central: \textbf{pontuar o pool também custa}. A pergunta não é só quantas imagens o especialista anota, é também o que a máquina precisa fazer, e precisa saber, para decidir quais são.
+
+Os critérios avaliados nesta dissertação se separam em três faixas de custo, e a distinção importa porque o \ac{FLIM} existe justamente para funcionar quando não se tem anotação em massa:
+
+\begin{description}
+    \item[Uma passagem pelo pool, sem anotação.] Entropia, \ac{LC} e margem precisam apenas da predição do modelo atual sobre cada imagem de $U$. O custo é uma inferência por imagem, e nenhuma anotação é consultada. É a faixa mais barata.
+
+    \item[Várias passagens, ou atributos de todo o pool, sem anotação.] O \ac{BALD} exige um comitê, logo $N$ inferências por imagem. O CoreSet e o \ac{BADGE} exigem extrair o vetor de atributos de \emph{cada} imagem do pool e depois resolver um problema de cobertura sobre todos eles. Continuam sem consultar anotação, mas o custo cresce com o tamanho do pool, e não apenas com o orçamento.
+
+    \item[Anotação de todo o pool.] É o caso do passo 7 do Algoritmo 1 do trabalho de referência, que escolhe a próxima imagem entre as de pior $F_\beta$. Para saber o $F_\beta$ de uma imagem é preciso ter o gabarito dela. Escolher 3 imagens entre 848 exige, portanto, as 848 anotadas.
+\end{description}
+
+Esta última linha é a razão de ser desta dissertação. O próprio artigo declara que a abordagem de seleção é supervisionada, e um procedimento que precisa do gabarito de todo o pool para escolher o que anotar derrota o propósito de um método criado para operar com três a cinco imagens anotadas. A pergunta que organiza o trabalho é, então, quanto do benefício daquele procedimento se recupera com critérios da primeira e da segunda faixa, que não consultam anotação nenhuma.
+
+Por isso o Algoritmo 1 aparece aqui sob o nome de \textbf{oracle} e é tratado como \emph{teto de referência}, nunca como método concorrente. Ele tem acesso a uma informação que os demais não têm.
 
 \subsection{Critérios de incerteza}
+\label{sec_crit_incerteza}
 
-A \textbf{entropia} mede a indecisão do modelo, atingindo o máximo quando a probabilidade predita é $0{,}5$:
+A família de incerteza parte da ideia de que o modelo aprende mais com aquilo sobre o que está em dúvida. Se a predição já é confiante, anotar aquela imagem apenas confirma o que o modelo já sabe.
+
+Seja $P(x,y) \in (0,1)$ a probabilidade predita de o pixel $(x,y)$ pertencer ao objeto.
+
+A \textbf{entropia} mede a indecisão ponto a ponto, atingindo o máximo quando a probabilidade predita é exatamente $0{,}5$, isto é, quando o modelo não tem preferência entre objeto e fundo:
 
 \begin{equation}
 H(x,y) = -\big[P \log P + (1-P)\log(1-P)\big]
 \label{eq_entropia}
 \end{equation}
 
-O \textbf{least confidence} mede a distância à decisão, com a mesma intuição e escala diferente:
+O \textbf{least confidence} mede a distância à fronteira de decisão. A intuição é a mesma da entropia, com escala diferente:
 
 \begin{equation}
 \text{LC}(x,y) = 1 - |2P - 1|
 \label{eq_lc}
 \end{equation}
 
-Para pontuar uma \emph{região} $r$, toma-se a média do critério sobre seus pixels:
+A \textbf{margem}, em classificação multiclasse, é a diferença entre as duas classes mais prováveis. No caso binário só existem duas classes, e a definição colapsa exatamente na de \emph{least confidence}. Os dois critérios foram mantidos separados nos experimentos porque a literatura os trata como distintos, mas a equivalência algébrica no caso binário precisa ser dita: \textbf{qualquer diferença observada entre eles nos resultados é ruído de execução, não efeito de critério}.
+
+Os três critérios acima medem a incerteza de \emph{um} modelo, e essa incerteza mistura duas coisas diferentes. Um pixel pode ser ambíguo porque a imagem é genuinamente ambígua naquele ponto, ou porque o modelo está mal treinado. Anotar o segundo caso ajuda; anotar o primeiro não resolve, porque nenhuma quantidade de dados elimina ambiguidade intrínseca.
+
+O \ac{BALD} separa as duas usando o desacordo entre modelos. Dado um comitê de $N$ modelos com predições $p_1, \dots, p_N$:
 
 \begin{equation}
-s(r) = \frac{1}{|r|} \sum_{(x,y) \in r} H(x,y)
-\label{eq_score_regiao}
+\text{BALD} = H\!\left(\frac{1}{N}\sum_i p_i\right) - \frac{1}{N}\sum_i H(p_i)
+\label{eq_bald}
 \end{equation}
 
+O primeiro termo é a incerteza total e o segundo é a parcela que todos os modelos compartilham. A diferença isola o desacordo: um ponto em que todos os modelos estão inseguros da mesma forma recebe pontuação baixa, e um ponto em que eles discordam entre si recebe pontuação alta.
+
+A formulação original obtém o comitê por \emph{dropout} de Monte Carlo, com várias passagens estocásticas pelo mesmo modelo. \textbf{O \ac{FLIM} não tem \emph{dropout} e sua inferência é determinística}, de modo que essa via não existe aqui. A adaptação feita neste trabalho usa como comitê os mapas de saliência de codificadores distintos, e o desacordo medido é entre eles. É uma adaptação legítima e é também uma diferença em relação ao método publicado, que precisa estar declarada ao ler os resultados do \ac{BALD}.
+
 \subsection{Critérios de diversidade}
+\label{sec_crit_diversidade}
 
-Os critérios de diversidade não olham a incerteza, e sim a representatividade no espaço de atributos. Cada candidato é descrito por um vetor obtido pela média das ativações do codificador dentro da sua máscara.
+A família de diversidade parte de uma objeção à anterior. Escolher sempre o mais incerto tende a escolher repetidamente o mesmo tipo de caso difícil, e um lote de imagens parecidas entre si ensina pouco mais do que uma delas. Os critérios de diversidade ignoram a incerteza e olham a \emph{cobertura}: o objetivo é que o conjunto anotado represente bem o conjunto todo.
 
-O \textbf{CoreSet} seleciona o candidato mais distante do que já foi anotado, que é o passo guloso do $k$-center:
+Cada candidato é descrito por um vetor $f(\cdot)$ obtido pela média das ativações do codificador dentro da sua máscara.
+
+O \textbf{CoreSet} formula a seleção como cobertura geométrica, escolhendo o candidato mais distante de tudo o que já foi anotado, que é o passo guloso do $k$-center:
 
 \begin{equation}
 r^{\ast} = \arg\max_{r \notin A} \; \min_{a \in A} \; \lVert f(r) - f(a) \rVert_2
 \label{eq_coreset}
 \end{equation}
 
-onde $A$ é o conjunto já anotado e $f(\cdot)$ o vetor de atributos. O \textbf{medoide} faz o oposto, escolhendo o candidato mais típico:
+onde $A$ é o conjunto já anotado e $f(\cdot)$ o vetor de atributos. Lê-se de dentro para fora: para cada candidato, encontre o item já anotado mais próximo dele; depois escolha o candidato cuja menor distância é a maior de todas. Em palavras, o candidato que está na região mais desassistida do espaço de atributos.
+
+O \textbf{medoide} faz o oposto, escolhendo o candidato mais típico, o de menor distância média a todos os demais:
 
 \begin{equation}
 r^{\ast} = \arg\min_{r} \; \frac{1}{|R|}\sum_{q \in R} \lVert f(r) - f(q) \rVert_2
 \label{eq_medoide}
 \end{equation}
 
-Esses dois critérios são de imagem por construção na literatura, pois comparam imagens inteiras. A extensão ao nível de região, feita neste trabalho, substitui a média global das ativações pela média dentro da máscara de cada região, mantendo o mesmo espaço.
+Ele entrou nos experimentos como contraste deliberado ao CoreSet. Se a cobertura de regiões extremas fosse o que importa, o medoide deveria ir pior que o CoreSet; se o que importasse fosse representatividade, o contrário. Ter os dois permite distinguir as hipóteses, em vez de apenas constatar que um critério não funcionou.
+
+O \textbf{\ac{BADGE}} combina as duas famílias numa única pontuação. A ideia é construir um vetor que já carregue incerteza e diversidade ao mesmo tempo, escalando o vetor de atributos pela incerteza da predição:
+
+\begin{equation}
+g_i = \big(P_i - \tfrac{1}{2}\big)\, f(r_i)
+\label{eq_badge}
+\end{equation}
+
+e em seguida aplicar a inicialização do $k$-means++ sobre os $g_i$. Como o $k$-means++ sorteia pontos com probabilidade proporcional ao quadrado da distância aos já escolhidos, candidatos com vetor $g$ grande, isto é, incertos, e distantes entre si, isto é, diversos, são favorecidos simultaneamente. É o critério de maior custo dos avaliados, porque exige atributos e predições de todo o pool.
+
+\subsection{Por que estes critérios, e não outros}
+
+A escolha não foi por conveniência de implementação. O conjunto avaliado cobre as posições que a literatura ocupa, com um representante de cada e com os controles que permitem distingui-las:
+
+\begin{itemize}
+    \item \textbf{incerteza pura}: entropia, \ac{LC} e margem;
+    \item \textbf{incerteza corrigida por desacordo}: \ac{BALD};
+    \item \textbf{diversidade pura}: CoreSet e medoide, em direções opostas;
+    \item \textbf{híbrido}: \ac{BADGE};
+    \item \textbf{teto}: oracle, que lê o gabarito e reproduz o passo 7 do Algoritmo 1;
+    \item \textbf{piso}: sorteio aleatório, sem critério nenhum.
+\end{itemize}
+
+O piso e o teto são o que torna o conjunto interpretável. Sem o sorteio não se sabe se um critério ajudou ou se qualquer escolha teria ajudado. Sem o oracle não se sabe se a dificuldade está em o critério ser imperfeito ou em a seleção de imagem não ser a alavanca certa, e é essa distinção que os resultados do Capítulo~\ref{cap_4} acabam decidindo.
+
+Ficaram de fora os métodos que exigem retropropagação para funcionar, como os baseados em gradiente da perda ou em redes adversárias de seleção. Não é omissão: o \ac{FLIM} não tem perda nem otimizador, e esses métodos não são aplicáveis sem descaracterizar o modelo que está sendo estudado.
+
+\subsection{Seleção de imagem e seleção de região}
+\label{sec_imagem_vs_regiao}
+
+Os critérios acima foram aplicados em dois níveis, e os dois níveis respondem a perguntas diferentes. Confundi-los é o erro mais fácil de cometer ao ler os resultados.
+
+Na \textbf{seleção de imagem}, o candidato é a imagem inteira e a pontuação é a média do critério sobre todos os seus pixels. O que se decide é \emph{quais imagens} o especialista vai anotar. É a forma usual na literatura e é a que o Algoritmo 1 do trabalho de referência usa. A Figura~\ref{fig_al_imagem} mostra o que o critério enxerga nesse nível.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{al_selecao_imagem.png}
+\caption[O que o critério de incerteza enxerga no nível de imagem]{Seleção no nível de imagem. À esquerda, o mapa de entropia produzido pelo codificador; à direita, as imagens do pool com maior e menor pontuação. A pontuação de uma imagem é a média do critério sobre todos os seus pixels, de modo que o fundo, que ocupa a maior parte da área, domina o valor.}
+\label{fig_al_imagem}
+\end{figure}
+
+Na \textbf{seleção de região}, a imagem é particionada em regiões e o candidato é uma região. A pontuação é a média do critério dentro dela:
+
+\begin{equation}
+s(r) = \frac{1}{|r|} \sum_{(x,y) \in r} H(x,y)
+\label{eq_score_regiao}
+\end{equation}
+
+O que se decide aqui é \emph{onde}, dentro de imagens já escolhidas, o traço vai cair. O braço de região usa exatamente as mesmas imagens que o sorteio usaria e gasta exatamente a mesma quantidade de pixels marcados. A única variável é a posição. A Figura~\ref{fig_al_regiao} mostra o procedimento completo.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{al_regiao_slic.png}
+\caption[Aprendizado ativo no nível de região]{Seleção no nível de região, passo a passo: a imagem é particionada pelo \ac{SLIC}, cada superpixel recebe a média do critério dentro dele, as regiões mais bem pontuadas são apresentadas ao especialista, e a resposta dele vira marcadores de objeto e de fundo. As mesmas imagens e o mesmo orçamento de pixels do braço de sorteio; o que muda é a posição.}
+\label{fig_al_regiao}
+\end{figure}
+
+A consequência prática é que \textbf{as duas diferenças não são comparáveis entre si}. O $\Delta$ da seleção de imagem mede escolha de imagem; o $\Delta$ da seleção de região mede posição de anotação. Somá-los ou apresentá-los na mesma coluna mediria duas coisas ao mesmo tempo.
+
+A extensão do CoreSet e do medoide ao nível de região é contribuição deste trabalho. Na literatura esses dois critérios são de imagem por construção, pois comparam imagens inteiras. A adaptação substitui a média global das ativações pela média dentro da máscara de cada região, mantendo o mesmo espaço de atributos e o mesmo passo guloso.
 
 \subsection{Geração dos candidatos}
+\label{sec_gerador}
 
 A pontuação só ordena a lista de candidatos que recebe, de modo que o procedimento que gera essa lista é parte do método, e não detalhe de implementação. Dois geradores são comparados nesta dissertação.
 
@@ -178,6 +309,17 @@ r_i = \{(x,y) : \lVert (x,y) - c_i \rVert_2 \leq \rho,\; c_i \in \partial \hat{Y
 \end{equation}
 
 onde $\hat{Y}$ é a máscara predita. Os centros $c_i$ são amostrados sobre o contorno com espaçamento mínimo de $2\rho$, para que os discos se toquem sem se sobrepor. O contorno usado é o \emph{predito}, e não o verdadeiro, de modo que o procedimento não depende de anotação prévia.
+
+A Figura~\ref{fig_gerador} mostra o contraste entre os dois geradores na mesma imagem. A diferença não é de escore: é de qual lista o escore recebe.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{gerador_candidatos.png}
+\caption[Superpixels e discos de contorno como geradores de candidatos]{Os dois geradores de candidatos na mesma imagem. As arestas do \ac{SLIC} seguem as bordas presentes na imagem por construção, de modo que seus pedaços tendem a ficar de um lado só da fronteira do objeto; os discos centrados no contorno cobrem os dois lados por construção. O painel da direita usa predição ideal e ilustra a geometria do gerador: com a predição real do codificador os discos caem no interior, porque o modelo sub-segmenta e o contorno predito fica por dentro do verdadeiro, e o ganho medido no Capítulo~\ref{cap_4} acontece apesar disso.}
+\label{fig_gerador}
+\end{figure}
+
+Uma limitação do gerador proposto precisa ser registrada junto com ele, porque é consequência direta do seu desenho. Ele depende de haver um contorno predito: com máscara predita vazia ou cheia, o conjunto de candidatos sai vazio, enquanto o \ac{SLIC} funciona sempre. E a dependência não aparece apenas no caso extremo. Quando o contorno predito é curto, o espaçamento mínimo de $2\rho$ limita quantos centros cabem, e o gerador entrega \emph{menos} candidatos do que os pedidos. Isso foi observado em três sementes das campanhas e tem consequência estatística, tratada no Capítulo~\ref{cap_4}.
 
 \section{Aprendizado contínuo}
 
@@ -221,6 +363,15 @@ onde $E$ é a componente de erro e $D_E(x,y)$ é a distância euclidiana de $(x,
 
 O clique é materializado como um disco de raio 5 pixels, valor medido nos 31 conjuntos de marcadores reais disponíveis, recortado de modo a não ultrapassar a fronteira do objeto. Não há sorteio em nenhuma etapa do laço, de forma que o \ac{NoC} é determinístico dado o codificador inicial.
 
+A Figura~\ref{fig_clique} percorre esse procedimento numa imagem real e mostra por que a distinção entre centróide e máxima distância não é preciosismo. No exemplo, a região de erro tem forma de anel, e o centróide cai no vazio central, isto é, \emph{fora} da região que deveria rotular.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{il_clique.png}
+\caption[Posicionamento do clique do usuário simulado]{Como o clique é posicionado. A diferença entre a predição e a anotação de referência define a região de erro; dentro da maior componente conexa dela, o clique vai ao máximo da transformada de distância. Neste exemplo a região de erro é um anel e o centróide cai fora dela, que é exatamente o caso que a Equação~\ref{eq_clique} evita.}
+\label{fig_clique}
+\end{figure}
+
 \subsection{O laço}
 
 A cada iteração, o modelo prediz, o usuário simulado escolhe o clique, o marcador é acrescentado, o codificador é reestimado com a plasticidade configurada, e a \ac{IoU} é medida novamente. O laço termina quando a \ac{IoU} ultrapassa o alvo ou quando o teto de cliques é atingido.
@@ -231,6 +382,19 @@ O laço possui dois pontos em que os componentes se encaixam. O \ac{AL} pode reo
 
 Os experimentos descritos neste capítulo são executados em lote, com usuário simulado. Para observar o comportamento do sistema com uma pessoa real no laço, foi desenvolvida uma aplicação que roda localmente e integra os três componentes em um fluxo único.
 
+A aplicação é um servidor em Python servindo uma página única, sem dependência de serviço externo. Ela é iniciada em linha de comando e atendida em \texttt{localhost}, de modo que as imagens, que são dados de pacientes em dois dos três conjuntos, não saem da máquina. A interface se organiza em cinco abas, descritas a seguir.
+
+\subsection{Os conjuntos disponíveis e o envio de novos}
+
+A aba de conjuntos lista o que está disponível e permite enviar um conjunto novo, conforme a Figura~\ref{fig_plat_datasets}. O padrão adotado é um diretório com \texttt{orig/} e, opcionalmente, \texttt{label/}. A anotação de referência é opcional de propósito: um conjunto trazido por um especialista normalmente não tem anotação nenhuma, que é precisamente a situação que o método endereça. Sem \texttt{label/} a aplicação continua treinando e prevendo, e o que deixa de existir é o cálculo automático do $F_\beta$, passando a avaliação a ser o julgamento visual de quem usa.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{plataforma_datasets.jpg}
+\caption[Aba de conjuntos de dados da plataforma]{A aba de conjuntos. Além dos três conjuntos usados nos experimentos, a aplicação aceita o envio de um conjunto novo, com ou sem anotação de referência, e permite separar o lote entre treino e validação no momento do envio.}
+\label{fig_plat_datasets}
+\end{figure}
+
 \subsection{O ciclo}
 
 A aplicação opera em rodadas. A cada rodada, o estado consiste no conjunto de marcadores acumulados, no codificador estimado a partir deles, e na curva de qualidade registrada até ali.
@@ -239,6 +403,37 @@ O \ac{AL} atua na etapa de sugestão: a aplicação calcula o mapa de probabilid
 
 Essa última possibilidade é deliberada. Alterar a plasticidade no meio de uma sessão permite comparar os dois comportamentos sobre a mesma imagem e o mesmo histórico de cliques, o que torna a diferença visível sem exigir duas sessões separadas.
 
+A Figura~\ref{fig_plat_anotar} mostra a tela desse ciclo. À esquerda ficam o pincel de objeto, o pincel de fundo e a imagem que o critério escolheu; à direita, o estado da rodada, o orçamento configurado, o decodificador e o critério em uso, e um registro textual que explica, a cada passo, \emph{por que} aquela imagem foi escolhida. Esse registro é deliberado: sem ele a escolha do sistema é uma caixa preta para quem anota, e a aplicação existe para tornar o mecanismo observável.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{plataforma_anotar.jpg}
+\caption[Tela de anotação e treino da plataforma]{A tela de anotação. O painel da direita mostra a rodada corrente, o motivo da escolha da imagem, o orçamento, o decodificador e o critério de \ac{AL}. Abaixo dele fica o painel de regiões confusas, pelo qual o modelo pergunta e o especialista decide.}
+\label{fig_plat_anotar}
+\end{figure}
+
+\subsection{A comparação entre braços na própria tela}
+
+Duas comparações do Capítulo~\ref{cap_4} estão implementadas na aplicação, e é por elas que ela deixa de ser apenas uma demonstração de interface.
+
+A primeira, na Figura~\ref{fig_plat_comparar}, põe o \ac{FLIM} com sorteio de imagens contra um ou mais critérios de \ac{AL}, com o mesmo orçamento e o mesmo conjunto de validação. Um detalhe do desenho merece nota: a imagem da primeira rodada é comum a todos os braços, e o traço feito nela vale para todos. Sem isso, a diferença observada no fim incluiria qual imagem calhou de sair primeiro para cada braço, que é a maior fonte de variância do método.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{plataforma_comparar.jpg}
+\caption[Comparação entre \acs{FLIM} puro e Active Learning na plataforma]{A comparação entre braços. Todos recebem o mesmo orçamento de imagens e são medidos no mesmo conjunto de validação. Quando dois critérios escolhem a mesma imagem, ela aparece uma vez só na fila e a anotação vale para ambos.}
+\label{fig_plat_comparar}
+\end{figure}
+
+A segunda, na Figura~\ref{fig_plat_onde}, é a que corresponde à contribuição central desta dissertação. Ela mantém as mesmas imagens em todos os braços e o mesmo número de pixels marcados, e varia apenas \emph{quem escolhe o lugar}: o especialista, o modelo por pré-marcação, o critério de \ac{AL} por região, ou o sorteio. É o braço de sorteio que torna os outros interpretáveis, porque sem ele não há como separar o ganho de escolher bem a região do ganho de simplesmente anotar em blocos.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.62\linewidth]{plataforma_onde_anotar.jpg}
+\caption[Comparação de onde anotar, na plataforma]{A comparação de posição de anotação. As mesmas imagens, o mesmo orçamento de pixels, e quatro formas de decidir onde o traço cai. O braço de região sorteada é o controle.}
+\label{fig_plat_onde}
+\end{figure}
+
 \subsection{O que a tela registra}
 
 Além da máscara corrente, a aplicação mantém a curva de qualidade por clique e três indicadores: a qualidade inicial, a melhor qualidade alcançada, e o número de cliques que \emph{pioraram} o resultado. O último indicador é o motivo de a tela existir. Com plasticidade máxima, que corresponde ao comportamento original, ele cresce ao longo da sessão, e o especialista observa diretamente o fenômeno descrito na Seção \ref{sec_cl_flim}: anotar mais não implica melhorar.
@@ -246,6 +441,17 @@ Além da máscara corrente, a aplicação mantém a curva de qualidade por cliqu
 \subsection{Limite de uso dos números da aplicação}
 
 A qualidade exibida na tela é calculada contra a anotação de referência do conjunto de dados, que existe porque se trata de ambiente de demonstração. Em uso real não haveria essa referência, e o especialista julgaria pela própria máscara.
+
+A aplicação traz ainda um guia de anotação, reproduzido na Figura~\ref{fig_plat_tutorial}, que mostra lado a lado três formas de gastar a mesma quantidade de tinta na mesma imagem. Ele existe porque a orientação de onde tocar é contraintuitiva: a tendência natural de quem anota é preencher o centro do objeto, e o guia mostra o traço encostado no contorno.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{plataforma_tutorial.jpg}
+\caption[Guia de anotação da plataforma]{O guia de anotação da aplicação. Mesma imagem e quantidade de pixels comparável nas três colunas; o que muda é a posição do traço. \textbf{Os valores de $F_\beta$ mostrados são ilustrativos e não constituem evidência}: vêm de uma execução única sobre três imagens, sem repetição por semente e sem teste pareado. A evidência sobre posição de anotação está no Capítulo~\ref{cap_4}.}
+\label{fig_plat_tutorial}
+\end{figure}
+
+\textbf{Nenhum número produzido pela aplicação é usado nesta dissertação.} Ela roda com orçamento pequeno e execução única, regime em que a amplitude do braço de sorteio, entre 0,10 e 0,22 de $F_\beta$, é maior do que qualquer efeito que se queira observar. A aplicação serve para tornar o fenômeno visível e para permitir que um especialista opere o laço, não para medir. Todas as medições citadas vêm das campanhas em lote registradas no Capítulo~\ref{cap_4}.
 
 Os valores apresentados pela aplicação não são usados em nenhuma afirmação desta dissertação. Eles vêm de execução única, sem repetição e sem controle de partição, e servem para inspeção qualitativa. Todas as medições relatadas no Capítulo \ref{cap_4} vêm das campanhas em lote, com semente, partição e registro.
 
@@ -307,6 +513,15 @@ O conjunto \textbf{BraTS} \cite{menze2014multimodal} contém cortes de ressonân
 
 O conjunto de \textbf{conjuntivite} contém fotografias oculares em cores e alta resolução, nas quais o objeto ocupa fração bem maior da imagem, com área mediana de aproximadamente 89 mil pixels.
 
+A Figura~\ref{fig_datasets} mostra um exemplo de cada um, com a anotação de referência sobreposta e a máscara isolada. Três propriedades ficam visíveis de imediato e sustentam leituras feitas adiante: os três são de segmentação \emph{binária}, e não multiclasse; o objeto ocupa fração pequena da imagem em dois deles, o que é a razão de a acurácia passar de 0,97 em quase todas as configurações sem distinguir braço nenhum; e os domínios são visualmente muito distintos entre si, o que é precisamente o que torna informativo um método falhar nos três.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{datasets.png}
+\caption[Os três conjuntos de dados usados nos experimentos]{Um exemplo de cada conjunto, com a anotação de referência em verde na linha superior e a máscara isolada na linha inferior. A fração de pixels de objeto indicada em cada painel é medida na máscara do exemplo mostrado.}
+\label{fig_datasets}
+\end{figure}
+
 \subsection{Levantamento de domínios candidatos}
 
 A escolha dos três conjuntos acima partiu de um levantamento mais amplo de domínios em que a segmentação interativa reduziria esforço de anotação de forma significativa. O critério de seleção considerou a diversidade de desafios que cada domínio impõe, e não apenas a disponibilidade dos dados.
@@ -316,6 +531,15 @@ Em gastroenterologia e dermatologia, o Kvasir-SEG \cite{jha2020kvasir} apresenta
 Em radiologia e oncologia, o BraTS \cite{menze2014multimodal} e o LiTS \cite{bilic2019liver} introduzem modalidades volumétricas processadas em fatias bidimensionais, com canais monocromáticos e contraste baixo entre tecidos.
 
 Em ultrassonografia e oftalmologia, o BUSI \cite{al2020dataset} impõe ruído característico da modalidade, e o REFUGE2 \cite{fang2022refuge2} exige definição anatômica precisa de estruturas oculares.
+
+A Figura~\ref{fig_dominios} reúne exemplos desses domínios. A diversidade de modalidade é evidente, e é justamente ela que torna o levantamento inicial plausível: endoscopia, dermatoscopia, ressonância, tomografia e ultrassonografia impõem desafios de aparência muito diferentes.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{dominios_levantados.png}
+\caption[Exemplos dos domínios levantados]{Exemplos dos domínios considerados no levantamento, com a anotação de referência sobreposta. A fração de objeto indicada é medida na máscara do exemplo mostrado e não é estatística do conjunto. O REFUGE2, citado no texto, não aparece porque o par de imagem e máscara disponível no repositório não corresponde entre si.}
+\label{fig_dominios}
+\end{figure}
 
 Dos domínios levantados, três foram efetivamente usados nos experimentos. A razão é que a investigação revelou, ao longo do trabalho, que a propriedade determinante para o comportamento dos métodos avaliados não é a modalidade de aquisição, e sim a \emph{fração da imagem ocupada pelo objeto}, que controla a razão entre candidatos a filtro e canais disponíveis descrita na Equação \ref{eq_regimes}. Os três conjuntos escolhidos cobrem essa propriedade em faixas bem separadas, de cerca de 3\% a mais de 20\%, o que se mostrou mais informativo do que acrescentar domínios com fração semelhante.
 
