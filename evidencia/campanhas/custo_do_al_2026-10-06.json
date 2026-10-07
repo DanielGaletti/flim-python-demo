@@ -1,0 +1,341 @@
+{
+ "id": "custo_do_al_2026-10-06",
+ "FAIXAS_PARA_O_TEXTO": {
+  "margem_do_clique_perfeito": {
+   "menor": "0.1351",
+   "maior": "0.3089",
+   "celulas": 6
+  },
+  "custo_de_uma_anotacao_mal_posicionada": {
+   "menor": "0.2075",
+   "maior": "0.4954",
+   "celulas": 6
+  },
+  "lacuna_do_argmax_entropia": {
+   "menor": "0.0839",
+   "maior": "0.2667",
+   "celulas": 6
+  }
+ },
+ "tipo": "RECORTE de campanha pre-registrada, nao desfecho novo",
+ "o_que_e": "Recorte de `ganho_marginal` que poe lado a lado o teto amostrado e o que cada criterio captura, mais a lacuna entre os dois. As duas colunas ja existiam na campanha; o que esta aqui de novo e a SUBTRACAO pareada, que e o custo do Active Learning.",
+ "o_que_NAO_autoriza": "Escrever que o Active Learning melhorou o Fbeta em 0,1 a 0,3. O que vale 0,1 a 0,3 e o CLIQUE PERFEITO, medido pelo teto amostrado. O criterio captura parte disso, e a parte nao capturada e o custo.",
+ "limites_do_teto": "O teto escolhe pelo Fbeta da VALIDACAO, entre os 22 candidatos examinados de cerca de 380 superpixels. E teto AMOSTRADO, nao absoluto. As sementes compartilham pool e validacao, entao o IC95% vale para esta validacao sob sorteio das imagens de treino e nao generaliza para o dataset.",
+ "unidade_de_analise": "a semente. Os candidatos de uma mesma semente compartilham encoder e sao correlacionados.",
+ "fonte": "evidencia/execucoes/execucoes.csv, experimento ganho_marginal",
+ "reproduz_com": "python scripts/custo_do_al.py",
+ "RESULTADO": {
+  "brats_FLIM_lm": {
+   "dataset": "BraTS",
+   "decoder": "FLIM_lm",
+   "linhas": [
+    {
+     "braco": "teto amostrado (melhor regiao entre as examinadas)",
+     "n_sementes": 7,
+     "delta_vs_sorteio": "+0.2766",
+     "ic95": "[+0.1396, +0.4136]",
+     "p": "0.0026",
+     "o_que_e": "NAO e estrategia: escolhe pelo Fbeta da validacao. Mede a margem que EXISTE."
+    },
+    {
+     "braco": "argmax entropia (o AL)",
+     "n_sementes": 7,
+     "delta_vs_sorteio": "+0.0884",
+     "ic95": "[-0.0958, +0.2726]",
+     "p": "0.2847",
+     "lacuna_ate_o_teto": "+0.1882",
+     "p_lacuna": "0.1233",
+     "fracao_do_teto_capturada": "32%"
+    },
+    {
+     "braco": "argmax least confidence",
+     "n_sementes": 7,
+     "delta_vs_sorteio": "+0.2320",
+     "ic95": "[+0.1327, +0.3312]",
+     "p": "0.0012",
+     "lacuna_ate_o_teto": "+0.0446",
+     "p_lacuna": "0.1270",
+     "fracao_do_teto_capturada": "84%"
+    },
+    {
+     "braco": "argmax probabilidade",
+     "n_sementes": 2,
+     "delta_vs_sorteio": "-0.1829",
+     "ic95": "[-3.4806, +3.1149]",
+     "p": "0.6092",
+     "lacuna_ate_o_teto": "+0.4103",
+     "p_lacuna": "0.4620",
+     "fracao_do_teto_capturada": "-66%"
+    },
+    {
+     "braco": "pior regiao (o risco, tambem usa o Fbeta da validacao)",
+     "n_sementes": 7,
+     "delta_vs_sorteio": "-0.4954",
+     "ic95": "[-0.6369, -0.3538]",
+     "p": "0.0001",
+     "o_que_e": "o quanto custa UMA anotacao mal posicionada."
+    }
+   ]
+  },
+  "brats_FLIM_pb": {
+   "dataset": "BraTS",
+   "decoder": "FLIM_pb",
+   "linhas": [
+    {
+     "braco": "teto amostrado (melhor regiao entre as examinadas)",
+     "n_sementes": 8,
+     "delta_vs_sorteio": "+0.2384",
+     "ic95": "[+0.1109, +0.3660]",
+     "p": "0.0031",
+     "o_que_e": "NAO e estrategia: escolhe pelo Fbeta da validacao. Mede a margem que EXISTE."
+    },
+    {
+     "braco": "argmax entropia (o AL)",
+     "n_sementes": 8,
+     "delta_vs_sorteio": "-0.0283",
+     "ic95": "[-0.2481, +0.1915]",
+     "p": "0.7698",
+     "lacuna_ate_o_teto": "+0.2667",
+     "p_lacuna": "0.0495",
+     "fracao_do_teto_capturada": "-12%"
+    },
+    {
+     "braco": "argmax least confidence",
+     "n_sementes": 8,
+     "delta_vs_sorteio": "+0.1072",
+     "ic95": "[-0.0473, +0.2617]",
+     "p": "0.1450",
+     "lacuna_ate_o_teto": "+0.1312",
+     "p_lacuna": "0.1885",
+     "fracao_do_teto_capturada": "45%"
+    },
+    {
+     "braco": "argmax probabilidade",
+     "n_sementes": 3,
+     "delta_vs_sorteio": "-0.1994",
+     "ic95": "[-0.7554, +0.3566]",
+     "p": "0.2627",
+     "lacuna_ate_o_teto": "+0.4641",
+     "p_lacuna": "0.1718",
+     "fracao_do_teto_capturada": "-84%"
+    },
+    {
+     "braco": "pior regiao (o risco, tambem usa o Fbeta da validacao)",
+     "n_sementes": 8,
+     "delta_vs_sorteio": "-0.4104",
+     "ic95": "[-0.4976, -0.3233]",
+     "p": "0.0000",
+     "o_que_e": "o quanto custa UMA anotacao mal posicionada."
+    }
+   ]
+  },
+  "conjunctiva_FLIM_lm": {
+   "dataset": "Conjuntivite",
+   "decoder": "FLIM_lm",
+   "linhas": [
+    {
+     "braco": "teto amostrado (melhor regiao entre as examinadas)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.1997",
+     "ic95": "[+0.1275, +0.2719]",
+     "p": "0.0001",
+     "o_que_e": "NAO e estrategia: escolhe pelo Fbeta da validacao. Mede a margem que EXISTE."
+    },
+    {
+     "braco": "argmax entropia (o AL)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.1121",
+     "ic95": "[+0.0455, +0.1787]",
+     "p": "0.0042",
+     "lacuna_ate_o_teto": "+0.0876",
+     "p_lacuna": "0.0038",
+     "fracao_do_teto_capturada": "56%"
+    },
+    {
+     "braco": "argmax least confidence",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.0999",
+     "ic95": "[+0.0348, +0.1649]",
+     "p": "0.0070",
+     "lacuna_ate_o_teto": "+0.0998",
+     "p_lacuna": "0.0051",
+     "fracao_do_teto_capturada": "50%"
+    },
+    {
+     "braco": "argmax probabilidade",
+     "n_sementes": 5,
+     "delta_vs_sorteio": "-0.0004",
+     "ic95": "[-0.1184, +0.1176]",
+     "p": "0.9930",
+     "lacuna_ate_o_teto": "+0.1625",
+     "p_lacuna": "0.0552",
+     "fracao_do_teto_capturada": "-0%"
+    },
+    {
+     "braco": "pior regiao (o risco, tambem usa o Fbeta da validacao)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "-0.4345",
+     "ic95": "[-0.5281, -0.3409]",
+     "p": "0.0000",
+     "o_que_e": "o quanto custa UMA anotacao mal posicionada."
+    }
+   ]
+  },
+  "conjunctiva_FLIM_pb": {
+   "dataset": "Conjuntivite",
+   "decoder": "FLIM_pb",
+   "linhas": [
+    {
+     "braco": "teto amostrado (melhor regiao entre as examinadas)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.1436",
+     "ic95": "[+0.0939, +0.1934]",
+     "p": "0.0001",
+     "o_que_e": "NAO e estrategia: escolhe pelo Fbeta da validacao. Mede a margem que EXISTE."
+    },
+    {
+     "braco": "argmax entropia (o AL)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.0598",
+     "ic95": "[-0.0077, +0.1273]",
+     "p": "0.0762",
+     "lacuna_ate_o_teto": "+0.0839",
+     "p_lacuna": "0.0117",
+     "fracao_do_teto_capturada": "42%"
+    },
+    {
+     "braco": "argmax least confidence",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "-0.0025",
+     "ic95": "[-0.0682, +0.0632]",
+     "p": "0.9330",
+     "lacuna_ate_o_teto": "+0.1461",
+     "p_lacuna": "0.0052",
+     "fracao_do_teto_capturada": "-2%"
+    },
+    {
+     "braco": "argmax probabilidade",
+     "n_sementes": 5,
+     "delta_vs_sorteio": "-0.0339",
+     "ic95": "[-0.0994, +0.0316]",
+     "p": "0.2239",
+     "lacuna_ate_o_teto": "+0.1467",
+     "p_lacuna": "0.0058",
+     "fracao_do_teto_capturada": "-24%"
+    },
+    {
+     "braco": "pior regiao (o risco, tambem usa o Fbeta da validacao)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "-0.2341",
+     "ic95": "[-0.3319, -0.1364]",
+     "p": "0.0004",
+     "o_que_e": "o quanto custa UMA anotacao mal posicionada."
+    }
+   ]
+  },
+  "schisto_FLIM_lm": {
+   "dataset": "Parasitas",
+   "decoder": "FLIM_lm",
+   "linhas": [
+    {
+     "braco": "teto amostrado (melhor regiao entre as examinadas)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.3089",
+     "ic95": "[+0.2211, +0.3966]",
+     "p": "0.0000",
+     "o_que_e": "NAO e estrategia: escolhe pelo Fbeta da validacao. Mede a margem que EXISTE."
+    },
+    {
+     "braco": "argmax entropia (o AL)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.1741",
+     "ic95": "[+0.0415, +0.3067]",
+     "p": "0.0157",
+     "lacuna_ate_o_teto": "+0.1347",
+     "p_lacuna": "0.0230",
+     "fracao_do_teto_capturada": "56%"
+    },
+    {
+     "braco": "argmax least confidence",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.1976",
+     "ic95": "[+0.0687, +0.3264]",
+     "p": "0.0071",
+     "lacuna_ate_o_teto": "+0.1113",
+     "p_lacuna": "0.0378",
+     "fracao_do_teto_capturada": "64%"
+    },
+    {
+     "braco": "argmax probabilidade",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.1619",
+     "ic95": "[+0.0315, +0.2923]",
+     "p": "0.0204",
+     "lacuna_ate_o_teto": "+0.1470",
+     "p_lacuna": "0.0146",
+     "fracao_do_teto_capturada": "52%"
+    },
+    {
+     "braco": "pior regiao (o risco, tambem usa o Fbeta da validacao)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "-0.2592",
+     "ic95": "[-0.3213, -0.1970]",
+     "p": "0.0000",
+     "o_que_e": "o quanto custa UMA anotacao mal posicionada."
+    }
+   ]
+  },
+  "schisto_FLIM_pb": {
+   "dataset": "Parasitas",
+   "decoder": "FLIM_pb",
+   "linhas": [
+    {
+     "braco": "teto amostrado (melhor regiao entre as examinadas)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.1351",
+     "ic95": "[+0.1127, +0.1574]",
+     "p": "0.0000",
+     "o_que_e": "NAO e estrategia: escolhe pelo Fbeta da validacao. Mede a margem que EXISTE."
+    },
+    {
+     "braco": "argmax entropia (o AL)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.0096",
+     "ic95": "[-0.0515, +0.0706]",
+     "p": "0.7313",
+     "lacuna_ate_o_teto": "+0.1255",
+     "p_lacuna": "0.0006",
+     "fracao_do_teto_capturada": "7%"
+    },
+    {
+     "braco": "argmax least confidence",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.0165",
+     "ic95": "[-0.0387, +0.0717]",
+     "p": "0.5164",
+     "lacuna_ate_o_teto": "+0.1186",
+     "p_lacuna": "0.0006",
+     "fracao_do_teto_capturada": "12%"
+    },
+    {
+     "braco": "argmax probabilidade",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "+0.0195",
+     "ic95": "[-0.0232, +0.0622]",
+     "p": "0.3286",
+     "lacuna_ate_o_teto": "+0.1156",
+     "p_lacuna": "0.0001",
+     "fracao_do_teto_capturada": "14%"
+    },
+    {
+     "braco": "pior regiao (o risco, tambem usa o Fbeta da validacao)",
+     "n_sementes": 10,
+     "delta_vs_sorteio": "-0.2075",
+     "ic95": "[-0.2468, -0.1682]",
+     "p": "0.0000",
+     "o_que_e": "o quanto custa UMA anotacao mal posicionada."
+    }
+   ]
+  }
+ }
+}
