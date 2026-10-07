@@ -42,12 +42,20 @@ CONHECIDOS = {
     "0.300": "beta ao quadrado da metrica Fbeta",
     "0.500": "limiar de probabilidade",
     # contagens e proporcoes derivadas que o texto explica no lugar
-    "0.0034": "desvio maximo entre execucoes, seccao de reprodutibilidade",
-    "0.134": "divergencia de pesos entre execucoes, mesma seccao",
-    "0.024": "Fbeta mediano antes da correcao do filtro de area",
-    "0.594": "Fbeta mediano depois da correcao",
-    "0.126": "valor da anotacao de borda, limite inferior",
-    "0.166": "valor da anotacao de borda, limite superior",
+    "0.0034": "desvio maximo entre execucoes; adendo_ganho_marginal_2026-10-01",
+    # Os tres abaixo ANTECEDEM o registro de execucoes e nao podem ser
+    # recomputados a partir dele. O proprio texto declara essa limitacao na
+    # subsecao de reprodutibilidade; a excecao aqui existe para que a checagem
+    # nao os acuse a cada rodada, e NAO para dispensar a declaracao.
+    "0.134": "divergencia de pesos entre execucoes; anterior ao registro",
+    "0.024": "Fbeta mediano antes da correcao do filtro de area; idem",
+    "0.594": "Fbeta mediano depois da correcao; idem",
+    # NAO reintroduzir 0.126 e 0.166 aqui. Eles constavam do texto como "o
+    # valor da anotacao de borda" e NAO vinham da tabela citada: a coluna
+    # `aleat-artigo` de artigo_vs_regiao vai de 0,075 a 0,182. Eram numero
+    # defasado, e estavam nesta lista por engano, isentados em vez de
+    # verificados. Uma excecao sem origem conferida transforma a checagem em
+    # carimbo.
     "0.724": "exemplo de regressao no laco interativo",
     "0.702": "idem, valor final",
     "0.1034": "soma 0,0772+0,0262, conferida contra 0,1033 medido",

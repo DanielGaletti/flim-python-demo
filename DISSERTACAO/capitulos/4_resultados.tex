@@ -116,9 +116,9 @@ O mesmo experimento nos outros dois conjuntos, nas Tabelas~\ref{tab_gm_brats} e 
 
 \input{tabelas/ganho_marginal_conjunctiva_FLIM_lm_funcional.nota.tex}
 
-A linha de imagem nova inteira merece comentário, porque ela responde a uma objeção natural. Poderia alguém argumentar que, em vez de escolher melhor onde anotar numa imagem já escolhida, bastaria anotar uma imagem a mais. A linha mede exatamente isso, e com orçamento \emph{maior} que o das demais: ela rende menos que a melhor região. O ganho não está em anotar mais, está em anotar no lugar certo, e é esse contraste que justifica mudar a granularidade da pergunta de imagem para região.
-
 A dispersão entre candidatos é grande. A melhor região examinada supera a região sorteada por margens entre 0,1351 e 0,3089 de $F_\beta$, com significância nas seis células formadas por conjunto de dados e decodificador, todas com valor p igual ou inferior a 0,0031. A pior região, por sua vez, fica entre 0,2075 e 0,4954 abaixo do sorteio, também nas seis células.
+
+A linha de imagem nova inteira merece comentário, porque responde a uma objeção natural. Poderia alguém argumentar que, em vez de escolher melhor onde anotar numa imagem já escolhida, bastaria anotar uma imagem a mais. A linha mede exatamente isso, e com orçamento \emph{maior} que o das demais: ela rende menos que a melhor região. O ganho não está em anotar mais, está em anotar no lugar certo, e é esse contraste que justifica mudar a granularidade da pergunta de imagem para região.
 
 O segundo número merece tanta atenção quanto o primeiro. O risco é da mesma ordem de grandeza do prêmio, o que significa que, no \ac{FLIM}, \textbf{anotar mais não é monotonicamente bom}. Em uma rede treinada por retropropagação, acrescentar um exemplo rotulado correto raramente piora o modelo; aqui, uma única anotação adicional mal posicionada pode custar meio ponto de $F_\beta$. É essa assimetria que dá sentido à pergunta sobre onde anotar: se toda anotação ajudasse, bastaria anotar mais.
 
@@ -162,7 +162,11 @@ Note o que a formulação \emph{não} diz. Ela não diz que o \ac{AL} melhora o 
 
 A resposta está em medir o comportamento dos critérios, e não apenas o seu desempenho. Como escolher uma região exige apenas pontuar e ordenar, essa medição dispensa reestimar o codificador para cada candidato e pode ser feita sobre dez repetições nos três conjuntos de dados a custo baixo.
 
-A fração de objeto de uma região descreve onde ela está: valor próximo de zero indica fundo puro, valor próximo de um indica interior do objeto, e valores intermediários indicam que a região atravessa a fronteira. Essa distinção importa porque a comparação com os marcadores reais dos especialistas, apresentada na Tabela \ref{tab_artigo_regiao}, mede que a anotação de borda vale entre 0,126 e 0,166 de $F_\beta$ sobre a anotação em qualquer outro ponto interno ao objeto.
+A fração de objeto de uma região descreve onde ela está: valor próximo de zero indica fundo puro, valor próximo de um indica interior do objeto, e valores intermediários indicam que a região atravessa a fronteira. Essa distinção importa por causa do que a comparação com os marcadores reais dos especialistas, na Tabela \ref{tab_artigo_regiao}, mede.
+
+Nessa tabela, a coluna que interessa é a terceira diferença, \emph{aleatório menos artigo}. Ela compara a anotação que os especialistas efetivamente fizeram, que recai próxima ao contorno do objeto, com cliques realocados ao acaso dentro do objeto, mantendo imagens, número de cliques e traço de fundo idênticos. Tirar o clique da posição do especialista custa entre 0,075 e 0,182 de $F_\beta$, nas sete linhas, com significância em todas.
+
+Convém dizer com precisão o que essa comparação estabelece e o que não estabelece. Ela mede o custo de \emph{afastar} o clique da posição escolhida pelo especialista. Não é um controle que isole borda de interior, porque os cliques sorteados dentro do objeto incluem posições próximas à fronteira, e porque a posição do especialista não é definida como sendo a borda, e sim observada como próxima dela. O contraste entre borda e interior é, portanto, hipótese compatível com a medição, e não medição direta. Essa limitação é retomada no Capítulo~\ref{cap_5}.
 
 \begin{table}[htb]
 \centering
@@ -258,7 +262,9 @@ O eixo da segmentação interativa é diferente do $F_\beta$ a orçamento fixo. 
 
 \input{tabelas/noc_noc.nota.tex}
 
-O comportamento mais informativo dessa avaliação não é o valor médio, e sim a ocorrência de regressão. Em várias execuções o modelo piora ao longo da sequência de cliques: em um caso representativo, doze interações levaram a qualidade de 0,724 para 0,702. O especialista anota repetidamente e o modelo não avança, porque cada anotação nova reestima o banco de filtros e desfaz parte do que havia sido construído.
+O comportamento mais informativo dessa avaliação não é o valor médio, e sim a ocorrência de regressão. Em várias execuções o modelo piora ao longo da sequência de cliques. O caso que motivou a formulação da hipótese, registrado no pré-registro da campanha antes da execução, é a imagem 000296: com plasticidade máxima, a \ac{IoU} foi de 0,724 para 0,702 \emph{depois} de seis cliques, enquanto com plasticidade intermediária chegou a 0,759 em quatro. O especialista anota repetidamente e o modelo não avança, porque cada anotação nova reestima o banco de filtros e desfaz parte do que havia sido construído.
+
+Esse caso é observação de piloto sobre uma imagem, e foi usado para \emph{formular} a hipótese, não para sustentá-la. O que a sustenta, ou deixa de sustentar, é o teste declarado junto com ela, cujo resultado é o nulo relatado acima.
 
 A proteção do banco não reduziu o número de cliques de forma significativa, e o confirmatório em imagens inéditas falseou tanto a hipótese quanto o mecanismo proposto para ela. A taxa de sucesso é reportada ao lado da contagem de cliques porque imagens que não atingem o alvo entram com o teto, e um braço poderia exibir contagem baixa simplesmente por desistir antes.
 
@@ -330,6 +336,8 @@ O que eles autorizam é apenas uma observação de contexto: no conjunto de para
 Três resultados não dizem respeito ao desempenho dos métodos, mas à validade das medições, e por isso são relatados separadamente.
 
 \subsection{Reprodutibilidade do treinamento}
+
+Os dois resultados desta subseção e da seguinte \textbf{antecedem a adoção do registro de execuções} descrito no Capítulo \ref{cap_3}, e por isso têm proveniência mais fraca que a das demais seções deste capítulo: eles não podem ser recomputados a partir do registro, embora a correção que motivaram esteja incorporada ao código e verificada por teste automatizado. A Tabela \ref{tab_proveniencia} quantifica essa distinção para o conjunto do trabalho.
 
 O treinamento do codificador não era reprodutível entre execuções. Duas chamadas idênticas, com os mesmos arquivos de marcadores e no mesmo processo, produziam pesos diferentes quando o número de candidatos a filtro ultrapassava o limite da arquitetura: a diferença máxima observada nos pesos da segunda camada foi de 0,134. Abaixo desse limite o procedimento devolve os próprios candidatos sem agrupá-los, e por isso é estável; acima dele o agrupamento precisa escolher entre muitos candidatos, e a ordem de redução das somas em bibliotecas de álgebra linear com múltiplas linhas de execução altera o resultado no último dígito, o que basta para o agrupamento convergir para outra configuração. O efeito se amplifica entre camadas, já que cada camada recebe como entrada as ativações da anterior.
 
