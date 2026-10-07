@@ -1,0 +1,7 @@
+conjunto,decodificador,n,teto amostrado,o critério,lacuna,p da lacuna,captura
+Parasitas,FLIM_lm,10,0.3089,0.1741,0.1347,0.0230,56\%
+Parasitas,FLIM_pb,10,0.1351,0.0096,0.1255,0.0006,7\%
+BraTS,FLIM_lm,7,0.2766,0.0884,0.1882,0.1233,32\%
+BraTS,FLIM_pb,8,0.2384,-0.0283,0.2667,0.0495,-12\%
+Conjuntivite,FLIM_lm,10,0.1997,0.1121,0.0876,0.0038,56\%
+Conjuntivite,FLIM_pb,10,0.1436,0.0598,0.0839,0.0117,42\%

@@ -6,13 +6,35 @@ Todos os números vêm do registro de execuções descrito no Capítulo \ref{cap
 
 \section{Reprodução do trabalho de referência}
 
-A reprodução do arranjo descrito por \cite{soares2026flim} confirma o comportamento central relatado pelos autores: o Fβ cresce de forma monotônica à medida que imagens são acrescentadas ao conjunto de treino e satura entre três e quatro imagens, atingindo valores próximos aos publicados para o codificador.
+A reprodução do arranjo descrito por \cite{soares2026flim} confirma o comportamento central relatado pelos autores: o $F_\beta$ cresce de forma monotônica à medida que imagens são acrescentadas ao conjunto de treino e satura entre três e quatro imagens, atingindo valores próximos aos publicados para o codificador.
 
 Duas diferenças de implementação precisam ser declaradas antes de qualquer comparação numérica. A primeira é que a avaliação usa limiarização de Otsu seguida de filtro de área, e não o delineamento por árvores dinâmicas empregado no trabalho original, cujo executável é um binário compilado para Linux que não roda no ambiente usado aqui. A segunda é que a seleção de imagens do Algoritmo 1 do trabalho de referência exige o ground truth de todo o conjunto disponível para escolher as poucas imagens que serão anotadas, o que os próprios autores declaram ao descrever a abordagem como supervisionada.
 
 Essa segunda diferença não é um detalhe de implementação, e sim o ponto de partida desta dissertação. Se a escolha das imagens depende de conhecer a resposta em todas elas, o procedimento não é aplicável na situação que motiva o \ac{FLIM}, que é justamente a ausência de anotação. A pergunta que organiza os experimentos seguintes é quanto do benefício dessa escolha se recupera com critérios que não usam ground truth algum.
 
-A reimplementação do Algoritmo 1 revelou ainda duas propriedades não discutidas no trabalho original. O critério de selecionar a imagem de pior Fβ tende a escolher imagens insegmentáveis, e não imagens informativas: as imagens com Fβ igual a zero são aquelas cujas componentes previstas caem fora da faixa aceita pelo filtro de área, de modo que o algoritmo prioriza casos em que nenhuma anotação ajudaria. Além disso, sem uma lista de imagens rejeitadas, a imagem removida pelo retrocesso volta a ser a de menor Fβ na iteração seguinte, e o procedimento pode entrar em ciclo.
+A Figura~\ref{fig_curva} e a Tabela~\ref{tab_curva} mostram o comportamento da curva de orçamento. A saturação entre três e quatro imagens é o que responde à pergunta de por que o trabalho de referência usa esse número: o algoritmo para quando acrescentar imagem deixa de melhorar o $F_\beta$.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.86\linewidth]{curva_orcamento.png}
+\caption[Qualidade em função do número de imagens anotadas]{Qualidade em função do número de imagens anotadas, com a faixa de ruído da reexecução. A curva satura entre três e quatro imagens, e o ganho posterior cabe dentro do intervalo de confiança.}
+\label{fig_curva}
+\end{figure}
+
+\begin{table}[htb]
+\centering
+\caption{Qualidade por número de imagens anotadas.}
+\label{tab_curva}
+\input{tabelas/curva_orcamento.tex}
+\end{table}
+
+\input{tabelas/curva_orcamento.nota.tex}
+
+Uma ressalva importante acompanha essa leitura, e ela diz respeito ao que a curva mistura. A arquitetura pede duzentos núcleos por camada, mas o agrupamento só produz tantos quantos os trechos sob os marcadores permitem. Com uma imagem anotada o codificador sai com 54, 51, 48 e 48 núcleos nas quatro camadas; com oito, sai com duzentos em todas. Com pouca anotação a rede não é apenas menos treinada, \textbf{ela é menor}. Parte do ganho que a curva mostra nos primeiros pontos é, portanto, aumento de capacidade, e não aumento de supervisão, e separar as duas contribuições exigiria fixar o tamanho do codificador ao longo da curva.
+
+Nas cinco últimas linhas da Tabela~\ref{tab_curva}, referentes a doze imagens ou mais, a coluna de sementes distintas indica zero. Isso significa que o registro não guardou semente distinta para essas execuções, de modo que três execuções de uma mesma semente não constituem três repetições, e o desvio nulo é artefato disso, não estabilidade.
+
+A reimplementação do Algoritmo 1 revelou ainda duas propriedades não discutidas no trabalho original. O critério de selecionar a imagem de pior $F_\beta$ tende a escolher imagens insegmentáveis, e não imagens informativas: as imagens com $F_\beta$ igual a zero são aquelas cujas componentes previstas caem fora da faixa aceita pelo filtro de área, de modo que o algoritmo prioriza casos em que nenhuma anotação ajudaria. Além disso, sem uma lista de imagens rejeitadas, a imagem removida pelo retrocesso volta a ser a de menor $F_\beta$ na iteração seguinte, e o procedimento pode entrar em ciclo.
 
 \section{Seleção de imagens}
 
@@ -33,32 +55,110 @@ Nenhum critério apresenta superioridade sobre o sorteio que sobreviva à corre�
 
 É importante enunciar esse resultado com precisão. O que foi observado é ausência de evidência de superioridade nas condições avaliadas, e não demonstração de equivalência. Os intervalos de confiança são compatíveis com efeitos pequenos em qualquer direção, e o número de repetições limita o tamanho de efeito detectável.
 
+A Tabela~\ref{tab_comparacao_criterios} apresenta o conjunto completo de técnicas que chegaram a rodar, incluindo as que perderam do sorteio. Ela é deliberadamente exaustiva: apresentar apenas as técnicas que se saíram melhor seria seleção de resultado, e a leitura correta deste capítulo depende de ver que o fenômeno é geral e não um acidente de uma implementação.
+
+\begin{table}[htb]
+\centering
+\caption{Todas as técnicas avaliadas, contra o sorteio.}
+\label{tab_comparacao_criterios}
+\input{tabelas/comparacao_criterios.tex}
+\end{table}
+
+\input{tabelas/comparacao_criterios.nota.tex}
+
+Linhas com células vazias merecem explicação, porque a ausência ali não é descuido. O braço do trabalho de referência usa os trinta e um conjuntos de marcadores \emph{reais} dos especialistas, enquanto os braços de \ac{AL} sobre o conjunto completo usam marcadores sintéticos, pela razão simples de que marcador real só existe para essas trinta e uma imagens. A origem do marcador entra no pareamento justamente para impedir que esse par se forme: se formasse, a diferença mediria quem desenhou o traço e seria apresentada como efeito da seleção. Onde a coluna aparece vazia, a comparação é \textbf{impossível} com os dados existentes.
+
+A Tabela~\ref{tab_custo} traz o custo computacional medido, que é parte do argumento a favor do \ac{FLIM} e precisa ser registrado ao lado da qualidade. Estimar os núcleos por agrupamento leva de 0,8 segundo com uma imagem a 48,1 segundos com oito. O tempo de avaliação cresce com o orçamento pela razão já discutida: o codificador cresce junto. Todas as linhas vêm de uma única campanha com uma semente, de modo que servem para ordem de grandeza e não para comparar critérios entre si.
+
+\begin{table}[htb]
+\centering
+\caption{Qualidade por critério e orçamento nos sete decodificadores, com custo.}
+\label{tab_custo}
+\input{tabelas/k_por_modelo.tex}
+\end{table}
+
+\input{tabelas/k_por_modelo.nota.tex}
+
 \section{Seleção de região: a margem existe}
 
 A ausência de ganho na seleção de imagens admite duas leituras opostas. Pode ser que a escolha não importe, caso em que a técnica seria inaplicável por natureza. Ou pode ser que a escolha importe e os critérios não a capturem, caso em que o problema permanece aberto. Distinguir as duas exige medir o teto, e não apenas o desempenho.
 
-O experimento de ganho marginal fixa a partição, as imagens de treino, os marcadores iniciais, o codificador de partida e o conjunto de validação, e varia uma única coisa: qual região recebe os aproximadamente trezentos pixels seguintes de anotação. Para cada região candidata o codificador é reestimado e o Fβ é medido novamente, de modo que a diferença entre candidatos isola o efeito da posição da anotação.
+O experimento de ganho marginal fixa a partição, as imagens de treino, os marcadores iniciais, o codificador de partida e o conjunto de validação, e varia uma única coisa: qual região recebe os aproximadamente trezentos pixels seguintes de anotação. Para cada região candidata o codificador é reestimado e o $F_\beta$ é medido novamente, de modo que a diferença entre candidatos isola o efeito da posição da anotação.
 
 \begin{table}[htb]
 \centering
-\caption{Ganho marginal de uma anotação adicional, por tipo de região escolhida.}
+\caption{Ganho marginal de uma anotação adicional no conjunto de parasitas.}
 \label{tab_ganho_marginal}
 \input{tabelas/ganho_marginal_schisto_FLIM_lm_funcional.tex}
 \end{table}
 
 \input{tabelas/ganho_marginal_schisto_FLIM_lm_funcional.nota.tex}
 
-A dispersão entre candidatos é grande. A melhor região examinada supera a região sorteada por margens entre 0,133 e 0,303 de Fβ, com significância nas seis células formadas por conjunto de dados e decodificador. A pior região, por sua vez, fica entre 0,199 e 0,502 abaixo do sorteio, também nas seis células. Uma única anotação adicional, mal posicionada, chega a levar um codificador de Fβ 0,78 para zero.
+O mesmo experimento nos outros dois conjuntos, nas Tabelas~\ref{tab_gm_brats} e \ref{tab_gm_conj}, reproduz o padrão com magnitudes diferentes, o que é o que permite afirmar que a margem não é particularidade de um domínio.
 
-Dois esclarecimentos são necessários. A linha identificada como melhor região escolhe o candidato pelo Fβ de validação e portanto não constitui uma estratégia aplicável: ela mede o que existe para ser capturado, e não um método. E o valor medido é um máximo sobre os candidatos examinados, não um teto absoluto, já que apenas parte dos superpixels de cada imagem foi avaliada.
+\begin{table}[htb]
+\centering
+\caption{Ganho marginal de uma anotação adicional no BraTS.}
+\label{tab_gm_brats}
+\input{tabelas/ganho_marginal_brats_FLIM_lm_funcional.tex}
+\end{table}
 
-Ainda assim, o resultado responde à ambiguidade. Existe margem considerável na escolha da região, e ela é da ordem de grandeza que separa um modelo mediano de um modelo bom. A pergunta passa a ser por que os critérios não a alcançam.
+\begin{table}[htb]
+\centering
+\caption{Ganho marginal de uma anotação adicional na conjuntivite.}
+\label{tab_gm_conj}
+\input{tabelas/ganho_marginal_conjunctiva_FLIM_lm_funcional.tex}
+\end{table}
+
+\input{tabelas/ganho_marginal_conjunctiva_FLIM_lm_funcional.nota.tex}
+
+A linha de imagem nova inteira merece comentário, porque ela responde a uma objeção natural. Poderia alguém argumentar que, em vez de escolher melhor onde anotar numa imagem já escolhida, bastaria anotar uma imagem a mais. A linha mede exatamente isso, e com orçamento \emph{maior} que o das demais: ela rende menos que a melhor região. O ganho não está em anotar mais, está em anotar no lugar certo, e é esse contraste que justifica mudar a granularidade da pergunta de imagem para região.
+
+A dispersão entre candidatos é grande. A melhor região examinada supera a região sorteada por margens entre 0,1351 e 0,3089 de $F_\beta$, com significância nas seis células formadas por conjunto de dados e decodificador, todas com valor p igual ou inferior a 0,0031. A pior região, por sua vez, fica entre 0,2075 e 0,4954 abaixo do sorteio, também nas seis células.
+
+O segundo número merece tanta atenção quanto o primeiro. O risco é da mesma ordem de grandeza do prêmio, o que significa que, no \ac{FLIM}, \textbf{anotar mais não é monotonicamente bom}. Em uma rede treinada por retropropagação, acrescentar um exemplo rotulado correto raramente piora o modelo; aqui, uma única anotação adicional mal posicionada pode custar meio ponto de $F_\beta$. É essa assimetria que dá sentido à pergunta sobre onde anotar: se toda anotação ajudasse, bastaria anotar mais.
+
+Dois esclarecimentos são necessários. A linha identificada como melhor região escolhe o candidato pelo $F_\beta$ de validação e portanto não constitui uma estratégia aplicável: ela mede o que existe para ser capturado, e não um método. E o valor medido é um máximo sobre os candidatos examinados, não um teto absoluto, já que apenas parte dos superpixels de cada imagem foi avaliada.
+
+Ainda assim, o resultado responde à ambiguidade. Existe margem considerável na escolha da região, e ela é da ordem de grandeza que separa um modelo mediano de um modelo bom. A pergunta passa a ser quanto dessa margem os critérios alcançam.
+
+\section{O custo do Active Learning}
+\label{sec_custo_al}
+
+Esta seção reúne as duas metades do resultado central. De um lado, quanto vale o clique no lugar certo, medido pelo teto amostrado. De outro, quanto o critério de \ac{AL} efetivamente entrega quando escolhe sozinho, sem olhar resultado nenhum. A diferença entre as duas é o que se deixa na mesa, e é ela que esta dissertação chama de \emph{custo do Active Learning}.
+
+As duas colunas vêm da mesma campanha, da mesma semente, com a mesma base e a mesma validação, de modo que a subtração é pareada e não mistura condições.
+
+\begin{table}[htb]
+\centering
+\caption{A margem disponível, o que o critério captura, e a lacuna entre as duas.}
+\label{tab_custo_al}
+\input{tabelas/custo_do_al.tex}
+\end{table}
+
+\input{tabelas/custo_do_al.nota.tex}
+
+Três leituras, em ordem de importância.
+
+\textbf{A margem é grande e consistente.} De 0,1351 a 0,3089 de $F_\beta$, positiva nas seis células, com significância em todas. Esse é o valor do clique no lugar certo, e é a razão de a pergunta sobre posição de anotação valer a pena. Para dar escala: no mesmo conjunto de dados, a diferença entre o melhor e o pior dos sete decodificadores avaliados é da ordem de 0,2, de modo que escolher onde anotar pesa tanto quanto escolher a arquitetura do decodificador.
+
+\textbf{O critério captura parte dela, e a parte não capturada é significativa.} A lacuna vai de 0,0839 a 0,2667 e atinge significância em quatro das seis células. Em termos de fração capturada, o critério recupera cerca de metade da margem nos casos favoráveis e praticamente nada nos desfavoráveis. A coluna de captura é apresentada como ilustração e não como estatística, porque é razão entre duas médias e fica instável quando o denominador é pequeno; quem tem teste é a lacuna.
+
+\textbf{Há um caso em que o critério vai bem, e ele precisa ser dito.} No BraTS com o decodificador \texttt{FLIM\_lm}, o \textit{least confidence} entrega 0,2320 contra um teto de 0,2766, isto é, captura 84\% da margem, com valor p de 0,0012. Omitir esse caso tornaria a conclusão mais limpa e menos verdadeira. A leitura correta não é que os critérios de incerteza sejam inúteis, e sim que o seu desempenho \textbf{depende do decodificador e do domínio}. O mesmo escore que ordena bem as regiões no \texttt{FLIM\_lm} do conjunto de parasitas, com correlação de 0,427 e valor p de 0,0001, não as ordena no \texttt{FLIM\_pb}, onde a correlação é de $-0{,}045$ com valor p de 0,6400.
+
+A formulação que os números autorizam é, portanto:
+
+\begin{quote}
+Sob orçamento de anotação fixo, existe uma margem de 0,1351 a 0,3089 de $F_\beta$ entre a melhor região examinada e uma região sorteada. Os critérios de \ac{AL} capturam parte dela, e a parte não capturada, de 0,0839 a 0,2667, é o custo de o critério escolher o lugar errado.
+\end{quote}
+
+Note o que a formulação \emph{não} diz. Ela não diz que o \ac{AL} melhora o $F_\beta$ em 0,1 a 0,3. Os 0,1 a 0,3 são o teto, medido com acesso ao resultado da validação, e nenhum método os entrega. Confundir as duas coisas transformaria o resultado mais sólido do trabalho em uma afirmação falsa.
 
 \section{Para onde os critérios apontam}
 
 A resposta está em medir o comportamento dos critérios, e não apenas o seu desempenho. Como escolher uma região exige apenas pontuar e ordenar, essa medição dispensa reestimar o codificador para cada candidato e pode ser feita sobre dez repetições nos três conjuntos de dados a custo baixo.
 
-A fração de objeto de uma região descreve onde ela está: valor próximo de zero indica fundo puro, valor próximo de um indica interior do objeto, e valores intermediários indicam que a região atravessa a fronteira. Essa distinção importa porque a comparação com os marcadores reais dos especialistas, apresentada na Tabela \ref{tab_artigo_regiao}, mede que a anotação de borda vale entre 0,126 e 0,166 de Fβ sobre a anotação em qualquer outro ponto interno ao objeto.
+A fração de objeto de uma região descreve onde ela está: valor próximo de zero indica fundo puro, valor próximo de um indica interior do objeto, e valores intermediários indicam que a região atravessa a fronteira. Essa distinção importa porque a comparação com os marcadores reais dos especialistas, apresentada na Tabela \ref{tab_artigo_regiao}, mede que a anotação de borda vale entre 0,126 e 0,166 de $F_\beta$ sobre a anotação em qualquer outro ponto interno ao objeto.
 
 \begin{table}[htb]
 \centering
@@ -77,11 +177,63 @@ A segunda é que eles erram a geometria. As escolhas atravessam a fronteira em 0
 
 A terceira é a mais consequente: regiões que atravessam a fronteira representam apenas 2\% a 12\% do conjunto de candidatos. A anotação valiosa quase não está disponível para ser escolhida. Isso não é uma falha dos critérios, e sim do procedimento que gera a lista. O SLIC é construído para que as fronteiras dos superpixels coincidam com as bordas presentes na imagem, de modo que seus segmentos tendem a ficar inteiramente dentro ou inteiramente fora do objeto. A propriedade que faz dele um bom algoritmo de superpixels é a mesma que o torna inadequado como gerador de candidatos para anotação de borda.
 
+A Figura~\ref{fig_gargalo} torna visível a terceira constatação, que é a mais consequente das três. Os superpixels do \ac{SLIC} tendem a ficar inteiramente de um lado da fronteira; os discos centrados no contorno a atravessam por construção.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{gerador_candidatos.png}
+\caption[O gargalo na geração de candidatos]{Os dois geradores de candidatos sobre a mesma imagem. Em vermelho, os candidatos que atravessam a fronteira verdadeira do objeto. O painel da direita usa predição ideal e ilustra a geometria do gerador proposto; com a predição real do codificador os discos caem no interior, e o ganho medido ocorre apesar disso.}
+\label{fig_gargalo}
+\end{figure}
+
+A Tabela~\ref{tab_mecanismo} completa o quadro medindo o que \emph{prevê} o ganho de anotar uma região. A entropia da região correlaciona com o ganho no decodificador \texttt{FLIM\_lm} do conjunto de parasitas, com coeficiente de 0,427 e valor p de 0,0001, mas não no \texttt{FLIM\_pb}, onde o coeficiente é de $-0{,}045$ com valor p de 0,6400. O escore não é inútil; ele é dependente do decodificador.
+
+\begin{table}[htb]
+\centering
+\caption{O que prevê o ganho de anotar uma região.}
+\label{tab_mecanismo}
+\input{tabelas/ganho_mecanismo_schisto_FLIM_lm_funcional.tex}
+\end{table}
+
+\input{tabelas/ganho_mecanismo_schisto_FLIM_lm_funcional.nota.tex}
+
+A linha de variação do número de núcleos merece atenção separada. Ela tem correlação \emph{negativa} com o ganho, de $-0{,}299$ com valor p de 0,0005, isto é, acrescentar mais núcleos ao codificador tende a piorar o resultado. Essa linha mede capacidade, não posição, e foi ela que serviu de base ao mecanismo declarado antes da execução da intervenção descrita adiante. Correlação de núcleos com ganho não é, contudo, demonstração de causalidade, e o texto não a trata como tal.
+
 Os critérios de diversidade, avaliados no nível de região pela primeira vez neste trabalho, comportam-se de forma ainda menos favorável. CoreSet localiza o objeto apenas no conjunto de conjuntivite, onde os objetos são grandes, e nos demais seleciona fundo em todas as escolhas, sem qualquer enriquecimento sobre a taxa de base. O medoide nunca localiza o objeto. A explicação é o desequilíbrio do conjunto de candidatos: a diversidade é calculada sobre a distribuição de aparência das regiões, e quando o objeto ocupa cerca de 3\% da imagem ele não participa dessa distribuição de forma relevante. Nos dois conjuntos de objetos pequenos, CoreSet e medoide, que são critérios opostos, produzem a mesma resposta.
+
+\section{Posição ou composição? O controle que separa as duas}
+
+Uma objeção precisa ser respondida antes de atribuir o efeito à posição da anotação. Escolher uma região incerta não escolhe apenas um \emph{lugar}: escolhe junto uma \emph{composição} de classes. Regiões incertas concentram muito mais objeto do que a média, cerca de 73\% contra 16\%, proporção medida antes da execução. Se o ganho viesse de anotar mais objeto, e não de anotar na posição certa, a conclusão do capítulo mudaria.
+
+O experimento que separa as duas coisas fixa o orçamento em pixels anotados por imagem, usa as mesmas imagens em todos os braços, e acrescenta um braço de controle: anotação sorteada, mas com a \emph{mesma proporção} entre objeto e fundo que a seleção por incerteza produz. Se o ganho fosse de composição, esse braço o reproduziria.
+
+\begin{table}[htb]
+\centering
+\caption{Onde anotar, com orçamento fixo em pixels por imagem.}
+\label{tab_onde_marcar}
+\input{tabelas/onde_marcar.tex}
+\end{table}
+
+\input{tabelas/onde_marcar.nota.tex}
+
+O resultado é desfavorável à seleção por incerteza em todas as seis células, com diferenças contra o braço uniforme entre $-0{,}011$ e $-0{,}283$. E o braço balanceado, que isola a composição, não reproduz o comportamento do braço de incerteza: o que separa os braços é o balanceamento de classe, e não a posição escolhida pelo escore. O braço de borda, que consulta o gabarito e portanto é teto e não método, fica dentro do ruído do uniforme.
+
+A leitura conjunta com a Seção~\ref{sec_custo_al} é a seguinte. Existe margem na posição, e ela é grande. Mas o escore de incerteza, aplicado sobre superpixels, não a captura e ainda introduz um viés de composição que atrapalha. É o terceiro elo do argumento que leva ao gerador.
+
+A Tabela~\ref{tab_regiao_vs_imagem} fecha a comparação por decodificador, e serve de lembrete de que os sete decodificadores de uma mesma célula compartilham o codificador: eles não são observações independentes entre si, e os valores p das suas linhas não se somam.
+
+\begin{table}[htb]
+\centering
+\caption{Seleção por região contra o controle, por decodificador.}
+\label{tab_regiao_vs_imagem}
+\input{tabelas/regiao_vs_imagem.tex}
+\end{table}
+
+\input{tabelas/regiao_vs_imagem.nota.tex}
 
 \section{Aprendizado contínuo sem retropropagação}
 
-O esquecimento catastrófico, tal como descrito na Seção \ref{sec_cl}, é atribuído ao deslocamento dos pesos durante o ajuste por gradiente, e os métodos que o combatem atuam sobre esse deslocamento. Como o \ac{FLIM} não possui otimizador, nenhum desses métodos se aplica diretamente. O fenômeno, contudo, existe, e os resultados da seção anterior o quantificam: uma anotação adicional pode reduzir o Fβ em até meio ponto.
+O esquecimento catastrófico, tal como descrito na Seção \ref{sec_cl}, é atribuído ao deslocamento dos pesos durante o ajuste por gradiente, e os métodos que o combatem atuam sobre esse deslocamento. Como o \ac{FLIM} não possui otimizador, nenhum desses métodos se aplica diretamente. O fenômeno, contudo, existe, e os resultados da seção anterior o quantificam: uma anotação adicional pode reduzir o $F_\beta$ em até meio ponto.
 
 A inspeção do procedimento de estimação dos filtros localiza a origem. Os candidatos a filtro extraídos de todas as imagens e de todos os marcadores são reunidos em um único conjunto, que então é reduzido ao número de canais da camada por um agrupamento. Acrescentar marcadores acrescenta candidatos, o agrupamento é refeito sobre o conjunto ampliado, e os centróides que estavam em uso se deslocam. O banco de filtros é compartilhado por todas as imagens, inclusive as não anotadas, de modo que a perturbação é global e não local.
 
@@ -91,7 +243,7 @@ A avaliação, porém, não encontrou valor de plasticidade que convertesse o me
 
 \section{Esforço de anotação}
 
-O eixo da segmentação interativa é diferente do Fβ a orçamento fixo. A métrica usual é o número de cliques necessários para que a qualidade ultrapasse um alvo, com um teto de interações. Um método pode não alterar o Fβ a orçamento fixo e ainda assim reduzir o esforço de interação.
+O eixo da segmentação interativa é diferente do $F_\beta$ a orçamento fixo. A métrica usual é o número de cliques necessários para que a qualidade ultrapasse um alvo, com um teto de interações. Um método pode não alterar o $F_\beta$ a orçamento fixo e ainda assim reduzir o esforço de interação.
 
 \begin{table}[htb]
 \centering
@@ -105,6 +257,17 @@ O eixo da segmentação interativa é diferente do Fβ a orçamento fixo. A mét
 O comportamento mais informativo dessa avaliação não é o valor médio, e sim a ocorrência de regressão. Em várias execuções o modelo piora ao longo da sequência de cliques: em um caso representativo, doze interações levaram a qualidade de 0,724 para 0,702. O especialista anota repetidamente e o modelo não avança, porque cada anotação nova reestima o banco de filtros e desfaz parte do que havia sido construído.
 
 A proteção do banco não reduziu o número de cliques de forma significativa, e o confirmatório em imagens inéditas falseou tanto a hipótese quanto o mecanismo proposto para ela. A taxa de sucesso é reportada ao lado da contagem de cliques porque imagens que não atingem o alvo entram com o teto, e um braço poderia exibir contagem baixa simplesmente por desistir antes.
+
+\begin{table}[htb]
+\centering
+\caption{Confirmatório em imagens inéditas.}
+\label{tab_noc_conf}
+\input{tabelas/noc_confirmatorio.tex}
+\end{table}
+
+\input{tabelas/noc_confirmatorio.nota.tex}
+
+Duas advertências de leitura acompanham a Tabela~\ref{tab_noc}. A primeira é que as linhas do conjunto de conjuntivite têm $n$ igual a um, e uma única execução não autoriza leitura alguma; elas constam para que a ausência de dado seja visível, e não para serem interpretadas. A segunda é de método, e vale mais que o resultado em si: uma versão anterior desta análise agregava os conjuntos de parasitas e BraTS numa única comparação e obtinha valor p de 0,0265, o que parecia um achado. Separados por conjunto, como manda o protocolo, nenhum dos dois passa de 0,10. A agregação inflava o resultado porque os conjuntos têm taxas de sucesso muito diferentes, de 7\% e 30\%, e misturá-las cria uma diferença que não é do critério.
 
 \section{A intervenção no gerador de candidatos}
 
@@ -123,11 +286,40 @@ O experimento fixa o critério de seleção em sorteio nos dois braços e manté
 
 \input{tabelas/gerador_contorno.nota.tex}
 
-No conjunto de parasitas o efeito é claro: ganho médio de 0,0772 de Fβ, com intervalo de confiança entre 0,0393 e 0,1151, valor p de 0,0013, e vantagem em todas as dez repetições. O resultado sobrevive à correção de Benjamini-Hochberg aplicada sobre os três conjuntos de dados. Os dois desfechos secundários, declarados no pré-registro com o mecanismo escrito antes da execução, acompanham: o pior caso melhora 0,2153 e a dispersão entre candidatos cai 0,1091.
+No conjunto de parasitas o efeito é claro: ganho médio de 0,0772 de $F_\beta$, com intervalo de confiança entre 0,0393 e 0,1151, valor p de 0,0013, e vantagem em todas as dez repetições. O resultado sobrevive à correção de Benjamini-Hochberg aplicada sobre os três conjuntos de dados. Os dois desfechos secundários, declarados no pré-registro com o mecanismo escrito antes da execução, acompanham: o pior caso melhora 0,2153 e a dispersão entre candidatos cai 0,1091.
 
 O comportamento nos outros dois conjuntos merece atenção. Na conjuntivite o efeito vai na mesma direção, com vantagem em quatro das cinco repetições, mas sem significância no desfecho primário. No BraTS o efeito desaparece, e esse resultado nulo é previsto pelo mecanismo: a arquitetura empregada nesse conjunto fixa o banco em oito filtros por camada, de modo que ambos os braços acrescentam exatamente o mesmo número de filtros e o deslocamento que a intervenção evita não pode ocorrer. O conjunto funciona, assim, como controle do mecanismo.
 
 Duas limitações do gerador foram medidas e devem acompanhar qualquer leitura do resultado. A primeira é que ele exige uma predição não trivial: quando a máscara prevista é vazia ou cobre a imagem inteira, não há contorno e o conjunto de candidatos fica vazio, enquanto o gerador por superpixels funciona em qualquer situação. A segunda é que os candidatos gerados apresentam fração de objeto próxima de um, isto é, caem no interior do objeto verdadeiro e não sobre sua fronteira, porque o modelo subsegmenta e o contorno previsto se situa dentro do contorno real. O ganho ocorre apesar disso, o que sugere que parte do efeito decorre de o candidato ser pequeno e localizado, acrescentando menos filtros ao banco, e não apenas de sua posição. Separar essas duas contribuições exige um experimento adicional, discutido no Capítulo \ref{cap_5}.
+
+\subsection{Análise de sensibilidade dos desfechos secundários}
+\label{sec_sensibilidade}
+
+Uma terceira limitação apareceu na conferência dos dados e afeta a leitura dos secundários, não do desfecho primário. O desenho declarou oito candidatos por braço, mas o gerador de contorno entregou menos em três sementes: três no conjunto de parasitas, três no BraTS e \emph{uma} na conjuntivite. O gerador por superpixels entregou oito em todas.
+
+A consequência não é a mesma para os três desfechos. A média é estimador não viesado da média do braço qualquer que seja o número de candidatos, de modo que o desfecho primário não se move. Mas o desfecho de pior caso é um \emph{mínimo}, e o mínimo de oito sorteios é, por construção, mais extremo que o mínimo de um, mesmo que a distribuição subjacente seja idêntica. O viés empurra na direção que a tabela reporta, o que obriga a medi-lo.
+
+Refazendo o teste com o braço de superpixels subamostrado ao mesmo número de candidatos, sem reposição, com duas mil repetições e o mesmo teste pareado por semente, obtém-se o seguinte. No conjunto de parasitas o pior caso passa de 0,2153 para 0,2085, com valor p de 0,0002, e a dispersão passa de $-0{,}1091$ para $-0{,}1078$, com valor p abaixo de 0,0001: ambos sobrevivem, e o efeito não era artefato do número de candidatos. Na conjuntivite, porém, o pior caso passa de 0,1759 com valor p de 0,0480 para 0,1369 com valor p de 0,1032, isto é, \textbf{cruza o limiar e deixa de ser significativo}. A semente responsável entregou um único candidato de contorno, e mínimo de um sorteio contra mínimo de oito não é comparação.
+
+O desfecho secundário de pior caso na conjuntivite não é, portanto, apresentado como significativo nesta dissertação. Esta análise é de sensibilidade sobre um desfecho pré-registrado, e não um desfecho novo.
+
+\subsection{O critério sobre a lista corrigida}
+
+A intervenção acima troca o gerador mantendo o escore fixo em sorteio, de propósito, para isolar uma coisa de cada vez. Resta a pergunta complementar: uma vez corrigida a lista, o escore volta a ter utilidade?
+
+Uma campanha adicional no conjunto de parasitas, com dez sementes completas, indica que sim, e os dois efeitos se somam de forma quase exata. Aplicar o critério de entropia sobre candidatos de contorno rende 0,0262 de $F_\beta$ sobre sortear dentro da mesma lista, com vantagem em nove das dez sementes e valor p de 0,0185. A troca do gerador isolada rende os 0,0772 já relatados. E o efeito combinado, critério sobre contorno contra sorteio sobre superpixels, rende 0,1033, com vantagem nas dez sementes e valor p de 0,0002. A soma das partes, 0,1034, coincide com o efeito total medido.
+
+A aditividade é coerente com o diagnóstico: o gerador resolve \emph{o que está na lista} e o escore resolve \emph{qual item da lista}, e são operações sobre dimensões distintas do problema.
+
+Duas ressalvas limitam o alcance desse resultado. Ele vem de um único conjunto de dados, e \textbf{não houve pré-registro para estas comparações}, de modo que elas são exploratórias e servem para orientar o próximo passo, não para afirmar. Registra-se também que a terceira linha dessa campanha reproduz exatamente o ganho de 0,0772 já publicado, com o mesmo valor p e as mesmas dez vitórias, o que serve de verificação interna: um cálculo novo, sobre uma campanha nova, devolveu o número anterior.
+
+\section{Comparação com redes treinadas por retropropagação}
+
+Para situar a ordem de grandeza dos valores acima, cinco redes de segmentação treinadas por retropropagação foram avaliadas nos dois conjuntos de maior porte, com três partições cada. No conjunto de parasitas os valores de $F_\beta$ ficam entre 0,3763 e 0,4450, e no BraTS entre 0,7421 e 0,8511.
+
+A comparação direta com os números do \ac{FLIM} apresentados neste capítulo \textbf{não é válida} e não é feita aqui, por três razões que convém enunciar em vez de contornar. As redes por retropropagação foram treinadas com o conjunto de treino completo e anotação densa, enquanto o \ac{FLIM} opera com três a cinco imagens e traços esparsos, de modo que o orçamento de anotação difere por ordens de grandeza. Os protocolos de avaliação e as partições não coincidem. E, principalmente, esses resultados \textbf{não estão no registro canônico de execuções} que sustenta todas as demais tabelas deste capítulo, tendo proveniência mais fraca que o restante.
+
+O que eles autorizam é apenas uma observação de contexto: no conjunto de parasitas, o patamar alcançado por redes com supervisão densa é da ordem de 0,44, enquanto o \ac{FLIM} com três marcadores reais atinge 0,744 no decodificador \texttt{FLIM\_lm} sob o protocolo de avaliação adotado aqui. Os dois números medem coisas diferentes e a diferença de protocolo é suficiente para explicar a distância; o que não se sustenta é a suposição de que supervisão densa seja condição necessária para desempenho utilizável neste domínio.
 
 \section{Resultados de natureza metodológica}
 
@@ -141,7 +333,7 @@ Fixando as bibliotecas em uma única linha de execução, a diferença passa a s
 
 \subsection{Defeitos que invalidaram medições anteriores}
 
-Três defeitos de implementação foram encontrados e corrigidos, e os números produzidos antes das correções não são válidos. O procedimento de extração de atributos para os critérios de diversidade assumia imagens de três bandas, o que impedia sua execução no conjunto BraTS, de banda única. A leitura de imagens assumia extensão fixa, o que impedia a execução no conjunto de conjuntivite. E o filtro de área do pós-processamento estava configurado com a faixa adequada ao conjunto de parasitas, cujos objetos são pequenos, o que eliminava toda componente prevista nas imagens de conjuntivite: nenhum dos objetos examinados cabia na faixa, e o Fβ mediano passou de 0,024 para 0,594 após a correção.
+Três defeitos de implementação foram encontrados e corrigidos, e os números produzidos antes das correções não são válidos. O procedimento de extração de atributos para os critérios de diversidade assumia imagens de três bandas, o que impedia sua execução no conjunto BraTS, de banda única. A leitura de imagens assumia extensão fixa, o que impedia a execução no conjunto de conjuntivite. E o filtro de área do pós-processamento estava configurado com a faixa adequada ao conjunto de parasitas, cujos objetos são pequenos, o que eliminava toda componente prevista nas imagens de conjuntivite: nenhum dos objetos examinados cabia na faixa, e o $F_\beta$ mediano passou de 0,024 para 0,594 após a correção.
 
 Esse último caso tem interesse além do defeito pontual. Ele indica que os parâmetros de pós-processamento publicados não transferem entre domínios, e que aplicá-los sem reavaliação pode produzir resultados sem relação com o método avaliado.
 
@@ -160,6 +352,14 @@ O protocolo de pré-registro, descrito no Capítulo \ref{cap_3}, capturou quatro
 
 \section{Síntese}
 
-Os resultados sustentam a seguinte leitura. Critérios de \ac{AL} não apresentam superioridade sobre a escolha aleatória no \ac{FLIM}, seja na seleção de imagens, seja na seleção de regiões, nas condições avaliadas. Existe margem considerável na escolha da região, da ordem de 0,13 a 0,30 de Fβ, e ela não é alcançada pelos critérios conhecidos. A razão é estrutural e tem duas partes: a anotação adicional reestima o extrator de atributos em vez de refiná-lo, o que torna o acréscimo uma intervenção de risco; e o procedimento que gera os candidatos quase não oferece a anotação que os marcadores dos especialistas mostram ter valor.
+Os resultados sustentam a seguinte leitura, em quatro elos, cada um medido.
 
-A intervenção sobre o gerador, derivada desse diagnóstico, produz ganho mensurável em um dos três conjuntos de dados, com o comportamento nos demais explicado pelo mesmo mecanismo. O Capítulo \ref{cap_5} discute o que esses resultados autorizam afirmar e o que permanece em aberto.
+\textbf{Primeiro, a seleção de imagem não é a alavanca.} Nenhum critério de \ac{AL} apresenta superioridade sobre a escolha aleatória que sobreviva à correção para múltiplas comparações, e o procedimento supervisionado do trabalho de referência, que lê o gabarito de todo o conjunto, também não se destaca. Isso não é demonstração de equivalência: é ausência de evidência de superioridade nas condições avaliadas.
+
+\textbf{Segundo, a posição da anotação é.} Com orçamento de pixels fixo e nas mesmas imagens, a melhor região examinada supera a sorteada por 0,1351 a 0,3089 de $F_\beta$, nas seis células, e a pior fica 0,2075 a 0,4954 abaixo. O prêmio e o risco são da mesma ordem, o que significa que anotar mais não é, por si, melhorar.
+
+\textbf{Terceiro, os critérios capturam parte dessa margem, e a parte que escapa é o custo do método.} A lacuna entre o teto e o que o critério entrega vai de 0,0839 a 0,2667 e é significativa em quatro das seis células. O desempenho do escore depende do decodificador e do domínio: há uma célula em que ele captura 84\% da margem e outra em que captura praticamente nada.
+
+\textbf{Quarto, o gargalo está na lista e não no escore.} Regiões que atravessam a fronteira do objeto, que são as que a comparação com os marcadores reais mostra terem valor, representam de 2\% a 12\% dos candidatos produzidos por superpixels. Como um critério apenas ordena a lista que recebe, nenhuma escolha de escore resolveria isso. A intervenção derivada desse diagnóstico, que troca o gerador mantendo escore e orçamento fixos, produz ganho de 0,0772 de $F_\beta$ no conjunto de parasitas, em dez de dez repetições, sobrevivendo à correção; o resultado nulo no BraTS foi previsto pelo mecanismo antes da execução e funciona como controle dele.
+
+A razão estrutural que percorre os quatro elos é a mesma: no \ac{FLIM}, a anotação adicional \emph{reestima} o extrator de atributos em vez de refiná-lo, e o banco de filtros é compartilhado por todas as imagens, de modo que o acréscimo é uma intervenção global e de risco. O Capítulo \ref{cap_5} discute o que esses resultados autorizam afirmar e o que permanece em aberto.

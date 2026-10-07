@@ -209,6 +209,27 @@ def main() -> int:
                 ("arquivo .tex que nao e incluido pelo documento principal",
                  orfaos))
 
+    # Letra grega e simbolo matematico em modo texto. A checagem vive em
+    # `conferir_simbolos.py`, que tem a logica de remover modo matematico
+    # antes de procurar; aqui ela e apenas acionada, para que uma unica
+    # chamada cubra tudo o que impede a compilacao.
+    try:
+        import subprocess
+        r = subprocess.run(
+            [sys.executable,
+             os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "conferir_simbolos.py")],
+            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if r.returncode != 0:
+            problemas.append(
+                ("letra grega ou simbolo matematico em modo texto "
+                 "(o pdflatex recusa)",
+                 [l for l in (r.stdout or "").split("\n")
+                  if l.strip().startswith("linha ")
+                  or l.strip().startswith("== ")]))
+    except Exception as e:                      # nunca derrubar o verificador
+        print(f"(aviso: checagem de simbolos nao rodou: {e})")
+
     travessoes = []
     for f, t in corpo.items():
         for n, linha in enumerate(t.split("\n"), 1):

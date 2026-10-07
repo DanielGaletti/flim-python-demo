@@ -1,161 +1,125 @@
 \chapter[Introdução]{Introdução}
 \label{cap_1}
-% ---
+
 \section{Caracterização do Problema}
-% ---
 
-A segmentação semântica constitui uma tarefa fundamental em Visão Computacional, com aplicações em áreas como análise de imagens médicas, veículos autônomos, monitoramento por vídeo e realidade aumentada. Embora os avanços recentes impulsionados pelo Aprendizado Profundo (\ac{DL}) tenham ampliado significativamente o desempenho dos modelos, persiste um obstáculo crítico: a necessidade de grandes volumes de imagens anotadas manualmente. Esse processo é custoso, demorado e sujeito a inconsistências, pois requer que especialistas rotulem pixel a pixel cada instância da base de dados.
+A segmentação de imagens é uma tarefa fundamental em Visão Computacional, com aplicações em análise de imagens médicas, diagnóstico assistido, monitoramento e inspeção automatizada. Os avanços do Aprendizado Profundo (\ac{DL}) ampliaram o desempenho dos modelos, mas o obstáculo que motiva esta dissertação permaneceu: redes de segmentação precisam de grandes volumes de imagens anotadas pixel a pixel, e produzir essa anotação exige tempo de um especialista. Em domínios biomédicos o problema é agudo, porque o especialista é escasso e a anotação precisa acompanhar fronteiras que nem sempre são evidentes.
 
-Outro desafio recorrente diz respeito ao desequilíbrio entre classes, comum em bases reais, o que compromete a capacidade de generalização dos modelos. Esse problema torna-se ainda mais evidente em cenários de alta resolução (como imagens 4K contendo múltiplos objetos), em que tanto o esforço humano quanto o custo computacional se tornam significativamente mais elevados.
+Uma linha de trabalho recente propõe contornar esse custo por outro caminho. Em vez de ajustar milhões de parâmetros por retropropagação a partir de muitos exemplos, o \ac{FLIM} \cite{souza2020flim,benato2020cnnmarkers} constrói os filtros da rede \emph{diretamente} a partir de traços que o especialista desenha sobre poucas imagens. Os trechos de imagem sob esses traços são agrupados, e os centróides resultantes passam a ser os núcleos da convolução. Não há função de perda, não há otimizador e não há gradiente. O treinamento custa segundos e opera com três a cinco imagens anotadas.
 
-Diante desse contexto, o problema central desta pesquisa pode ser formulado da seguinte forma: como propor e validar estratégias que integrem Aprendizado Ativo, Aprendizado por Reforço, superpixels e Aprendizado Contínuo, de modo a reduzir o esforço de anotação em imagens de alta resolução, assegurando qualidade e eficiência computacional no processo de segmentação semântica?
+O trabalho de referência reproduzido nesta dissertação \cite{soares2026flim} leva essa ideia a um conjunto de decodificadores adaptativos e reporta resultados competitivos com redes treinadas por retropropagação. Mas há nele um ponto que merece atenção. A escolha das poucas imagens que o especialista vai anotar é feita por um procedimento iterativo que, a cada passo, mede o desempenho do modelo em todas as imagens disponíveis e escolhe aquela em que ele vai pior. Medir o desempenho em uma imagem exige a anotação de referência dela. Escolher três imagens entre as 848 do conjunto exige, portanto, que as 848 já estejam anotadas.
 
-% ---
+Os próprios autores declaram que a abordagem de seleção é supervisionada. A consequência, contudo, é mais severa do que a palavra sugere: um procedimento que precisa da anotação de todo o conjunto para decidir o que anotar devolve exatamente o custo que o \ac{FLIM} foi criado para evitar.
+
+Daí a pergunta que organiza este trabalho:
+
+\begin{quote}
+Quanto do benefício daquele procedimento se recupera com critérios de seleção que \textbf{não consultam anotação alguma}?
+\end{quote}
+
+A pergunta pertence ao campo do Aprendizado Ativo (\ac{AL}) \cite{settles2009active}, que estuda precisamente como escolher o que anotar usando apenas o modelo corrente. A literatura de \ac{AL} é extensa e madura, e a expectativa razoável seria que seus critérios transferissem para o \ac{FLIM} com ajustes menores. O que esta dissertação mostra é que não transferem, e, mais importante do que constatar isso, \emph{por que} não transferem.
+
 \section{Motivações e Desafios}
-% ---
 
-A principal motivação deste trabalho é reduzir o custo e o tempo necessários para a anotação de imagens, mantendo ou até mesmo aprimorando a qualidade da segmentação semântica gerada pelos modelos. A literatura apresenta diversas estratégias que podem contribuir para esse objetivo, tais como:
+O interesse da pergunta não está apenas em economizar anotação. Está em que o \ac{FLIM} é um modelo com propriedades incomuns, e essas propriedades mudam o que cada técnica significa.
 
-\begin{itemize}
+\textbf{Não há gradiente.} A maior parte do arsenal de Aprendizado Contínuo (\ac{CL}) consolidado na literatura, da consolidação elástica de pesos \cite{kirkpatrick2017overcoming} à destilação de conhecimento \cite{hinton2015distilling} e ao ensaio por exemplares \cite{rebuffi2017icarl}, atua sobre o deslocamento de pesos causado pelo otimizador. Em um modelo sem otimizador, esses métodos não têm sobre o que agir. Isso não significa que não haja esquecimento: significa que, se houver, ele tem outra forma, e descrevê-la é parte do problema.
 
-\item Aprendizado Ativo (\ac{AL}): busca diminuir a quantidade de amostras que precisam ser anotadas, priorizando aquelas mais informativas para o aprendizado. Embora promissora, a maioria dos métodos ainda depende de heurísticas manuais e opera em ciclos offline, sem interação em tempo real com especialistas humanos \cite{kim2023adaptive,konyushkova2017learning}. %【kim2023adaptive; konyushkova2017learning】.
+\textbf{A anotação não é monotonicamente boa.} Em uma rede treinada por retropropagação, acrescentar um exemplo rotulado correto raramente piora o modelo. No \ac{FLIM}, acrescentar um marcador amplia o conjunto de trechos candidatos a filtro, e o agrupamento que os reduz ao número de canais disponíveis é refeito. Os filtros em uso se deslocam, e como o banco é compartilhado por todas as imagens, a perturbação é global. Anotar mais pode piorar.
 
-\item Integração de \ac{AL} com \ac{RL}: abordagens recentes exploram políticas de seleção de dados guiadas por recompensas de desempenho, aumentando a eficiência da escolha de amostras \cite{fang2017active}. %fang2017active.
-Entretanto, esses modelos ainda carecem de mecanismos de interação contínua com especialistas.
+\textbf{O que se anota é um traço, não uma máscara.} A unidade de anotação do \ac{FLIM} não é a imagem nem o pixel isolado: é um traço, com posição, extensão e proporção entre objeto e fundo. Isso abre uma pergunta que a formulação usual do \ac{AL} não faz. A literatura pergunta \emph{quais imagens} anotar; aqui é possível perguntar também \emph{onde} anotar dentro de uma imagem já escolhida, mantendo fixo o orçamento de pixels marcados.
 
-\item Segmentação por superpixels: possibilita que a anotação seja realizada em unidades visuais semanticamente coerentes, o que reduz ambiguidades de fronteira e esforço de anotação. Segundo Vargas et al. (2014), essa representação permite descritores de imagem em nível mais alto quando comparada à abordagem pixel a pixel.
+\textbf{O especialista está no laço.} A anotação por traços é rápida o bastante para ser feita em tempo real, o que torna natural acoplar Aprendizado Interativo (\ac{IL}) \cite{xu2016deep_arxiv,sofiiuk2020fbrs_arxiv} ao método, com o modelo propondo onde a dúvida está e o especialista respondendo.
 
-\item Esquecimento catastrófico em Aprendizado Contínuo: modelos incrementais frequentemente perdem conhecimento adquirido ao serem expostos a novos dados. Estratégias como a Destilação de Conhecimento surgem como alternativas para mitigar esse problema e garantir estabilidade no refinamento do modelo.
-
-\end{itemize}
-
-Diante desse cenário, esta pesquisa propõe avançar o estado da arte por meio de um framework integrado, que combine \ac{AL}, \ac{RL}, superpixels e técnicas de Aprendizado Contínuo, promovendo um processo de anotação mais eficiente, interativo e escalável.
-
-
-%Com o advento do aprendizado de máquina profundo (Deep Leaning), muitas tarefas de visão computacional, incluindo a segmentação semântica, tem evoluído nos últimos anos \cite{kim2023adaptive}. Apesar dos avanços, umas das principais dificuldades ainda permanece: a necessidade de grandes volumes de dados anotados, que demanda um esforço considerável e tempo elevado. Além disso, é comum que os dados apresentem forte desbalanceamento entre as classes, o que afeta negativamente o aprendizado \cite{casanova2020reinforced}.
-
-%Para mitigar esse problema, estratégias de Active Learning (\ac{AL}) têm sido amplamente estudadas. O objetivo central da \ac{AL} é reduzir o número de amostras que precisam ser rotuladas, identificando aquelas que são mais informativas para o aprendizado. A maioria dos métodos atualmente existentes ainda são baseados em heurísticas manuais \cite{konyushkova2017learning}
-
-%Abordagens recentes propõem a integração de \ac{AL} com Aprendizado por reforço (Reinforcement Learning (\ac{RL})), permitindo que o sistema aprenda políticas de obtenção de dados através do sistema de recompensas de desempenho \cite{fang2017active}. Entretanto, modelos assim operam em ciclos de batchs ou offline, não possuindo uma interação em tempo real com os especialista humanos.
-
-%Além disso, modelos baseados em superpixel têm demonstrado serem promissores ao permitir que as unidades anotáveis se baseiem em unidades visuais com maior nível de semântica, o que reduz a ambiguidade de fronteira e o esforço de anotação. A segmentação de imagem em superpixels tem como objetivo agrupar pixels em regiões homogêneas que capturam a redundância da imagem. Segundo \cite{vargas2014superpixel}, "a representação por superpixels permite descritores de imagem de nível mais alto em comparação com a representação por pixel".
-
+Os três componentes, portanto, não são acessórios somados a um modelo pronto. Cada um deles interage com uma propriedade estrutural do \ac{FLIM}, e é essa interação que a dissertação investiga.
 
 \section{Objetivos}
 
 \subsection{Objetivo Geral}
 
-% Este trabalho tem como objetivo principal propor, desenvolver e validar estratégias eficazes para reduzir o custo e o tempo necessário para anotação de imagens e realizar uma interação em tempo real com especialistas para otimizar essas anotações.
+Investigar se, e sob quais condições, técnicas de \ac{AL}, \ac{CL} e \ac{IL} transferem para o \ac{FLIM}, caracterizando com medição o mecanismo que explica o comportamento observado e propondo a intervenção que esse mecanismo indica.
 
-Este trabalho tem como objetivo principal propor, desenvolver e validar um framework interativo para segmentação semântica de imagens, capaz de reduzir o custo e o tempo de anotação manual, ao mesmo tempo em que promove interação em tempo real entre especialistas humanos e o modelo de aprendizado profundo. A proposta busca integrar técnicas de \ac{AL}, \ac{CL}, métodos baseados em superpixels aplicados tanto ao aumento de dados quanto à análise estrutural das regiões de interesse para auxiliar o \ac{AL} e abordagens fundamentadas em \ac{RL} destinadas à melhoria progressiva do modelo, de forma a otimizar o processo de anotação, melhorar a qualidade das segmentações e mitigar problemas como o esquecimento catastrófico.
+A formulação é deliberada em dois aspectos. Primeiro, ela não promete redução de custo de anotação, porque o trabalho mede número de interações e qualidade de segmentação, e não tempo de especialista. Segundo, ela admite resposta negativa: estabelecer que uma família de técnicas não transfere, acompanhada do mecanismo que explica a falha, é resultado de pesquisa.
 
 \subsection{Objetivos Específicos}
 
-%Desenvolver objetivo de data augmentation utilizando superpixel-mix com active learning
-
 \begin{itemize}
 
-%\item Levantamento, análise e seleção de bases de imagens com multiclasses e alta qualidade disponíveis.
+\item Reproduzir o trabalho de referência \cite{soares2026flim} em condições controladas, estabelecendo a linha de base sobre a qual qualquer comparação se apoia.
 
-\item Realizar levantamento e análise crítica de bases de imagens multiclasse de alta qualidade, selecionando aquelas mais adequadas para validação da proposta.
+\item Avaliar critérios de \ac{AL} de incerteza, de diversidade e híbridos na seleção de imagens, usando apenas informação disponível sem anotação, e comparando contra dois referenciais: o sorteio aleatório, como piso, e o procedimento supervisionado do trabalho de referência, como teto.
 
-%\item Levantamento, análise e seleção de técnicas de superpixel para redução de tempo computacional
+\item Estender ao nível de região os critérios de diversidade, que na literatura são de imagem por construção, e avaliar a seleção de \emph{onde} anotar com orçamento de pixels fixo.
 
-\item Estudar, selecionar e adaptar técnicas de segmentação por superpixels, visando reduzir o custo computacional e o esforço de anotação, mantendo a precisão das fronteiras dos objetos.
+\item Medir a margem disponível para a seleção de região, isto é, quanto separa a melhor posição de anotação examinada de uma posição sorteada, e quanto dessa margem os critérios efetivamente capturam.
 
-%\item Levantamento e proposta de técnicas de \ac{AL} para identificar amostras mais adequadas, dada as incertezas do modelo.
+\item Diagnosticar onde os critérios caem quando erram, e distinguir se a limitação está no escore ou no conjunto de candidatos que ele recebe.
 
-\item Investigar e propor estratégias de \ac{AL} para identificar amostras mais informativas com base na incerteza do modelo, otimizando o processo de refinamento interativo.
+\item Propor e avaliar uma intervenção sobre o gerador de candidatos, mantendo escore e orçamento fixos, de modo a isolar o efeito do gerador.
 
-%\item Levantamento, análise e seleção de técnicas de \ac{RL} para reduzir o número de interações da \ac{AL} com o especialista, considerando a interação com as amostras que possuam maior grau de incerteza.
+\item Caracterizar a forma que o esquecimento assume em um modelo sem gradiente, propor um mecanismo de retenção compatível com essa forma, e testá-lo.
 
-\item Explorar e integrar abordagens de \ac{RL} como apoio ao \ac{AL}, a fim de reduzir o número de interações necessárias com o especialista, priorizando instâncias de maior relevância.
+\item Medir o esforço de interação em um laço de \ac{IL} com usuário simulado, pela métrica de número de cliques.
 
-%\item Proposta de inclusão de técnicas de critérios no processo de seleção de dados para retornar ao especialista quanto a incerteza em multiclasses.
+\item Desenvolver uma plataforma local que integre os três componentes em um fluxo único, permitindo observar o comportamento do sistema com um especialista real no laço.
 
-\item Propor critérios adicionais para seleção de dados em cenários multiclasse, fornecendo feedback ao especialista sobre regiões de maior incerteza e auxiliando na priorização das correções.
-
-%\item Avaliação e comparação extensiva das técnicas propostas utilizando métricas Dice para comparativo com outras técncias já existentes.
-
-\item Implementar e avaliar a integração das técnicas propostas em um framework interativo, realizando comparações extensivas com métodos existentes, utilizando métricas como Dice e \ac{IoU}.
-
-\item Validar a eficácia do framework em cenários práticos de segmentação semântica, verificando sua capacidade de reduzir tempo e custo de anotação, mitigar o esquecimento catastrófico e transferir conhecimento entre instâncias da mesma classe.
+\item Conduzir toda a avaliação sob protocolo declarado antes da execução, com teste pareado, unidade de análise explícita e correção para múltiplas comparações.
 
 \end{itemize}
 
-\section{Contribuições Esperadas}
+\section{Contribuições}
 
-Espera-se que o presente trabalho traga contribuições relevantes tanto no campo científico quanto no prático. Do ponto de vista metodológico, a principal contribuição será a proposição e validação de um framework interativo para segmentação semântica de imagens em alta resolução, capaz de reduzir o custo e o tempo de anotação por especialistas, ao mesmo tempo em que minimiza a necessidade de interação constante durante o processo de treinamento.
+As contribuições abaixo são as efetivamente obtidas, com a medição que as sustenta indicada entre parênteses. O Capítulo~\ref{cap_4} apresenta cada uma com a tabela correspondente.
 
-A integração de estratégias de \ac{AL} com \ac{RL}, aliada ao uso de técnicas de segmentação por superpixels, pode representar um avanço em relação às abordagens tradicionais, oferecendo maior eficiência na seleção de amostras e maior precisão na segmentação de imagens 4K contendo múltiplos objetos. Espera-se também obter contribuições a partir de novas estratégias de seleção de amostras mais informativas para as técnicas de aprendizado ativo.
+\textbf{Primeira, a caracterização do motivo pelo qual as técnicas não transferem, com cada elo do argumento medido.} Nenhum critério de seleção de imagem supera o sorteio aleatório de forma que sobreviva à correção para múltiplas comparações, e o procedimento supervisionado do trabalho de referência tampouco se destaca. Mas existe margem considerável a capturar na seleção de \emph{região}: anotar a melhor região examinada em vez de uma sorteada vale entre 0,135 e 0,309 de $F_\beta$, nas seis combinações de conjunto de dados e decodificador, com significância em todas. Os critérios capturam apenas parte dela, e a parte não capturada, entre 0,084 e 0,267, é o custo de o critério escolher o lugar errado.
 
-Além disso, espera-se que a utilização de técnicas de \ac{CL} e Destilação de Conhecimento permita mitigar o problema do esquecimento catastrófico, garantindo a retenção do conhecimento previamente adquirido pelo modelo ao longo do refinamento interativo.
+\textbf{Segunda, a identificação do gargalo e a intervenção que ele indica.} A limitação não está no escore. Regiões que atravessam a fronteira do objeto representam de 2\% a 12\% dos candidatos produzidos por superpixels, e um critério apenas ordena a lista que recebe. Substituir esse gerador por discos centrados no contorno predito, mantendo escore e orçamento fixos, elevou o ganho de uma anotação adicional em 0,0772 de $F_\beta$ no conjunto de parasitas, com vantagem nas dez repetições e sobrevivendo à correção. O comportamento nos demais conjuntos é compatível com o mecanismo, incluindo um resultado nulo previsto antes da execução.
 
-No âmbito prático, espera-se contribuir para a obtenção e disponibilização de conjuntos de dados anotados de alta qualidade, gerados a partir das pesquisas e experimentos desenvolvidos neste trabalho, de forma a apoiar futuras investigações e aplicações em visão computacional. Dessa forma, a pesquisa deverá não apenas avançar o estado da arte em métodos de anotação assistida, mas também fornecer ferramentas concretas que possam ser incorporadas em cenários reais de análise de imagens.
+\textbf{Terceira, a descrição do esquecimento em um modelo sem gradiente.} O fenômeno existe no \ac{FLIM} e assume forma própria: a anotação adicional amplia o conjunto de candidatos a filtro, o agrupamento é refeito e os filtros em uso se deslocam, com perturbação global porque o banco é compartilhado. Os três grupos de métodos consolidados atuam sobre deslocamento de pesos por gradiente e não se aplicam. O mecanismo de retenção proposto resolve o problema a que se destina, verificado por teste, mas não se converteu em ganho mensurável em nenhum regime avaliado.
 
-%A pesquisa tem como princiapal objetivo a otimização das anotações por especialista, considerando tempo de anotação por imagme de alta qualidade e treinamento da rede neural. Tem-se como foco central, melhorar o tempo e custo computacional de imagens de alta qualidades que possuam diversos objetos para segmentação semântica, sem que haja uma interação constante com o especialista.
+\textbf{Quarta, de natureza metodológica, com alcance além deste trabalho.} O treinamento do codificador não era reprodutível entre execuções quando o número de candidatos ultrapassava o limite da arquitetura, e a causa foi localizada na interação entre o agrupamento e a ordem de redução em bibliotecas de álgebra linear com múltiplas linhas de execução. Verificou-se também que parâmetros de pós-processamento publicados não transferem entre domínios. E o protocolo de pré-registro adotado capturou quatro falsos positivos que teriam entrado no texto como achados.
 
-%Para alcançar esse objetivo, espera-se obter contribuições com a proposta de novas estratégias de \ac{AL} alidas a \ac{RL} e utilização de superpixel que sejam mais adequadas para imagens 4k.
-
-%Também espera-se contribuir para a obtenção e disponbilização de conjuntos de dados anotados, obtidos através das pesquisas e da aplicação da estratégia nas imagens.
-
+\textbf{Quinta, a plataforma interativa.} Uma aplicação local integra os três componentes em um fluxo único, no qual o \ac{AL} propõe a região, o especialista a rotula, e a plasticidade do banco de filtros pode ser alterada entre interações. Ela permite observar em tempo real o fenômeno descrito aqui, incluindo o caso em que anotações sucessivas não melhoram o modelo.
 
 \section{Questões e Hipóteses da Pesquisa}
 
-A presente pesquisa busca responder a um conjunto de questões relacionadas à otimização do processo de anotação de imagens em alta resolução para segmentação semântica, considerando eficiência, qualidade e viabilidade prática. Essas questões estão diretamente alinhadas aos objetivos gerais e específicos do trabalho e são acompanhadas de hipóteses que orientam as etapas experimentais.
+As hipóteses abaixo foram declaradas antes da execução das campanhas correspondentes, com o critério de falseamento escrito junto. O veredito de cada uma consta ao lado, e três delas foram refutadas pelos próprios critérios que as acompanhavam. Hipótese refutada por medição é resultado, e não falha de planejamento; registrá-las é o que torna as demais confiáveis.
 
 \begin{itemize}
-\item Q1. Como reduzir o custo e o tempo de anotação de imagens em alta resolução (4K) para segmentação semântica, mantendo a qualidade das anotações realizadas por especialistas?
 
+\item \textbf{Q1.} Quanto do benefício do procedimento supervisionado de seleção se recupera com critérios de \ac{AL} que não consultam anotação?
 \begin{itemize}
-\item H1. O framework interativo proposto reduzirá significativamente o tempo e o custo de anotação, preservando a qualidade das segmentações obtidas.
+\item \textbf{H1.} Ao menos um dos critérios avaliados supera o sorteio aleatório na seleção de imagens. \textbf{Refutada}: em 96 testes, nenhum sobrevive à correção para múltiplas comparações, e o próprio procedimento supervisionado também não se destaca.
 \end{itemize}
 
-\item Q2. De que forma estratégias de \ac{AL}, aliadas
-ao \ac{RL}, podem ser utilizadas para selecionar amostras mais informativas e reduzir a necessidade de interação constante com o especialista?
-
+\item \textbf{Q2.} Se a escolha de quais imagens anotar não é a alavanca, a escolha de \emph{onde} anotar, com orçamento de pixels fixo, é?
 \begin{itemize}
-\item H2. A integração de \ac{AL} e \ac{RL} permitirá a seleção mais eficiente de amostras, diminuindo o número de interações necessárias com o especialista.
+\item \textbf{H2.} Existe margem mensurável entre a melhor posição de anotação e uma posição sorteada. \textbf{Sustentada}: entre 0,135 e 0,309 de $F_\beta$, em 6 de 6 células, com significância em todas.
+\item \textbf{H2b.} Os critérios de \ac{AL} capturam essa margem. \textbf{Parcialmente refutada}: capturam parte dela, e a lacuna remanescente, de 0,084 a 0,267, é significativa em 4 de 6 células.
 \end{itemize}
 
-\item Q3. Qual é o impacto da utilização de técnicas baseadas em superpixels na eficiência da anotação e no desempenho dos modelos de segmentação em imagens complexas com múltiplos objetos?
-
+\item \textbf{Q3.} A limitação está no escore que ordena os candidatos ou no procedimento que gera a lista de candidatos?
 \begin{itemize}
-\item H3. A segmentação por superpixels reduzirá a complexidade computacional do processo, mantendo a precisão das fronteiras dos objetos em imagens multiclasse.
+\item \textbf{H3.} Está na lista. \textbf{Sustentada}: substituir o gerador, mantendo escore e orçamento fixos, produz ganho de 0,0772 de $F_\beta$ no conjunto de parasitas, em 10 de 10 repetições, sobrevivendo à correção; e o resultado nulo nos demais conjuntos foi previsto pelo mecanismo antes da execução.
 \end{itemize}
 
-\item Q4. Como incorporar técnicas de \ac{CL} e Destilação de Conhecimento para mitigar o problema do esquecimento catastrófico durante o refinamento interativo do modelo?
-
+\item \textbf{Q4.} O esquecimento catastrófico ocorre no \ac{FLIM}, e os métodos consolidados de \ac{CL} se aplicam a ele?
 \begin{itemize}
-\item H4. A combinação de \ac{CL} e Destilação de Conhecimento mitigará o esquecimento catastrófico, permitindo a retenção do conhecimento previamente adquirido pelo modelo.
+\item \textbf{H4.} Ocorre, em forma distinta, e os métodos consolidados não se aplicam. \textbf{Sustentada} quanto à descrição do fenômeno.
+\item \textbf{H4b.} Reter o banco de filtros preserva qualidade ao longo das interações. \textbf{Refutada} pelo critério declarado antes da execução.
 \end{itemize}
 
-\item Q5. De que maneira o framework proposto pode contribuir para a geração de conjuntos de dados anotados de alta qualidade, aplicáveis em diferentes contextos de visão computacional?
-
+\item \textbf{Q5.} Congelar o banco de filtros reduz o número de interações necessárias no laço de \ac{IL}?
 \begin{itemize}
-\item H5. O framework possibilitará a criação de conjuntos de dados anotados de alta qualidade, que poderão ser disponibilizados para a comunidade científica e utilizados em diferentes aplicações de visão computacional.
+\item \textbf{H5.} Reduz. \textbf{Refutada}: o efeito não é detectável em nenhum dos cortes limpos, e um achado aparente na análise agregada desapareceu quando os conjuntos de dados foram separados.
 \end{itemize}
 
 \end{itemize}
 
-%\begin{itemize}
+\section{Organização do texto}
 
-%\item Como reduzir o custo e o tempo de anotação de imagens em alta resolução (4K) para segmentação semântica, mantendo a qualidade das anotações realizadas por especialistas?
-
-%\item De que forma estratégias de Aprendizado Ativo (AL), aliadas à Aprendizado por Reforço (RL), podem ser utilizadas para selecionar amostras mais informativas e reduzir a necessidade de interação constante com o especialista?
-
-%\item Qual é o impacto da utilização de técnicas baseadas em superpixels na eficiência da anotação e no desempenho dos modelos de segmentação em imagens complexas com múltiplos objetos?
-
-%\item Como incorporar técnicas de Aprendizado Contínuo (Continual Learning) e Destilação de Conhecimento para mitigar o problema do esquecimento catastrófico durante o refinamento interativo do modelo?
-
-%\item De que maneira o framework proposto pode contribuir para a geração de conjuntos de dados anotados de alta qualidade, aplicáveis em diferentes contextos de visão computacional?
-
-%\end{itemize}
-
+O Capítulo~\ref{cap_2} apresenta os conceitos necessários e os trabalhos relacionados, cobrindo segmentação, superpixels, Aprendizado Ativo, Contínuo e Interativo, e o próprio \ac{FLIM}, com atenção a por que a combinação entre eles não é imediata. O Capítulo~\ref{cap_3} descreve o método em detalhe, incluindo a formulação do \ac{FLIM}, as métricas, cada critério de \ac{AL} avaliado com a justificativa de sua inclusão, o mecanismo de retenção proposto, o usuário simulado do laço interativo, a plataforma, e o protocolo experimental. O Capítulo~\ref{cap_4} apresenta os resultados na ordem do raciocínio da investigação, e não na ordem cronológica dos experimentos. O Capítulo~\ref{cap_5} responde às questões, enuncia as contribuições e as limitações, e aponta os desdobramentos.
 
 \section{Publicações}
 
-Encontra-se em elaboração um artigo científico para divulgação dos resultados preliminares obtidos a partir de experimentos com estratégias de aumento de dados. A submissão deste artigo está prevista para uma conferência da área no primeiro semestre de 2026.
-Os resultados subsequentes, relacionados à aplicação e avaliação das estratégias de \ac{AL}, \ac{RL} e segmentação por superpixels, serão organizados e submetidos para publicação em periódicos de relevância na área, de modo a garantir ampla disseminação científica e impacto acadêmico. Além disso, pretende-se publicar em periódico especializado os conjuntos de dados gerados e utilizados nesta pesquisa, assegurando sua reprodutibilidade e promovendo a ampla divulgação dos resultados junto à comunidade.
-
-%Encontra-se em elaboração um artigo científico, para publicação dos resultados preliminares obtidos, a partir de experimentos relacionados à aplicação e avaliação de algumas estratégias de aumento de dados. A submissão deste artigo para publicação em conferência da área está prevista para o segundo semestre de 2026. Os demais resultados a serem obtidos, envolvendo as estrategias de aprendizado ativo, aprendizado por reforço e superpixels, devem também ser publicados em periódicos relevantes na área.
+Encontra-se em elaboração um artigo científico para divulgação dos resultados relativos à intervenção no gerador de candidatos e ao diagnóstico que a motiva, com submissão prevista para conferência da área. Os resultados de natureza metodológica, em particular o protocolo de pré-registro adotado e os defeitos de reprodutibilidade identificados e corrigidos, são candidatos a submissão separada, por terem alcance além do método estudado aqui.

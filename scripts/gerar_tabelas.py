@@ -103,6 +103,7 @@ CATALOGO = [
     ("noc", lambda recs: tb.tabela_noc(recs, rotulo="noc")),
     ("noc_confirmatorio",
      lambda recs: tb.tabela_noc(recs, rotulo="confirmatorio")),
+    ("custo_do_al", lambda recs: tb.tabela_custo_do_al(recs)),
     ("gerador", lambda recs: tb.tabela_gerador(recs)),
     ("proveniencia_registro",
      lambda recs: tb.tabela_resumo_registro(recs)),

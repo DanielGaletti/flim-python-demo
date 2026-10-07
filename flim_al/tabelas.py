@@ -1838,6 +1838,95 @@ def tabela_noc(recs=None, experimento: str = "il_noc",
 
 # ── o gerador de candidatos ─────────────────────────────────────────────────
 
+def tabela_custo_do_al(recs=None, experimento: str = "ganho_marginal",
+                       criterio: str = "argmax_entropia") -> Tabela:
+    """
+    O custo do Active Learning: o teto, o que o critério captura, e a lacuna.
+
+    As duas primeiras colunas de número já existem, espalhadas pelas seis
+    tabelas de ganho marginal. O que esta tabela acrescenta é a SUBTRAÇÃO
+    pareada entre elas, que é o resultado central da dissertação e que não
+    pode ser lido das outras sem o leitor fazer a conta de cabeça, o que
+    perderia o teste.
+
+    Teto e critério saem da mesma semente, com a mesma base e a mesma
+    validação, então a diferença é pareada e não mistura condições.
+
+    O `teto amostrado` escolhe o candidato pelo Fβ da validação: NÃO é
+    estratégia, e mede o que existe para capturar entre os candidatos
+    examinados. A coluna `captura` é razão entre duas médias, fica instável
+    quando o denominador é pequeno, e serve de ilustração e não de
+    estatística; quem tem teste é a lacuna.
+    """
+    recs = ev.carregar() if recs is None else recs
+    t = Tabela(
+        "custo_do_al",
+        "O custo do Active Learning: a margem que existe e a que se captura",
+        ["conjunto", "decodificador", "n", "teto amostrado",
+         "o critério", "lacuna", "p da lacuna", "captura"],
+        alinhamento="llrrrrrr",
+        nota=("Todas as colunas são diferenças de Fβ contra o **candidato "
+              "sorteado**, medidas na validação, com a partição, as imagens, "
+              "os marcadores base e o codificador inicial idênticos dentro de "
+              "cada semente. `teto amostrado` é o melhor candidato entre os "
+              "examinados, escolhido **pelo Fβ da validação**: não é "
+              "estratégia, e mede o que existe para capturar, não um teto "
+              "absoluto. `o critério` é o que o Active Learning de fato "
+              "escolhe, sem olhar resultado. A **lacuna** entre os dois é o "
+              "custo de o critério errar o lugar do clique, e é a coluna com "
+              "teste: t pareado por semente, com n = sementes, porque os "
+              "candidatos de uma mesma semente compartilham codificador. "
+              "`captura` é razão entre duas médias, fica instável com "
+              "denominador pequeno e serve de ilustração, não de "
+              "estatística. Linhas restritas à **base funcional**; a "
+              "estratificação por regime é post-hoc e forçada pela "
+              "aritmética, porque Δ a partir de Fβ=0 exato não pode ser "
+              "negativo. As sementes compartilham pool e validação, então o "
+              "IC vale para esta validação sob sorteio das imagens de treino "
+              "e não generaliza para o dataset. O conjunto de teste não foi "
+              "tocado por esta campanha."))
+
+    for ds in ("schisto", "brats", "conjunctiva"):
+        for dec in ("FLIM_lm", "FLIM_pb"):
+            try:
+                por = _gm_por_semente(recs, experimento, ds, dec)
+            except Exception:                                 # noqa: BLE001
+                continue
+            por = {k: v for k, v in por.items()
+                   if not _colapsou(v["base"]["fb"])}
+            if not por:
+                continue
+
+            tetos, crits, lacunas, ids = [], [], [], []
+            for s in sorted(por, key=lambda x: int(x)):
+                v = por[s]
+                sort = [c for c in v["cands"] if c["papel"] == "sorteado"]
+                alvo = next((c for c in v["cands"]
+                             if c["papel"] == criterio), None)
+                if not sort or alvo is None:
+                    continue
+                ref = sum(c["fb"] for c in sort) / len(sort)
+                tetos.append(max(c["fb"] for c in sort) - ref)
+                crits.append(alvo["fb"] - ref)
+                lacunas.append(tetos[-1] - crits[-1])
+                ids += [c["run_id"] for c in sort] + [alvo["run_id"]]
+            if len(lacunas) < 2:
+                continue
+
+            dt, dc = ag.descrever(tetos), ag.descrever(crits)
+            dl = ag.descrever(lacunas)
+            tp = ag.teste_pareado(tetos, crits)
+            cap = (dc["media"] / dt["media"] * 100.0) if dt["media"] else None
+            t.adicionar(
+                [NOME_DATASET.get(ds, ds), dec, dt["n"],
+                 _fmt(dt["media"], 4), _fmt(dc["media"], 4),
+                 _fmt(dl["media"], 4), _fmt(tp["p"], 4),
+                 f"{cap:.0f}\\%" if cap is not None else "—"],
+                ids, enfase=5 if tp["p"] is not None and tp["p"] < 0.05
+                else None)
+    return t
+
+
 def tabela_gerador(recs=None, experimento: str = "ganho_marginal",
                    rotulo: str = "contorno") -> Tabela:
     """
