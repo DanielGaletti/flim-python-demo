@@ -179,11 +179,13 @@ Convém dizer com precisão o que essa comparação estabelece e o que não esta
 
 A medição do comportamento dos critérios produz três constatações.
 
-A primeira é que os critérios de incerteza encontram o objeto. Regiões de interior puro representam de 2\% a 8\% do conjunto de candidatos, e entropia e \textit{least confidence} selecionam interior em 40\% a 100\% das escolhas, o que é um enriquecimento expressivo sobre a taxa de base.
+As taxas de base, medidas sobre todos os candidatos gerados, dão a referência contra a qual as escolhas devem ser lidas: regiões de interior puro são 1,5\% dos candidatos no conjunto de parasitas, 2,4\% no BraTS e 8,3\% na conjuntivite, sobre 3768, 3964 e 4381 regiões respectivamente.
 
-A segunda é que eles erram a geometria. As escolhas atravessam a fronteira em 0\% a 20\% dos casos, embora seja justamente a travessia que a comparação com os especialistas mostra ter valor.
+A primeira constatação é que os critérios de incerteza encontram o objeto. Entropia e \textit{least confidence} selecionam interior puro em 70\%, 40\% e 100\% das escolhas nos três conjuntos, sobre dez sementes cada, o que é um enriquecimento de uma a duas ordens de grandeza sobre a taxa de base.
 
-A terceira é a mais consequente: regiões que atravessam a fronteira representam apenas 2\% a 12\% do conjunto de candidatos. A anotação valiosa quase não está disponível para ser escolhida. Isso não é uma falha dos critérios, e sim do procedimento que gera a lista. O SLIC é construído para que as fronteiras dos superpixels coincidam com as bordas presentes na imagem, de modo que seus segmentos tendem a ficar inteiramente dentro ou inteiramente fora do objeto. A propriedade que faz dele um bom algoritmo de superpixels é a mesma que o torna inadequado como gerador de candidatos para anotação de borda.
+A segunda é que eles erram a geometria. As escolhas atravessam a fronteira em 0\%, 20\% e 0\% dos casos, embora seja justamente a travessia que a comparação com os especialistas mostra ter valor.
+
+A terceira é a mais consequente: regiões que atravessam a fronteira representam apenas 2,5\%, 2,7\% e 12,4\% dos candidatos. A anotação valiosa quase não está disponível para ser escolhida. Isso não é uma falha dos critérios, e sim do procedimento que gera a lista. O SLIC é construído para que as fronteiras dos superpixels coincidam com as bordas presentes na imagem, de modo que seus segmentos tendem a ficar inteiramente dentro ou inteiramente fora do objeto. A propriedade que faz dele um bom algoritmo de superpixels é a mesma que o torna inadequado como gerador de candidatos para anotação de borda.
 
 A Figura~\ref{fig_gargalo} torna visível a terceira constatação, que é a mais consequente das três. Os superpixels do \ac{SLIC} tendem a ficar inteiramente de um lado da fronteira; os discos centrados no contorno a atravessam por construção.
 
@@ -207,7 +209,7 @@ A Tabela~\ref{tab_mecanismo} completa o quadro medindo o que \emph{prevê} o gan
 
 A linha de variação do número de núcleos merece atenção separada. Ela tem correlação \emph{negativa} com o ganho, de $-0{,}299$ com valor p de 0,0005, isto é, acrescentar mais núcleos ao codificador tende a piorar o resultado. Essa linha mede capacidade, não posição, e foi ela que serviu de base ao mecanismo declarado antes da execução da intervenção descrita adiante. Correlação de núcleos com ganho não é, contudo, demonstração de causalidade, e o texto não a trata como tal.
 
-Os critérios de diversidade, avaliados no nível de região pela primeira vez neste trabalho, comportam-se de forma ainda menos favorável. CoreSet localiza o objeto apenas no conjunto de conjuntivite, onde os objetos são grandes, e nos demais seleciona fundo em todas as escolhas, sem qualquer enriquecimento sobre a taxa de base. O medoide nunca localiza o objeto. A explicação é o desequilíbrio do conjunto de candidatos: a diversidade é calculada sobre a distribuição de aparência das regiões, e quando o objeto ocupa cerca de 3\% da imagem ele não participa dessa distribuição de forma relevante. Nos dois conjuntos de objetos pequenos, CoreSet e medoide, que são critérios opostos, produzem a mesma resposta.
+Os critérios de diversidade, avaliados no nível de região pela primeira vez neste trabalho, comportam-se de forma ainda menos favorável. O CoreSet seleciona fundo puro em 100\% das escolhas nos conjuntos de parasitas e BraTS, sem qualquer enriquecimento sobre a taxa de base, e só localiza o objeto na conjuntivite, com 90\% de interior puro, que é o conjunto em que o objeto é grande. O medoide seleciona fundo puro em 100\% das escolhas nos dois primeiros e em 80\% na conjuntivite, e \textbf{nunca} seleciona interior puro em nenhum dos três. A explicação é o desequilíbrio do conjunto de candidatos: a diversidade é calculada sobre a distribuição de aparência das regiões, e quando o objeto ocupa cerca de 3\% da imagem ele não participa dessa distribuição de forma relevante. Nos dois conjuntos de objetos pequenos, CoreSet e medoide, que são critérios opostos, produzem a mesma resposta.
 
 \section{Posição ou composição? O controle que separa as duas}
 
