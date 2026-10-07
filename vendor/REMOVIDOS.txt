@@ -227,3 +227,31 @@ quase toda a sua extensao exemplos do PascalVOC2012 (`2007_*.jpg/png`,
 deixou de citar quando a dissertacao passou para o FLIM. Ficam fora do
 `\graphicspath`, entao nao entram na compilacao; para voltar a usar alguma,
 mover um nivel para cima.
+
+
+================================================================================
+2026-10-07  DISSERTACAO/capitulos/2_fundamentos.tex, bloco de Aprendizado por
+            Reforco (13 linhas comprimidas para 2 paragrafos)
+================================================================================
+
+O capitulo 2 trazia a formulacao classica do Aprendizado por Reforco: agente,
+politica, retorno descontado, Processo de Decisao de Markov como quintupla, e
+as funcoes de valor V(s) e Q(s,a). Treze linhas de formalismo.
+
+NAO HA APRENDIZADO POR REFORCO NESTE TRABALHO. O bloco veio da qualificacao,
+quando a proposta incluia RL, e a introducao ainda prometia essa integracao em
+dois objetivos e numa hipotese. A introducao foi reescrita no mesmo dia e o
+RL saiu dela.
+
+Manter o formalismo convidaria, na defesa, a pergunta "onde esta o RL no seu
+trabalho?", para a qual nao ha resposta boa.
+
+Nao e perda de conteudo relevante. O que sobrou situa o paradigma na
+taxonomia, cita os dois trabalhos que formulam selecao de amostras como
+politica aprendida (`casanova2020reinforced`, `fang2017active`), e diz
+EXPLICITAMENTE por que nao se aplica aqui: aprender politica por recompensa
+exige muitas rodadas para o sinal se acumular, e o regime estudado tem tres a
+cinco imagens anotadas com um modelo que se reestima por completo a cada
+anotacao. Nao ha onde a politica convergir.
+
+O texto integral do bloco esta no historico do git, no commit anterior a este.

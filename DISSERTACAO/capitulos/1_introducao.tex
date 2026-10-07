@@ -71,7 +71,7 @@ A formulação é deliberada em dois aspectos. Primeiro, ela não promete reduç
 
 As contribuições abaixo são as efetivamente obtidas, com a medição que as sustenta indicada entre parênteses. O Capítulo~\ref{cap_4} apresenta cada uma com a tabela correspondente.
 
-\textbf{Primeira, a caracterização do motivo pelo qual as técnicas não transferem, com cada elo do argumento medido.} Nenhum critério de seleção de imagem supera o sorteio aleatório de forma que sobreviva à correção para múltiplas comparações, e o procedimento supervisionado do trabalho de referência tampouco se destaca. Mas existe margem considerável a capturar na seleção de \emph{região}: anotar a melhor região examinada em vez de uma sorteada vale entre 0,135 e 0,309 de $F_\beta$, nas seis combinações de conjunto de dados e decodificador, com significância em todas. Os critérios capturam apenas parte dela, e a parte não capturada, entre 0,084 e 0,267, é o custo de o critério escolher o lugar errado.
+\textbf{Primeira, a caracterização do motivo pelo qual as técnicas não transferem, com cada elo do argumento medido.} Nenhum critério de seleção de imagem supera o sorteio aleatório de forma que sobreviva à correção para múltiplas comparações, e o procedimento supervisionado do trabalho de referência tampouco se destaca. Mas existe margem considerável a capturar na seleção de \emph{região}: anotar a melhor região examinada em vez de uma sorteada vale entre 0,1351 e 0,3089 de $F_\beta$, nas seis combinações de conjunto de dados e decodificador, com significância em todas. Os critérios capturam apenas parte dela, e a parte não capturada, entre 0,0839 e 0,2667, é o custo de o critério escolher o lugar errado.
 
 \textbf{Segunda, a identificação do gargalo e a intervenção que ele indica.} A limitação não está no escore. Regiões que atravessam a fronteira do objeto representam de 2\% a 12\% dos candidatos produzidos por superpixels, e um critério apenas ordena a lista que recebe. Substituir esse gerador por discos centrados no contorno predito, mantendo escore e orçamento fixos, elevou o ganho de uma anotação adicional em 0,0772 de $F_\beta$ no conjunto de parasitas, com vantagem nas dez repetições e sobrevivendo à correção. O comportamento nos demais conjuntos é compatível com o mecanismo, incluindo um resultado nulo previsto antes da execução.
 
@@ -94,7 +94,7 @@ As hipóteses abaixo foram declaradas antes da execução das campanhas correspo
 
 \item \textbf{Q2.} Se a escolha de quais imagens anotar não é a alavanca, a escolha de \emph{onde} anotar, com orçamento de pixels fixo, é?
 \begin{itemize}
-\item \textbf{H2.} Existe margem mensurável entre a melhor posição de anotação e uma posição sorteada. \textbf{Sustentada}: entre 0,135 e 0,309 de $F_\beta$, em 6 de 6 células, com significância em todas.
+\item \textbf{H2.} Existe margem mensurável entre a melhor posição de anotação e uma posição sorteada. \textbf{Sustentada}: entre 0,1351 e 0,3089 de $F_\beta$, em 6 de 6 células, com significância em todas.
 \item \textbf{H2b.} Os critérios de \ac{AL} capturam essa margem. \textbf{Parcialmente refutada}: capturam parte dela, e a lacuna remanescente, de 0,084 a 0,267, é significativa em 4 de 6 células.
 \end{itemize}
 

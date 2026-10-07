@@ -77,18 +77,9 @@ No aprendizado não supervisionado, o modelo tem acesso apenas a exemplos não r
 
 No aprendizado semi-supervisionado, o modelo recebe um conjunto de treinamento composto simultaneamente por exemplos rotulados e não rotulados. Essa abordagem é adequada em cenários nos quais grandes volumes de dados não rotulados estão disponíveis, enquanto a rotulagem manual é custosa ou demorada. Tarefas como classificação, regressão e ranqueamento podem ser formuladas sob este paradigma. Assumindo que os dados não rotulados sigam a mesma distribuição que os dados rotulados, espera-se que sua exploração contribua para melhorar o desempenho em relação ao aprendizado supervisionado puro.
 
-O Aprendizado por Reforço (\ac{RL}) constitui um subcampo da Inteligência Artificial (\ac{AI}) no qual um agente aprende a tomar decisões por meio da interação contínua com um ambiente, aprimorando progressivamente sua política de ação com base no feedback recebido \cite{ghasemi2024comprehensive}. Esse paradigma é inspirado nos mecanismos de aprendizado por tentativa e erro observados em humanos e animais, nos quais a exploração do ambiente desempenha um papel fundamental na aquisição de conhecimento, sem a necessidade de supervisão explícita \cite{li2022xrl}.
-%O trecho a seguir apresenta, de forma concisa, a formulação clássica de \ac{RL}:
+O Aprendizado por Reforço (\ac{RL}) constitui um subcampo da Inteligência Artificial (\ac{AI}) no qual um agente aprende a tomar decisões por meio da interação contínua com um ambiente, aprimorando progressivamente sua política de ação com base no \textit{feedback} recebido \cite{ghasemi2024comprehensive,li2022xrl}. Parte da literatura de seleção de amostras formula a escolha do que anotar como uma política aprendida por recompensa \cite{casanova2020reinforced,fang2017active}, o que o situa como alternativa ao Aprendizado Ativo discutido adiante.
 
-Um agente de aprendizado por reforço interage com um ambiente ao longo do tempo. A cada instante $t$, o agente observa um estado $s_t$ pertencente ao espaço de estados $\mathcal{S}$ ($s_t \in \mathcal{S}$) e seleciona uma ação $a_t$ do espaço de ações $\mathcal{A}$ ($a_t \in \mathcal{A}$), seguindo uma política \( \pi(a_t|s_t) \), responsável por mapear estados ($s_t$) em ações ($a_t$), representando o comportamento do agente. Após a execução de $a_t$, o agente recebe uma recompensa escalar $r_t$ e transita para o estado subsequente $s_{t+1}$, de acordo com a dinâmica do ambiente (ou modelo). Essa dinâmica é descrita pela função de recompensa R(s,a) e pela probabilidade de transição $P(s_{t+1}\|s_t, a_t)$.
-Em problemas episódicos, a interação prossegue até que um estado terminal seja alcançado e o episódio seja reiniciado. O retorno
-\( R_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k} \)
-%$R_t$ = $\sum_{k=0}^{\infty}$ $\gamma^k$ $r_{t+k}$
-é definido como a soma acumulada das recompensas descontadas, em que $\gamma \in (0,1]$ representa o fator de desconto. O objetivo do agente é maximizar a expectativa desse retorno de longo prazo a partir de cada estado.
-
-Uma formulação matemática central que sustenta o \ac{RL} é o Processo de Decisão de Markov (\ac{MDP}), que modela problemas de tomada de decisão sequencial nos quais a transição entre estados depende apenas do estado atual e da ação executada \cite{li2022xrl}. Formalmente, um \ac{MDP} é definido como um quíntuplo (S, A, P, R, $\gamma$), em que S é o conjunto de estados possíveis; A é o conjunto de ações disponíveis; P é a função de transição de estados; R é a função de recompensa; $\gamma$ é o fator de desconto.
-
-O objetivo do agente é encontrar uma política ótima que maximize a recompensa acumulada esperada, denominada retorno $G_t$. Para tal, utilizam-se tipicamente duas funções de valor: a função de valor de estado $V(s)$, que estima o retorno esperado a partir do estado $s$, e a função de valor estado-ação $Q(s,a)$, que estima o retorno esperado a partir do estado $s$ quando tomada a ação $a$ \cite{ghasemi2024comprehensive}.
+Esse paradigma é mencionado aqui para completar a taxonomia e porque aparece em trabalhos relacionados, mas \textbf{não é empregado nesta dissertação}. A razão é a mesma que organiza o Capítulo \ref{cap_4}: aprender uma política de seleção por recompensa exige muitas rodadas de treinamento e avaliação para que o sinal de recompensa se acumule, e o regime estudado aqui tem três a cinco imagens anotadas e um modelo que se reestima por completo a cada anotação. Não há onde a política convergir.
 
 
 %\begin{quote}
@@ -105,7 +96,8 @@ O objetivo do agente é encontrar uma política ótima que maximize a recompensa
 %\footnotesize \cite{mohri2018foundations}
 %\end{flushright}
 
-\subsubsection{Aprendizado Ativo}
+\section{Aprendizado Ativo}
+\label{sec_al_fund}
 
 Diversas técnicas de \ac{ML} requerem grandes conjuntos de dados de treinamento para atingir seu desempenho ideal. Entretanto, o processo de anotação é frequentemente custoso, demorado e exige mão de obra especializada \cite{konyushkova2017learning}. 
 No paradigma supervisionado, o algoritmo recebe um conjunto S composto por exemplos rotulados por especialistas, o que, em tarefas como segmentação de imagem, pode demandar horas de trabalho manual para rotular pixel a pixel. A partir desse conjunto, o modelo aprende uma função que mapeia os dados de entrada para as saídas desejadas.
@@ -375,7 +367,14 @@ Um encoder \ac{FLIM} produz mapas de ativação, não uma máscara de segmentaç
 
 Essa escolha mantém a rede leve, porque o decodificador é uma convolução ponto a ponto com pesos em $\{-1, +1\}$, e preserva a propriedade central do \ac{FLIM}: nenhum parâmetro é ajustado por gradiente. O trabalho relata redes centenas de vezes menores que modelos considerados leves, treinadas com três a quatro imagens representativas. Trabalhos subsequentes na mesma linha exploram kernels separáveis dilatados para reduzir ainda mais o número de parâmetros \cite{joao2025flyweight}.
 
-É esse arranjo, encoder \ac{FLIM} com decodificador adaptativo, que o presente trabalho reproduz e sobre o qual aplica as estratégias de aprendizado ativo, interativo e contínuo descritas nas seções anteriores.
+É esse arranjo, encoder \ac{FLIM} com decodificador adaptativo, que o presente trabalho reproduz e sobre o qual aplica as estratégias de aprendizado ativo, interativo e contínuo descritas nas seções anteriores. A Figura~\ref{fig_flim_cap2} mostra o arranjo completo aplicado a uma imagem, da entrada ao erro por pixel.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{flim_pipeline.png}
+\caption[O arranjo \acs{FLIM} com decodificador adaptativo]{O arranjo aplicado a uma imagem de microscopia. O codificador \ac{FLIM}, cujos filtros são centróides de agrupamentos sobre os trechos marcados, produz o mapa de saliência; o decodificador adaptativo e o pós-processamento produzem a máscara; a comparação com a anotação de referência dá as métricas. Nenhum parâmetro do percurso foi ajustado por gradiente.}
+\label{fig_flim_cap2}
+\end{figure}
 
 \subsection{Por que a combinação com AL e CL não é imediata}
 

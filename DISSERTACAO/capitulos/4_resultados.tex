@@ -6,7 +6,11 @@ Todos os números vêm do registro de execuções descrito no Capítulo \ref{cap
 
 \section{Reprodução do trabalho de referência}
 
-A reprodução do arranjo descrito por \cite{soares2026flim} confirma o comportamento central relatado pelos autores: o $F_\beta$ cresce de forma monotônica à medida que imagens são acrescentadas ao conjunto de treino e satura entre três e quatro imagens, atingindo valores próximos aos publicados para o codificador.
+A reprodução do arranjo descrito por \cite{soares2026flim} confirma o comportamento central relatado pelos autores: o $F_\beta$ cresce com o número de imagens anotadas e satura cedo, entre três e quatro imagens.
+
+A palavra \emph{satura} merece precisão, porque a curva da Tabela~\ref{tab_curva} não é monotônica. Entre pontos vizinhos há quedas: de 0,602 para 0,576 ao passar de uma para duas imagens, e de 0,686 para 0,599 ao passar de nove para dez.
+
+A primeira dessas quedas cabe dentro dos intervalos de confiança, que se sobrepõem, e é compatível com a variância entre sorteios de imagens de treino. A segunda não cabe: os intervalos de nove e de dez imagens são disjuntos. A explicação não é um efeito de supervisão, e sim de composição da amostra. O ponto de dez imagens reúne 26 execuções sobre cinco sementes, enquanto o de nove reúne 64 execuções sobre nove sementes, de modo que os dois pontos não repousam sobre o mesmo conjunto de repetições e a comparação direta entre eles não é pareada. A tendência geral é de crescimento com saturação precoce; o percurso ponto a ponto não é regular e não deve ser lido como se fosse.
 
 Duas diferenças de implementação precisam ser declaradas antes de qualquer comparação numérica. A primeira é que a avaliação usa limiarização de Otsu seguida de filtro de área, e não o delineamento por árvores dinâmicas empregado no trabalho original, cujo executável é um binário compilado para Linux que não roda no ambiente usado aqui. A segunda é que a seleção de imagens do Algoritmo 1 do trabalho de referência exige o ground truth de todo o conjunto disponível para escolher as poucas imagens que serão anotadas, o que os próprios autores declaram ao descrever a abordagem como supervisionada.
 
