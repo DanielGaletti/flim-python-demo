@@ -2008,9 +2008,10 @@ def tabela_gerador(recs=None, experimento: str = "ganho_marginal",
     t = Tabela(
         f"gerador_{rotulo}",
         "Gerador de candidatos: contorno previsto contra superpixel",
-        ["dataset", "n (sementes)", "Δ médio", "IC95%", "vitórias",
-         "p", "Δ pior caso", "p ", "Δ dispersão", "p  "],
-        alinhamento="lrrrrrrrrr",
+        ["dataset", "n", "Δ médio", "IC95%", "vitórias",
+         "p (t)", "p (sinais)", "p (perm.)",
+         "Δ pior caso", "p ", "Δ dispersão", "p  "],
+        alinhamento="lrrrrrrrrrrr",
         nota=("Δ é a variação de Fβ na validação ao acrescentar **uma** "
               "anotação, do braço de contorno menos o braço de superpixel. "
               "Os dois sorteiam o candidato e gastam os mesmos ~300 px: a "
@@ -2027,7 +2028,18 @@ def tabela_gerador(recs=None, experimento: str = "ganho_marginal",
               "dois braços acrescentam exatamente 24, e o deslocamento que a "
               "intervenção evita não pode ocorrer. Semente cuja base "
               "degenerou (Fβ=0) sai, porque Δ a partir de zero não pode ser "
-              "negativo."))
+              "negativo. **O desfecho primário vem com três testes**: t "
+              "pareado, teste de sinais e permutação exata de sinais. Com 3 e "
+              "5 sementes a normalidade das diferenças não é verificável, e o "
+              "t sozinho não autorizaria conclusão; onde os três concordam, "
+              "como no conjunto de parasitas, a conclusão não depende da "
+              "suposição. **ATENÇÃO ao pior caso da conjuntivite**: o valor "
+              "de 0,0480 é bruto e **não sobrevive** à análise de "
+              "sensibilidade que casa o número de candidatos entre os braços, "
+              "na qual passa a 0,1032. O gerador de contorno entregou UM "
+              "único candidato naquela semente, e mínimo de um sorteio contra "
+              "mínimo de oito não é comparação. Esse desfecho **não deve ser "
+              "lido como significativo**."))
 
     for ds in ("schisto", "brats", "conjunctiva"):
         if ds not in por:
@@ -2070,10 +2082,17 @@ def tabela_gerador(recs=None, experimento: str = "ganho_marginal",
             d_txt, p_txt = _fmt(ts["delta"], 4), _fmt(ts["p"], 4)
         else:
             d_txt, p_txt = "—", "—"
+        # Testes nao parametricos para o desfecho PRIMARIO. Com 3 e 5
+        # sementes, a normalidade das diferencas nao e verificavel, e o t
+        # sozinho nao autoriza conclusao. O teste de sinais e a permutacao
+        # exata nao dependem dessa suposicao.
+        difs = [x - y for x, y in zip(a, b)]
+        sinais = ag.teste_sinais(difs)
+        perm = ag.permutacao_pareada(difs)
         t.adicionar(
             [NOME_DATASET.get(ds, ds), len(a), _fmt(tp["delta"], 4), ic,
              f"{sum(1 for x, y in zip(a, b) if x > y)} de {len(a)}",
-             _fmt(tp["p"], 4), _fmt(tw["delta"], 4), _fmt(tw["p"], 4),
-             d_txt, p_txt],
+             _fmt(tp["p"], 4), _fmt(sinais["p"], 4), _fmt(perm["p"], 4),
+             _fmt(tw["delta"], 4), _fmt(tw["p"], 4), d_txt, p_txt],
             sorted(set(ids[ds])))
     return t

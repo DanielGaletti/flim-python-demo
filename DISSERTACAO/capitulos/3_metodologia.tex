@@ -511,6 +511,22 @@ Essa disciplina tem motivo prático. Em um espaço com muitos critérios, conjun
 
 Análises não previstas no pré-registro são permitidas e reportadas, mas identificadas como exploratórias, e qualquer afirmação derivada delas exige confirmação em repetições inéditas.
 
+\subsection{O que cada campanha cobre}
+\label{sec_matriz}
+
+Afirmações sobre alcance experimental são fáceis de inflar sem intenção, porque o autor conhece o conjunto todo e o leitor vê apenas o recorte citado em cada seção. A Tabela~\ref{tab_matriz} existe para desfazer essa assimetria: ela é lida do registro de execuções, e não escrita à mão, e permite conferir o alcance de cada afirmação deste trabalho.
+
+\begin{table}[htb]
+\centering
+\caption{As campanhas experimentais e o que cada uma cobre.}
+\label{tab_matriz}
+\input{tabelas/matriz_campanhas.tex}
+\end{table}
+
+\input{tabelas/matriz_campanhas.nota.tex}
+
+Dois pontos da tabela merecem destaque, porque contrariam o que uma leitura apressada suporia. O primeiro é que a campanha principal de seleção de imagens emprega \textbf{dois} decodificadores, e não os sete do trabalho de referência: os sete aparecem somente em \texttt{tabela\_k\_por\_modelo}, restritos ao conjunto de parasitas e com uma repetição por configuração, de modo que aquela campanha é descritiva e serve para ordem de grandeza de custo, não para inferência. O segundo é que o número de repetições \textbf{varia por campanha e por célula}, de uma a dezessete, e cada tabela de resultado declara o seu próprio $n$.
+
 \subsection{Procedência dos resultados}
 
 Toda execução avaliada é gravada em um registro único, com uma linha por execução, contendo a configuração, a semente, as imagens usadas, as métricas obtidas e o identificador do commit que produziu o resultado. O identificador de cada execução é derivado dos campos que a definem, de modo que reexecutar a mesma configuração produz o mesmo identificador e a duplicata se torna detectável.

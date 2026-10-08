@@ -122,6 +122,15 @@ O mesmo experimento nos outros dois conjuntos, nas Tabelas~\ref{tab_gm_brats} e 
 
 A dispersão entre candidatos é grande. A melhor região examinada supera a região sorteada por margens entre 0,1351 e 0,3089 de $F_\beta$, com significância nas seis células formadas por conjunto de dados e decodificador, todas com valor p igual ou inferior a 0,0031. A pior região, por sua vez, fica entre 0,2075 e 0,4954 abaixo do sorteio, também nas seis células.
 
+A Figura~\ref{fig_valor_local} mostra essa amplitude nas seis células. É a figura do resultado central desta dissertação, e a leitura correta dela exige atenção a um ponto: a barra verde não é o desempenho de um método, e sim o que existe para ser capturado.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{valor_do_local.png}
+\caption[O valor do local do clique]{A mesma imagem, o mesmo orçamento de pixels marcados, e a única variável é qual região recebe a anotação. A barra verde é o melhor candidato entre os examinados, identificado \emph{com} o resultado de validação em mãos, e por isso é referência de potencial e não desempenho de método. A barra vermelha é o pior candidato. A distância entre as duas é a amplitude que a posição da anotação controla.}
+\label{fig_valor_local}
+\end{figure}
+
 A linha de imagem nova inteira merece comentário, porque responde a uma objeção natural. Poderia alguém argumentar que, em vez de escolher melhor onde anotar numa imagem já escolhida, bastaria anotar uma imagem a mais. A linha mede exatamente isso, e com orçamento \emph{maior} que o das demais: ela rende menos que a melhor região. O ganho não está em anotar mais, está em anotar no lugar certo, e é esse contraste que justifica mudar a granularidade da pergunta de imagem para região.
 
 O segundo número merece tanta atenção quanto o primeiro. O risco é da mesma ordem de grandeza do prêmio, o que significa que, no \ac{FLIM}, \textbf{anotar mais não é monotonicamente bom}. Em uma rede treinada por retropropagação, acrescentar um exemplo rotulado correto raramente piora o modelo; aqui, uma única anotação adicional mal posicionada pode custar meio ponto de $F_\beta$. É essa assimetria que dá sentido à pergunta sobre onde anotar: se toda anotação ajudasse, bastaria anotar mais.
@@ -133,9 +142,20 @@ Ainda assim, o resultado responde à ambiguidade. Existe margem considerável na
 \section{O custo do Active Learning}
 \label{sec_custo_al}
 
-Esta seção reúne as duas metades do resultado central. De um lado, quanto vale o clique no lugar certo, medido pelo máximo amostrado entre os candidatos examinados. De outro, quanto o critério de \ac{AL} efetivamente entrega quando escolhe sozinho, sem olhar resultado nenhum. A diferença entre as duas é o que se deixa na mesa, e é ela que esta dissertação chama de \emph{custo do Active Learning}.
+Esta seção reúne as duas metades do resultado central. De um lado, quanto vale o clique no lugar certo, medido pelo máximo amostrado entre os candidatos examinados. De outro, quanto o critério de \ac{AL} efetivamente entrega quando escolhe sozinho, sem consultar resultado nenhum.
 
-As duas colunas vêm da mesma campanha, da mesma semente, com a mesma base e a mesma validação, de modo que a subtração é pareada e não mistura condições.
+\subsection{Definição}
+
+Seja $C_s$ o conjunto de candidatos examinados na semente $s$, e seja $\Delta(c)$ a variação de $F_\beta$ na validação ao anotar o candidato $c$ em vez de um candidato sorteado da mesma lista. Define-se o \textbf{custo do aprendizado ativo} como a diferença pareada
+
+\begin{equation}
+L = \frac{1}{|S|}\sum_{s \in S} \left[ \max_{c \in C_s} \Delta(c) \;-\; \Delta\!\left(c^{\text{AL}}_s\right) \right]
+\label{eq_custo_al}
+\end{equation}
+
+onde $c^{\text{AL}}_s$ é o candidato que o critério automático escolhe naquela semente, sem acesso ao desempenho. O primeiro termo é o máximo amostrado e o segundo é o que o método entrega; a subtração ocorre \emph{dentro} da semente, de modo que partição, imagens, marcadores base, codificador inicial e conjunto de validação são idênticos nos dois termos.
+
+Essa quantidade existe para responder a uma ambiguidade que a literatura de resultados negativos em \ac{AL} costuma deixar aberta. Quando um critério não supera o sorteio, há duas explicações incompatíveis entre si: ou \emph{não havia margem} a capturar naquele regime, e o critério não tinha o que fazer; ou \emph{havia margem e ele não a alcançou}. As duas exigem respostas de pesquisa opostas: a primeira sugere abandonar a linha, a segunda sugere melhorar o procedimento. Medir $L$ separa os dois casos, porque o primeiro termo da Equação~\ref{eq_custo_al} mede o que existe independentemente de qualquer método.
 
 \begin{table}[htb]
 \centering
@@ -146,21 +166,34 @@ As duas colunas vêm da mesma campanha, da mesma semente, com a mesma base e a m
 
 \input{tabelas/custo_do_al.nota.tex}
 
+A Figura~\ref{fig_margem_captura} decompõe visualmente cada célula da tabela: a altura total é a margem disponível, a parte inferior é o que o critério captura, e a parte superior é o que fica para trás, isto é, o custo definido pela Equação~\ref{eq_custo_al}.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=\linewidth]{margem_captura.png}
+\caption[Margem disponível, parcela capturada e custo do aprendizado ativo]{Decomposição da margem em cada uma das seis células. A altura total é o máximo amostrado; a parte azul é o que o critério automático entrega; a parte laranja é o custo do aprendizado ativo. O asterisco marca as lacunas que sobrevivem à correção de Benjamini-Hochberg sobre as seis células. Na célula do BraTS com \texttt{FLIM\_pb} o critério entrega valor negativo, e a parcela capturada aparece como zero.}
+\label{fig_margem_captura}
+\end{figure}
+
 Três leituras, em ordem de importância.
 
 \textbf{A margem é grande e consistente.} De 0,1351 a 0,3089 de $F_\beta$, positiva nas seis células, com significância em todas. Esse é o valor do clique no lugar certo, e é a razão de a pergunta sobre posição de anotação valer a pena. Para dar escala: no mesmo conjunto de dados, a diferença entre o melhor e o pior dos sete decodificadores avaliados é da ordem de 0,2, de modo que escolher onde anotar pesa tanto quanto escolher a arquitetura do decodificador.
 
-\textbf{O critério captura parte dela, e a parte não capturada é significativa.} A lacuna vai de 0,0839 a 0,2667 e atinge significância em quatro das seis células. Em termos de fração capturada, o critério recupera cerca de metade da margem nos casos favoráveis e praticamente nada nos desfavoráveis. A coluna de captura é apresentada como ilustração e não como estatística, porque é razão entre duas médias e fica instável quando o denominador é pequeno; quem tem teste é a lacuna.
+\textbf{O critério captura parte dela, e a parte não capturada é significativa.} A lacuna definida pela Equação~\ref{eq_custo_al} vai de 0,0839 a 0,2667, e sobrevive à correção de Benjamini-Hochberg sobre as seis células em quatro delas. Em termos de fração capturada, o critério recupera cerca de metade da margem nos casos favoráveis e praticamente nada nos desfavoráveis. A coluna de captura é apresentada como ilustração e não como estatística, porque é razão entre duas médias e fica instável quando o denominador é pequeno; quem tem teste é a lacuna.
+
+Duas leituras da tabela merecem atenção, e as duas apontam na direção da cautela. A primeira é que o negrito marca $q < 0{,}05$, e não $p < 0{,}05$: a célula do BraTS com \texttt{FLIM\_pb} tem valor bruto de 0,0495 e ajustado de 0,0594, isto é, \textbf{não} sobrevive à correção, e não deve ser lida como significativa. A segunda é que o teste de sinais, reportado ao lado, discorda do teste $t$ no conjunto de parasitas com \texttt{FLIM\_lm}: o $t$ dá 0,0230 e os sinais dão 0,3438. A lacuna ali é grande em média, mas não é consistente em direção ao longo das sementes, e um leitor que dependesse apenas do $t$ não veria isso. Onde os dois testes divergem, a conclusão honesta é que a evidência é mais fraca do que o $t$ sozinho sugere.
 
 \textbf{Há um caso em que o critério vai bem, e ele precisa ser dito.} No BraTS com o decodificador \texttt{FLIM\_lm}, o \textit{least confidence} entrega 0,2320 contra um máximo amostrado de 0,2766, isto é, captura 84\% da margem, com valor p de 0,0012. Omitir esse caso tornaria a conclusão mais limpa e menos verdadeira. A leitura correta não é que os critérios de incerteza sejam inúteis, e sim que o seu desempenho \textbf{depende do decodificador e do domínio}. O mesmo escore que ordena bem as regiões no \texttt{FLIM\_lm} do conjunto de parasitas, com correlação de 0,427 e valor p de 0,0001, não as ordena no \texttt{FLIM\_pb}, onde a correlação é de $-0{,}045$ com valor p de 0,6400.
 
 A formulação que os números autorizam é, portanto:
 
 \begin{quote}
-Sob orçamento de anotação fixo, existe uma margem de 0,1351 a 0,3089 de $F_\beta$ entre a melhor região examinada e uma região sorteada. Os critérios de \ac{AL} capturam parte dela, e a parte não capturada, de 0,0839 a 0,2667, é o custo de o critério escolher o lugar errado.
+A seleção regional revelou que o valor de uma nova anotação no \ac{FLIM} depende fortemente de sua posição. Entre os candidatos examinados, conduzir o especialista ao melhor local esteve associado a ganhos de até aproximadamente 0,3 de $F_\beta$ sobre uma escolha aleatória, enquanto uma escolha desfavorável acarretou perdas de magnitude comparável ou superior. Esse valor representa a \textbf{margem disponível}, medida com acesso ao resultado de validação, e não o desempenho já alcançado por um critério automático. Os métodos avaliados capturam apenas parte dessa margem, o que estabelece como problema central encontrar, \emph{sem consultar o gabarito}, a região capaz de produzir esse ganho.
 \end{quote}
 
-Note o que a formulação \emph{não} diz. Ela não diz que o \ac{AL} melhora o $F_\beta$ em 0,1 a 0,3. Os 0,1 a 0,3 são o \textbf{máximo amostrado}, identificado com acesso ao resultado da validação, e nenhum método automático os entrega. Eles medem o potencial presente no conjunto de candidatos examinado, e o objetivo do aprendizado ativo regional é conduzir o especialista até esse local \emph{sem} consultar o gabarito. Confundir as duas coisas transformaria o resultado mais sólido do trabalho em uma afirmação falsa.
+A identificação desse local utilizou o desempenho de validação e serve como referência de potencial, não como método aplicável.
+
+Note o que a formulação \emph{não} diz. Ela não diz que o \ac{AL} melhorou o $F_\beta$ em 0,3. Dizer isso seria falso e cairia na primeira pergunta de uma banca atenta. Os 0,1 a 0,3 são o \textbf{máximo amostrado}: o melhor entre os candidatos examinados, identificado \emph{depois} de medir cada um deles na validação. Nenhum método automático os entrega, e nenhum método poderia entregá-los por esse caminho, porque o caminho consiste em olhar a resposta. O que a dissertação estabelece é que a margem existe e qual é o seu tamanho; capturá-la sem o gabarito é o problema que fica em aberto.
 
 \section{Para onde os critérios apontam}
 
@@ -287,9 +320,11 @@ Duas advertências de leitura acompanham a Tabela~\ref{tab_noc}. A primeira é q
 
 \section{A intervenção no gerador de candidatos}
 
-As seções anteriores convergem para um diagnóstico. Existe margem considerável na escolha da região. Os critérios de incerteza localizam o objeto mas pousam no interior. Os critérios de diversidade não localizam o objeto. E a anotação que os marcadores dos especialistas mostram ser valiosa, a que atravessa a fronteira, corresponde a uma fração mínima do conjunto de candidatos. Como um critério apenas ordena a lista que recebe, nenhuma escolha de escore poderia resolver a limitação.
+As seções anteriores convergem para um diagnóstico. Existe margem considerável na escolha da região. Os critérios de incerteza localizam o objeto mas pousam no interior. Os critérios de diversidade não localizam o objeto. E a anotação que os marcadores dos especialistas mostram ser valiosa, a que atravessa a fronteira, corresponde a uma fração mínima do conjunto de candidatos.
 
-A intervenção que decorre desse diagnóstico atua sobre o gerador. Em lugar de segmentar a imagem em superpixels, os candidatos passam a ser discos centrados em pontos do contorno previsto pelo modelo, de modo que atravessam a fronteira por construção. O contorno usado é o previsto, não o do ground truth, e portanto o procedimento é aplicável.
+Convém formular a conclusão com a força que a evidência comporta, e não mais. O que os números estabelecem é que \textbf{a geração de candidatos contribui materialmente para o desempenho e constitui um alvo promissor de intervenção}. O que eles \emph{não} estabelecem é que nenhum escore poderia resolver o problema: um escore suficientemente bom poderia, em princípio, priorizar os candidatos raros que têm a geometria desejada, e a escassez desses candidatos torna a tarefa difícil sem torná-la impossível. A baixa frequência limita a disponibilidade, e não a possibilidade.
+
+A intervenção que decorre desse diagnóstico atua sobre o gerador. Em lugar de segmentar a imagem em superpixels, os candidatos passam a ser discos centrados em pontos do contorno \emph{previsto} pelo modelo. Esses discos atravessam o contorno predito por construção, \textbf{mas não necessariamente a fronteira verdadeira do objeto}: quando o modelo subsegmenta, o contorno predito situa-se por dentro do real e os discos caem no interior. A medição confirma que é isso o que ocorre, com fração de objeto dos candidatos em 0,997 no conjunto de parasitas e 0,779 no BraTS. O contorno usado é o predito, e não o do gabarito, o que torna o procedimento aplicável sem anotação prévia.
 
 O experimento fixa o critério de seleção em sorteio nos dois braços e mantém o orçamento de anotação idêntico, verificado em mediana de trezentos pixels em ambos. A única diferença entre os braços é a origem da lista de candidatos, o que isola o efeito do gerador.
 
@@ -302,9 +337,17 @@ O experimento fixa o critério de seleção em sorteio nos dois braços e manté
 
 \input{tabelas/gerador_contorno.nota.tex}
 
-No conjunto de parasitas o efeito é claro: ganho médio de 0,0772 de $F_\beta$, com intervalo de confiança entre 0,0393 e 0,1151, valor p de 0,0013, e vantagem em todas as dez repetições. O resultado sobrevive à correção de Benjamini-Hochberg aplicada sobre os três conjuntos de dados. Os dois desfechos secundários, declarados no pré-registro com o mecanismo escrito antes da execução, acompanham: o pior caso melhora 0,2153 e a dispersão entre candidatos cai 0,1091.
+No conjunto de parasitas o efeito é claro: ganho médio de 0,0772 de $F_\beta$, com intervalo de confiança entre 0,0393 e 0,1151, valor p de 0,0013 no teste $t$ pareado, e vantagem em todas as dez repetições. O resultado sobrevive à correção de Benjamini-Hochberg aplicada sobre os três conjuntos de dados.
 
-O comportamento nos outros dois conjuntos merece atenção. Na conjuntivite o efeito vai na mesma direção, com vantagem em quatro das cinco repetições, mas sem significância no desfecho primário. No BraTS o efeito desaparece, e esse resultado nulo é previsto pelo mecanismo: a arquitetura empregada nesse conjunto fixa o banco em oito filtros por camada, de modo que ambos os braços acrescentam exatamente o mesmo número de filtros e o deslocamento que a intervenção evita não pode ocorrer. O conjunto funciona, assim, como controle do mecanismo.
+Esse resultado \textbf{não depende da suposição de normalidade das diferenças}, e isso foi verificado em vez de assumido. O teste de sinais bicaudal, que não supõe forma alguma para a distribuição, dá 0,0020, e a permutação exata de sinais, que enumera as $2^{10}$ atribuições possíveis, dá o mesmo 0,0020. Os três testes concordam, o que é o que se espera de um efeito consistente e não de um artefato de modelagem estatística.
+
+Os dois desfechos secundários, declarados na pré-especificação com o mecanismo escrito antes da execução, acompanham: o pior caso melhora 0,2153 e a dispersão entre candidatos cai 0,1091.
+
+O comportamento nos outros dois conjuntos merece atenção, e a conclusão honesta é que \textbf{o efeito foi confirmado em um dos três conjuntos de dados, e não há demonstração de generalização ampla}.
+
+Na conjuntivite o efeito vai na mesma direção, com vantagem em quatro das cinco repetições, mas sem significância no desfecho primário por nenhum dos três testes: 0,2374 no $t$, 0,3750 nos sinais e 0,2500 na permutação. Com cinco repetições, a permutação exata tem $2^5 = 32$ atribuições possíveis e o menor valor p atingível é $1/16$, de modo que o desenho simplesmente não tem poder para decidir. A leitura correta é \emph{inconclusivo}, e não \emph{equivalente}.
+
+No BraTS o efeito desaparece, e esse resultado nulo é previsto pelo mecanismo: a arquitetura empregada nesse conjunto fixa o banco em oito filtros por camada, de modo que ambos os braços acrescentam exatamente o mesmo número de filtros e o deslocamento que a intervenção evita não pode ocorrer. O conjunto funciona, assim, como controle negativo do mecanismo. Também ali o $n$ é pequeno, com três sementes, e o mesmo limite de poder se aplica: o nulo é compatível com a previsão, mas não a confirma com força.
 
 Duas limitações do gerador foram medidas e devem acompanhar qualquer leitura do resultado. A primeira é que ele exige uma predição não trivial: quando a máscara prevista é vazia ou cobre a imagem inteira, não há contorno e o conjunto de candidatos fica vazio, enquanto o gerador por superpixels funciona em qualquer situação. A segunda é que os candidatos gerados apresentam fração de objeto próxima de um, isto é, caem no interior do objeto verdadeiro e não sobre sua fronteira, porque o modelo subsegmenta e o contorno previsto se situa dentro do contorno real. O ganho ocorre apesar disso, o que sugere que parte do efeito decorre de o candidato ser pequeno e localizado, acrescentando menos filtros ao banco, e não apenas de sua posição. Separar essas duas contribuições exige um experimento adicional, discutido no Capítulo \ref{cap_5}.
 
@@ -378,6 +421,6 @@ Os resultados sustentam a seguinte leitura, em quatro elos, cada um medido.
 
 \textbf{Terceiro, os critérios capturam parte dessa margem, e a parte que escapa é o custo do método.} A lacuna entre o máximo amostrado e o que o critério entrega vai de 0,0839 a 0,2667 e é significativa em quatro das seis células. O desempenho do escore depende do decodificador e do domínio: há uma célula em que ele captura 84\% da margem e outra em que captura praticamente nada.
 
-\textbf{Quarto, o gargalo está na lista e não no escore.} Regiões que atravessam a fronteira do objeto, que são as que a comparação com os marcadores reais mostra terem valor, representam de 2\% a 12\% dos candidatos produzidos por superpixels. Como um critério apenas ordena a lista que recebe, nenhuma escolha de escore resolveria isso. A intervenção derivada desse diagnóstico, que troca o gerador mantendo escore e orçamento fixos, produz ganho de 0,0772 de $F_\beta$ no conjunto de parasitas, em dez de dez repetições, sobrevivendo à correção; o resultado nulo no BraTS foi previsto pelo mecanismo antes da execução e funciona como controle dele.
+\textbf{Quarto, a geração de candidatos contribui materialmente e é um alvo promissor de intervenção.} Regiões que atravessam a fronteira do objeto, que são as que a comparação com os marcadores reais mostra terem valor, representam de 2,5\% a 12,4\% dos candidatos produzidos por superpixels. Essa escassez limita a disponibilidade da geometria desejada, embora não impeça, em princípio, que um escore suficientemente bom priorize os candidatos raros. A intervenção derivada desse diagnóstico, que troca o gerador mantendo escore e orçamento fixos, produz ganho de 0,0772 de $F_\beta$ no conjunto de parasitas, em dez de dez repetições, sobrevivendo à correção; o resultado nulo no BraTS foi previsto pelo mecanismo antes da execução e funciona como controle dele. O efeito \textbf{não se confirmou} nos outros dois conjuntos, e a comparação não separa a geometria do tamanho dos candidatos, de modo que o mecanismo causal completo permanece apenas parcialmente identificado.
 
 A razão estrutural que percorre os quatro elos é a mesma: no \ac{FLIM}, a anotação adicional \emph{reestima} o extrator de atributos em vez de refiná-lo, e o banco de filtros é compartilhado por todas as imagens, de modo que o acréscimo é uma intervenção global e de risco. O Capítulo \ref{cap_5} discute o que esses resultados autorizam afirmar e o que permanece em aberto.
