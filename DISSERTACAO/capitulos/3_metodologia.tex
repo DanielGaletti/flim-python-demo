@@ -106,7 +106,7 @@ Vale também fixar o que é um marcador, já que ele é a única entrada de supe
 
 \subsection{Qualidade da segmentação}
 
-A métrica principal é o \fbeta, que combina precisão e revocação com peso maior para a precisão, seguindo o trabalho de referência:
+A métrica principal é o $F_\beta$, que combina precisão e revocação com peso maior para a precisão, seguindo o trabalho de referência:
 
 \begin{equation}
 F_\beta = \frac{(1 + \beta^2) \cdot P \cdot R}{\beta^2 \cdot P + R}, \qquad \beta^2 = 0{,}3
@@ -172,26 +172,30 @@ Os critérios avaliados nesta dissertação se separam em três faixas de custo,
 
 Esta última linha é a razão de ser desta dissertação. O próprio artigo declara que a abordagem de seleção é supervisionada, e um procedimento que precisa do gabarito de todo o pool para escolher o que anotar derrota o propósito de um método criado para operar com três a cinco imagens anotadas. A pergunta que organiza o trabalho é, então, quanto do benefício daquele procedimento se recupera com critérios da primeira e da segunda faixa, que não consultam anotação nenhuma.
 
-Por isso o Algoritmo 1 aparece aqui sob o nome de \textbf{oracle} e é tratado como \emph{teto de referência}, nunca como método concorrente. Ele tem acesso a uma informação que os demais não têm.
+Por isso o Algoritmo 1 aparece aqui sob o nome de \textbf{baseline supervisionado com informação privilegiada}, e não como método concorrente: ele tem acesso a uma informação que os demais não têm.
+
+Convém ser explícito quanto ao que esse braço \emph{não} é. Consultar a anotação de referência não transforma automaticamente uma heurística em limite superior de desempenho. Um limite superior exigiria que o procedimento maximizasse o desfecho avaliado, e o Algoritmo 1 maximiza outra coisa: ele escolhe a imagem de \emph{pior} $F_\beta$, que não é necessariamente a mais informativa. A medição relatada no Capítulo~\ref{cap_4} mostra que ele pode, inclusive, perder para o sorteio aleatório. Os termos \emph{teto} e \emph{limite superior} são, portanto, evitados para esse braço ao longo de todo o trabalho.
 
 \subsection{Critérios de incerteza}
 \label{sec_crit_incerteza}
 
 A família de incerteza parte da ideia de que o modelo aprende mais com aquilo sobre o que está em dúvida. Se a predição já é confiante, anotar aquela imagem apenas confirma o que o modelo já sabe.
 
-Seja $P(x,y) \in (0,1)$ a probabilidade predita de o pixel $(x,y)$ pertencer ao objeto.
+\paragraph{Uma ressalva de nomenclatura, antes das fórmulas.} Seja $S(x,y) \in [0,1]$ o valor que o decodificador atribui ao pixel $(x,y)$. Esse valor é o \textbf{escore de saliência normalizado}: ele resulta da normalização linear do mapa de ativação da Equação~\ref{eq_decoder} para o intervalo unitário, e é armazenado quantizado em oito bits. Ele \textbf{não é uma probabilidade calibrada}. Não provém de uma função logística ajustada, não passou por calibração, e nada garante que o valor $0{,}6$ corresponda a 60\% de chance de o pixel ser objeto.
 
-A \textbf{entropia} mede a indecisão ponto a ponto, atingindo o máximo quando a probabilidade predita é exatamente $0{,}5$, isto é, quando o modelo não tem preferência entre objeto e fundo:
+As funções de aquisição abaixo são, portanto, aplicadas a $S$ \emph{por analogia} com a formulação probabilística, e o termo \emph{pseudo-probabilidade} é usado ao longo do texto para marcar essa distinção. Duas consequências decorrem disso e valem ser enunciadas. A primeira é que a entropia calculada sobre $S$ não deve ser lida como incerteza epistêmica calibrada: o máximo em $S = 0{,}5$ é uma propriedade de onde a normalização situa o ponto médio, e não de uma dúvida probabilística do modelo. A segunda é que as comparações entre braços permanecem válidas, porque todos os braços recebem exatamente a mesma representação, e a diferença entre eles isola o critério e não a escala.
+
+A \textbf{entropia} mede a indecisão ponto a ponto, atingindo o máximo quando o escore é exatamente $0{,}5$:
 
 \begin{equation}
-H(x,y) = -\big[P \log P + (1-P)\log(1-P)\big]
+H(x,y) = -\big[S \log S + (1-S)\log(1-S)\big]
 \label{eq_entropia}
 \end{equation}
 
 O \textbf{least confidence} mede a distância à fronteira de decisão. A intuição é a mesma da entropia, com escala diferente:
 
 \begin{equation}
-\text{LC}(x,y) = 1 - |2P - 1|
+\text{LC}(x,y) = 1 - |2S - 1|
 \label{eq_lc}
 \end{equation}
 
@@ -199,7 +203,7 @@ A \textbf{margem}, em classificação multiclasse, é a diferença entre as duas
 
 Os três critérios acima medem a incerteza de \emph{um} modelo, e essa incerteza mistura duas coisas diferentes. Um pixel pode ser ambíguo porque a imagem é genuinamente ambígua naquele ponto, ou porque o modelo está mal treinado. Anotar o segundo caso ajuda; anotar o primeiro não resolve, porque nenhuma quantidade de dados elimina ambiguidade intrínseca.
 
-O \ac{BALD} separa as duas usando o desacordo entre modelos. Dado um comitê de $N$ modelos com predições $p_1, \dots, p_N$:
+O quarto critério desta família, aqui denominado \textbf{critério inspirado em \ac{BALD} por discordância de comitê}, separa as duas usando o desacordo entre modelos. Dado um comitê de $N$ modelos com predições $p_1, \dots, p_N$:
 
 \begin{equation}
 \text{BALD} = H\!\left(\frac{1}{N}\sum_i p_i\right) - \frac{1}{N}\sum_i H(p_i)
@@ -208,7 +212,9 @@ O \ac{BALD} separa as duas usando o desacordo entre modelos. Dado um comitê de 
 
 O primeiro termo é a incerteza total e o segundo é a parcela que todos os modelos compartilham. A diferença isola o desacordo: um ponto em que todos os modelos estão inseguros da mesma forma recebe pontuação baixa, e um ponto em que eles discordam entre si recebe pontuação alta.
 
-A formulação original obtém o comitê por \emph{dropout} de Monte Carlo, com várias passagens estocásticas pelo mesmo modelo. \textbf{O \ac{FLIM} não tem \emph{dropout} e sua inferência é determinística}, de modo que essa via não existe aqui. A adaptação feita neste trabalho usa como comitê os mapas de saliência de codificadores distintos, e o desacordo medido é entre eles. É uma adaptação legítima e é também uma diferença em relação ao método publicado, que precisa estar declarada ao ler os resultados do \ac{BALD}.
+A formulação original do \ac{BALD} é bayesiana: o comitê aproxima a posterior sobre os parâmetros, obtida por \emph{dropout} de Monte Carlo com várias passagens estocásticas pelo mesmo modelo, e a quantidade medida é o ganho de informação esperado sobre essa posterior. \textbf{O \ac{FLIM} não tem \emph{dropout} e sua inferência é determinística}, de modo que essa via não existe aqui, e não há posterior a aproximar.
+
+O que este trabalho mede é, portanto, \emph{discordância entre codificadores distintos}, usando como comitê os mapas de saliência de cada um. A quantidade da Equação~\ref{eq_bald} continua bem definida e continua separando desacordo de incerteza compartilhada, mas ela \textbf{não é uma aproximação bayesiana}, e o texto evita chamá-la de \ac{BALD} sem qualificação. A leitura dos resultados correspondentes deve ser feita nesses termos.
 
 \subsection{Critérios de diversidade}
 \label{sec_crit_diversidade}
@@ -235,14 +241,25 @@ r^{\ast} = \arg\min_{r} \; \frac{1}{|R|}\sum_{q \in R} \lVert f(r) - f(q) \rVert
 
 Ele entrou nos experimentos como contraste deliberado ao CoreSet. Se a cobertura de regiões extremas fosse o que importa, o medoide deveria ir pior que o CoreSet; se o que importasse fosse representatividade, o contrário. Ter os dois permite distinguir as hipóteses, em vez de apenas constatar que um critério não funcionou.
 
-O \textbf{\ac{BADGE}} combina as duas famílias numa única pontuação. A ideia é construir um vetor que já carregue incerteza e diversidade ao mesmo tempo, escalando o vetor de atributos pela incerteza da predição:
+O terceiro critério de diversidade avaliado é um \textbf{híbrido inspirado no \ac{BADGE}}, e a qualificação não é cosmética: a implementação usada aqui diverge da formulação original de uma forma que precisa ser declarada.
+
+A ideia do \ac{BADGE} é construir um vetor que carregue incerteza e diversidade ao mesmo tempo, aplicando o $k$-means++ sobre \emph{embeddings de gradiente}. No método original, o embedding é o gradiente da perda em relação à última camada, avaliado no pseudo-rótulo $\hat{y} = \arg\max_k P_k$:
 
 \begin{equation}
-g_i = \big(P_i - \tfrac{1}{2}\big)\, f(r_i)
+g_i^{\text{original}} = \big(P_i - e_{\hat{y}}\big) \otimes f(r_i)
+\label{eq_badge_original}
+\end{equation}
+
+cuja magnitude, no caso binário, é proporcional a $|P_i - \operatorname{round}(P_i)|$, isto é, \emph{máxima} quando $P_i$ se aproxima de $0{,}5$ e próxima de zero quando o modelo está confiante. A implementação avaliada neste trabalho usa, em seu lugar:
+
+\begin{equation}
+g_i = \big(S_i - \tfrac{1}{2}\big)\, f(r_i)
 \label{eq_badge}
 \end{equation}
 
-e em seguida aplicar a inicialização do $k$-means++ sobre os $g_i$. Como o $k$-means++ sorteia pontos com probabilidade proporcional ao quadrado da distância aos já escolhidos, candidatos com vetor $g$ grande, isto é, incertos, e distantes entre si, isto é, diversos, são favorecidos simultaneamente. É o critério de maior custo dos avaliados, porque exige atributos e predições de todo o pool.
+cuja magnitude é $|S_i - 0{,}5|$, ou seja, \textbf{nula} na incerteza máxima e \emph{máxima} na confiança máxima. Como o $k$-means++ sorteia pontos com probabilidade proporcional ao quadrado da distância, o efeito é favorecer os candidatos mais \emph{confiantes}, invertendo a intenção do método original.
+
+A divergência foi identificada na auditoria do código e está registrada aqui em vez de corrigida porque este critério \textbf{não participa de nenhum resultado central} desta dissertação: ele aparece somente na tabela que reúne todas as técnicas avaliadas, e não nas campanhas de ganho marginal, de custo do aprendizado ativo ou de troca do gerador. A leitura correta da linha correspondente é, portanto, que \emph{um híbrido de diversidade ponderado por confiança} não superou o sorteio, e não que o \ac{BADGE} tenha sido avaliado. Reimplementar a Equação~\ref{eq_badge_original} e reexecutar essa comparação consta entre os trabalhos futuros do Capítulo~\ref{cap_5}.
 
 \subsection{Por que estes critérios, e não outros}
 
@@ -253,11 +270,11 @@ A escolha não foi por conveniência de implementação. O conjunto avaliado cob
     \item \textbf{incerteza corrigida por desacordo}: \ac{BALD};
     \item \textbf{diversidade pura}: CoreSet e medoide, em direções opostas;
     \item \textbf{híbrido}: \ac{BADGE};
-    \item \textbf{teto}: oracle, que lê o gabarito e reproduz o passo 7 do Algoritmo 1;
+    \item \textbf{baseline privilegiado}: o procedimento do trabalho de referência, que lê o gabarito e reproduz o passo 7 do Algoritmo 1;
     \item \textbf{piso}: sorteio aleatório, sem critério nenhum.
 \end{itemize}
 
-O piso e o teto são o que torna o conjunto interpretável. Sem o sorteio não se sabe se um critério ajudou ou se qualquer escolha teria ajudado. Sem o oracle não se sabe se a dificuldade está em o critério ser imperfeito ou em a seleção de imagem não ser a alavanca certa, e é essa distinção que os resultados do Capítulo~\ref{cap_4} acabam decidindo.
+O piso e o baseline privilegiado são o que torna o conjunto interpretável. Sem o sorteio não se sabe se um critério ajudou ou se qualquer escolha teria ajudado. Sem o baseline privilegiado não se sabe se a dificuldade está em o critério ser imperfeito ou em a seleção de imagem não ser a alavanca certa, e é essa distinção que os resultados do Capítulo~\ref{cap_4} acabam decidindo.
 
 Ficaram de fora os métodos que exigem retropropagação para funcionar, como os baseados em gradiente da perda ou em redes adversárias de seleção. Não é omissão: o \ac{FLIM} não tem perda nem otimizador, e esses métodos não são aplicáveis sem descaracterizar o modelo que está sendo estudado.
 
@@ -461,7 +478,11 @@ Os valores apresentados pela aplicação não são usados em nenhuma afirmação
 
 Cada conjunto de dados é dividido em três partes disjuntas: um conjunto de onde saem as imagens a anotar, um conjunto de validação usado nas medições de diagnóstico, e um conjunto de teste. A divisão é feita uma vez, com semente fixa, e mantida em todas as campanhas, de modo que resultados de campanhas diferentes sejam comparáveis.
 
-O conjunto de teste não é usado em nenhuma decisão de método. Ele existe para ser tocado uma única vez, na configuração final.
+O conjunto de teste não participou de nenhuma decisão de método: nenhum hiperparâmetro, critério, limiar ou faixa do filtro de área foi escolhido com base nele. Convém, porém, ser preciso sobre o que isso significa e o que não significa.
+
+As campanhas de diagnóstico, que são as que sustentam os resultados centrais deste trabalho, medem \textbf{exclusivamente em validação}. É o caso do ganho marginal, da caracterização do comportamento dos critérios, da troca do gerador de candidatos e da análise de custo do aprendizado ativo.
+
+A campanha de seleção de imagens, por outro lado, reporta desempenho \textbf{no conjunto de teste} para todos os braços, o que corresponde a cinco critérios, quatro orçamentos e três conjuntos de dados. Todos esses braços foram declarados antes da execução, de modo que se trata de reporte de configurações pré-especificadas e não de busca sobre o teste. Ainda assim, dizer que o conjunto de teste foi \emph{tocado uma única vez} seria impreciso, e essa formulação não é usada aqui.
 
 \subsection{Repetições e unidade de análise}
 
@@ -479,9 +500,12 @@ Quando uma campanha produz múltiplas comparações, aplica-se a correção de B
 
 Resultados sobre proporções, como a taxa de sucesso do laço interativo, usam o teste exato de McNemar sobre os pares discordantes, já que pares concordantes não carregam informação sobre a diferença entre os braços.
 
-\subsection{Pré-registro}
+\subsection{Pré-especificação versionada}
+\label{sec_prereg}
 
-Cada campanha é precedida de um documento que declara, antes da execução: a hipótese, o desfecho primário, os desfechos secundários, o critério que falsearia a hipótese, o número de repetições, e o que o experimento não autorizará afirmar. O documento é versionado junto com o código.
+Cada campanha é precedida de um documento que declara, antes da execução: a hipótese, o desfecho primário, os desfechos secundários, o critério que falsearia a hipótese, o número de repetições, e o que o experimento não autorizará afirmar.
+
+O documento é versionado no mesmo repositório do código, e a ordem entre a declaração e a execução fica registrada nos \emph{commits}. Trata-se, portanto, de \textbf{pré-especificação versionada internamente}, e não de registro em plataforma externa e imutável como as usadas em ensaios clínicos ou em psicologia experimental. A distinção importa: um repositório sob controle do próprio autor oferece garantia mais fraca que um registro externo, ainda que o histórico torne a reescrita detectável. O que o procedimento garante é que a hipótese e o critério de falseamento existiam, em arquivo datado, antes de o resultado ser conhecido.
 
 Essa disciplina tem motivo prático. Em um espaço com muitos critérios, conjuntos de dados e orçamentos, encontrar uma combinação aparentemente favorável é quase certo mesmo quando nenhum efeito existe. Declarar antes o que contaria como evidência é o que distingue um achado de um acidente. Quatro resultados aparentemente favoráveis foram descartados por esse procedimento ao longo deste trabalho, conforme relatado no Capítulo \ref{cap_4}.
 

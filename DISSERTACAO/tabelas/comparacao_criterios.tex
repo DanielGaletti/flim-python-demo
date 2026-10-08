@@ -1,11 +1,12 @@
 % Técnicas de Active Learning contra o sorteio
-% GERADO por flim_al/tabelas.py em 2026-10-07T13:57:15+00:00
+% GERADO por flim_al/tabelas.py em 2026-10-08T13:52:40+00:00
 % NAO EDITE A MAO: a proxima geracao sobrescreve, e o numero editado deixa de bater com evidencia/execucoes/.
 % Proveniencia: comparacao_criterios.proveniencia.json
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lrrrrrrrrr}
-\hline
+\toprule
 técnica & nível & F$\beta$ (células pareadas) & n pares & $\Delta$ vs random & p & $\Delta$ vs FLIM (K=3) & p (FLIM) & $\Delta$ vs controle do nível & veredito \\
-\hline
+\midrule
 badge & imagem & 0.430 & 95 & \textbf{-0.019} & 0.0105 & --- & --- & --- & suportado \\
 coreset & imagem & 0.464 & 354 & \textbf{-0.028} & 0.0149 & --- & --- & --- & suportado \\
 entropy & imagem & 0.455 & 471 & -0.009 & 0.3661 & --- & --- & --- & sem suporte \\
@@ -47,5 +48,6 @@ sorteada & ? & --- & 0 & --- & --- & --- & --- & --- & sem pares suficientes \\
 sorteado & ? & --- & 0 & --- & --- & --- & --- & --- & sem pares suficientes \\
 uniforme & ? & --- & 0 & --- & --- & --- & --- & --- & sem pares suficientes \\
 uniforme\_balanceado & ? & --- & 0 & --- & --- & --- & --- & --- & sem pares suficientes \\
-\hline
+\bottomrule
 \end{tabular}
+\end{adjustbox}

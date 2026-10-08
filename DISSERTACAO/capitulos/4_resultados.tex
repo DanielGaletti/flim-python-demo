@@ -42,7 +42,9 @@ A reimplementação do Algoritmo 1 revelou ainda duas propriedades não discutid
 
 \section{Seleção de imagens}
 
-A primeira pergunta é se algum critério de \ac{AL} sem ground truth supera a escolha aleatória das imagens a anotar. Foram avaliados critérios das duas famílias predominantes na literatura: incerteza, representada por entropia, \textit{least confidence}, margem e BALD; e diversidade, representada por CoreSet, BADGE e medoide. A referência superior é o oracle, que usa o ground truth para escolher a imagem de pior desempenho, e a referência inferior é o sorteio.
+A primeira pergunta é se algum critério de \ac{AL} sem anotação prévia supera a escolha aleatória das imagens a anotar. Foram avaliados critérios das duas famílias predominantes na literatura: incerteza, representada por entropia, \textit{least confidence}, margem e o critério inspirado em \ac{BALD}; e diversidade, representada por CoreSet, medoide e o híbrido inspirado em \ac{BADGE}. Além deles entram duas referências: o \textbf{baseline supervisionado com informação privilegiada}, que reproduz o Algoritmo 1 do trabalho de referência consultando a anotação de todo o conjunto, e o sorteio, que é o piso.
+
+A campanha abrange os três conjuntos de dados e quatro orçamentos, com \textbf{dois decodificadores} e \textbf{três repetições por célula}. Os sete decodificadores do trabalho de referência aparecem apenas na análise complementar da Tabela~\ref{tab_custo}, restrita ao conjunto de parasitas e com uma repetição por configuração, de modo que aquela tabela é descritiva e não sustenta inferência.
 
 A Tabela \ref{tab_geral_al} resume a comparação nos três conjuntos de dados, para quatro orçamentos de anotação.
 
@@ -55,7 +57,9 @@ A Tabela \ref{tab_geral_al} resume a comparação nos três conjuntos de dados, 
 
 \input{tabelas/geral_al_lm.nota.tex}
 
-Nenhum critério apresenta superioridade sobre o sorteio que sobreviva à correção de Benjamini-Hochberg. O resultado se mantém nos três conjuntos de dados e nos quatro orçamentos. Vale notar que o oracle, que lê o ground truth e portanto representa o teto do que a seleção de imagens poderia entregar, também não se destaca de forma consistente, perdendo do sorteio em parte considerável das células. Isso sugere que, no regime de três a cinco imagens, a identidade das imagens escolhidas importa menos do que a formulação do Algoritmo 1 pressupõe.
+Nenhum critério apresenta superioridade sobre o sorteio que sobreviva à correção de Benjamini-Hochberg. O resultado se mantém nos três conjuntos de dados e nos quatro orçamentos.
+
+O comportamento do baseline privilegiado merece parágrafo próprio, porque é o achado mais informativo desta seção. Ele lê a anotação de referência de todo o conjunto e ainda assim não se destaca: com oito imagens fica 0,232 de $F_\beta$ \emph{abaixo} do sorteio, com valor p de 0,0107, perdendo em \textbf{todas} as nove células. Isso desfaz uma suposição que seria natural, a de que acesso ao gabarito tornaria o procedimento um limite superior de desempenho. Não torna: o Algoritmo 1 maximiza o pior $F_\beta$, e não a informatividade, e a reimplementação mostra que ele tende a escolher imagens insegmentáveis. No regime de três a cinco imagens, a identidade das imagens escolhidas importa menos do que a formulação do algoritmo pressupõe.
 
 É importante enunciar esse resultado com precisão. O que foi observado é ausência de evidência de superioridade nas condições avaliadas, e não demonstração de equivalência. Os intervalos de confiança são compatíveis com efeitos pequenos em qualquer direção, e o número de repetições limita o tamanho de efeito detectável.
 
@@ -85,7 +89,7 @@ A Tabela~\ref{tab_custo} traz o custo computacional medido, que é parte do argu
 
 \section{Seleção de região: a margem existe}
 
-A ausência de ganho na seleção de imagens admite duas leituras opostas. Pode ser que a escolha não importe, caso em que a técnica seria inaplicável por natureza. Ou pode ser que a escolha importe e os critérios não a capturem, caso em que o problema permanece aberto. Distinguir as duas exige medir o teto, e não apenas o desempenho.
+A ausência de ganho na seleção de imagens admite duas leituras opostas. Pode ser que a escolha não importe, caso em que a técnica seria inaplicável por natureza. Ou pode ser que a escolha importe e os critérios não a capturem, caso em que o problema permanece aberto. Distinguir as duas exige medir quanto existe para capturar, e não apenas o desempenho dos critérios.
 
 O experimento de ganho marginal fixa a partição, as imagens de treino, os marcadores iniciais, o codificador de partida e o conjunto de validação, e varia uma única coisa: qual região recebe os aproximadamente trezentos pixels seguintes de anotação. Para cada região candidata o codificador é reestimado e o $F_\beta$ é medido novamente, de modo que a diferença entre candidatos isola o efeito da posição da anotação.
 
@@ -122,14 +126,14 @@ A linha de imagem nova inteira merece comentário, porque responde a uma objeç�
 
 O segundo número merece tanta atenção quanto o primeiro. O risco é da mesma ordem de grandeza do prêmio, o que significa que, no \ac{FLIM}, \textbf{anotar mais não é monotonicamente bom}. Em uma rede treinada por retropropagação, acrescentar um exemplo rotulado correto raramente piora o modelo; aqui, uma única anotação adicional mal posicionada pode custar meio ponto de $F_\beta$. É essa assimetria que dá sentido à pergunta sobre onde anotar: se toda anotação ajudasse, bastaria anotar mais.
 
-Dois esclarecimentos são necessários. A linha identificada como melhor região escolhe o candidato pelo $F_\beta$ de validação e portanto não constitui uma estratégia aplicável: ela mede o que existe para ser capturado, e não um método. E o valor medido é um máximo sobre os candidatos examinados, não um teto absoluto, já que apenas parte dos superpixels de cada imagem foi avaliada.
+Dois esclarecimentos são necessários. A linha identificada como melhor região escolhe o candidato pelo $F_\beta$ de validação e portanto não constitui uma estratégia aplicável: ela mede o que existe para ser capturado, e não um método. E o valor medido é um \textbf{máximo amostrado}: o melhor entre os candidatos efetivamente examinados, e não um limite superior absoluto, já que apenas parte dos superpixels de cada imagem foi avaliada. Um conjunto de candidatos maior poderia conter posições melhores, e um conjunto diferente poderia não conter nenhuma delas.
 
 Ainda assim, o resultado responde à ambiguidade. Existe margem considerável na escolha da região, e ela é da ordem de grandeza que separa um modelo mediano de um modelo bom. A pergunta passa a ser quanto dessa margem os critérios alcançam.
 
 \section{O custo do Active Learning}
 \label{sec_custo_al}
 
-Esta seção reúne as duas metades do resultado central. De um lado, quanto vale o clique no lugar certo, medido pelo teto amostrado. De outro, quanto o critério de \ac{AL} efetivamente entrega quando escolhe sozinho, sem olhar resultado nenhum. A diferença entre as duas é o que se deixa na mesa, e é ela que esta dissertação chama de \emph{custo do Active Learning}.
+Esta seção reúne as duas metades do resultado central. De um lado, quanto vale o clique no lugar certo, medido pelo máximo amostrado entre os candidatos examinados. De outro, quanto o critério de \ac{AL} efetivamente entrega quando escolhe sozinho, sem olhar resultado nenhum. A diferença entre as duas é o que se deixa na mesa, e é ela que esta dissertação chama de \emph{custo do Active Learning}.
 
 As duas colunas vêm da mesma campanha, da mesma semente, com a mesma base e a mesma validação, de modo que a subtração é pareada e não mistura condições.
 
@@ -148,7 +152,7 @@ Três leituras, em ordem de importância.
 
 \textbf{O critério captura parte dela, e a parte não capturada é significativa.} A lacuna vai de 0,0839 a 0,2667 e atinge significância em quatro das seis células. Em termos de fração capturada, o critério recupera cerca de metade da margem nos casos favoráveis e praticamente nada nos desfavoráveis. A coluna de captura é apresentada como ilustração e não como estatística, porque é razão entre duas médias e fica instável quando o denominador é pequeno; quem tem teste é a lacuna.
 
-\textbf{Há um caso em que o critério vai bem, e ele precisa ser dito.} No BraTS com o decodificador \texttt{FLIM\_lm}, o \textit{least confidence} entrega 0,2320 contra um teto de 0,2766, isto é, captura 84\% da margem, com valor p de 0,0012. Omitir esse caso tornaria a conclusão mais limpa e menos verdadeira. A leitura correta não é que os critérios de incerteza sejam inúteis, e sim que o seu desempenho \textbf{depende do decodificador e do domínio}. O mesmo escore que ordena bem as regiões no \texttt{FLIM\_lm} do conjunto de parasitas, com correlação de 0,427 e valor p de 0,0001, não as ordena no \texttt{FLIM\_pb}, onde a correlação é de $-0{,}045$ com valor p de 0,6400.
+\textbf{Há um caso em que o critério vai bem, e ele precisa ser dito.} No BraTS com o decodificador \texttt{FLIM\_lm}, o \textit{least confidence} entrega 0,2320 contra um máximo amostrado de 0,2766, isto é, captura 84\% da margem, com valor p de 0,0012. Omitir esse caso tornaria a conclusão mais limpa e menos verdadeira. A leitura correta não é que os critérios de incerteza sejam inúteis, e sim que o seu desempenho \textbf{depende do decodificador e do domínio}. O mesmo escore que ordena bem as regiões no \texttt{FLIM\_lm} do conjunto de parasitas, com correlação de 0,427 e valor p de 0,0001, não as ordena no \texttt{FLIM\_pb}, onde a correlação é de $-0{,}045$ com valor p de 0,6400.
 
 A formulação que os números autorizam é, portanto:
 
@@ -156,7 +160,7 @@ A formulação que os números autorizam é, portanto:
 Sob orçamento de anotação fixo, existe uma margem de 0,1351 a 0,3089 de $F_\beta$ entre a melhor região examinada e uma região sorteada. Os critérios de \ac{AL} capturam parte dela, e a parte não capturada, de 0,0839 a 0,2667, é o custo de o critério escolher o lugar errado.
 \end{quote}
 
-Note o que a formulação \emph{não} diz. Ela não diz que o \ac{AL} melhora o $F_\beta$ em 0,1 a 0,3. Os 0,1 a 0,3 são o teto, medido com acesso ao resultado da validação, e nenhum método os entrega. Confundir as duas coisas transformaria o resultado mais sólido do trabalho em uma afirmação falsa.
+Note o que a formulação \emph{não} diz. Ela não diz que o \ac{AL} melhora o $F_\beta$ em 0,1 a 0,3. Os 0,1 a 0,3 são o \textbf{máximo amostrado}, identificado com acesso ao resultado da validação, e nenhum método automático os entrega. Eles medem o potencial presente no conjunto de candidatos examinado, e o objetivo do aprendizado ativo regional é conduzir o especialista até esse local \emph{sem} consultar o gabarito. Confundir as duas coisas transformaria o resultado mais sólido do trabalho em uma afirmação falsa.
 
 \section{Para onde os critérios apontam}
 
@@ -372,7 +376,7 @@ Os resultados sustentam a seguinte leitura, em quatro elos, cada um medido.
 
 \textbf{Segundo, a posição da anotação é.} Com orçamento de pixels fixo e nas mesmas imagens, a melhor região examinada supera a sorteada por 0,1351 a 0,3089 de $F_\beta$, nas seis células, e a pior fica 0,2075 a 0,4954 abaixo. O prêmio e o risco são da mesma ordem, o que significa que anotar mais não é, por si, melhorar.
 
-\textbf{Terceiro, os critérios capturam parte dessa margem, e a parte que escapa é o custo do método.} A lacuna entre o teto e o que o critério entrega vai de 0,0839 a 0,2667 e é significativa em quatro das seis células. O desempenho do escore depende do decodificador e do domínio: há uma célula em que ele captura 84\% da margem e outra em que captura praticamente nada.
+\textbf{Terceiro, os critérios capturam parte dessa margem, e a parte que escapa é o custo do método.} A lacuna entre o máximo amostrado e o que o critério entrega vai de 0,0839 a 0,2667 e é significativa em quatro das seis células. O desempenho do escore depende do decodificador e do domínio: há uma célula em que ele captura 84\% da margem e outra em que captura praticamente nada.
 
 \textbf{Quarto, o gargalo está na lista e não no escore.} Regiões que atravessam a fronteira do objeto, que são as que a comparação com os marcadores reais mostra terem valor, representam de 2\% a 12\% dos candidatos produzidos por superpixels. Como um critério apenas ordena a lista que recebe, nenhuma escolha de escore resolveria isso. A intervenção derivada desse diagnóstico, que troca o gerador mantendo escore e orçamento fixos, produz ganho de 0,0772 de $F_\beta$ no conjunto de parasitas, em dez de dez repetições, sobrevivendo à correção; o resultado nulo no BraTS foi previsto pelo mecanismo antes da execução e funciona como controle dele.
 

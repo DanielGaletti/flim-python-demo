@@ -77,6 +77,7 @@ _SIMBOLOS_TEX = {
     "α": r"$\alpha$", "β": r"$\beta$", "ρ": r"$\rho$", "Δ": r"$\Delta$",
     "σ": r"$\sigma$", "μ": r"$\mu$", "χ": r"$\chi$",
     "≠": r"$\neq$", "≥": r"$\geq$", "≤": r"$\leq$", "×": r"$\times$",
+    "∖": r"$\setminus$",
     "−": "-", "–": "-", "—": "---",
     "₀": r"$_0$", "₁": r"$_1$", "²": r"$^2$", "³": r"$^3$",
 }
@@ -165,10 +166,21 @@ class Tabela:
             "% NAO EDITE A MAO: a proxima geracao sobrescreve, e o numero"
             " editado deixa de bater com evidencia/execucoes/.",
             f"% Proveniencia: {self.nome}.proveniencia.json",
+        ]
+        # `adjustbox` com `max width` encolhe SO quando a tabela nao cabe, e
+        # deixa as estreitas no corpo normal. Varias tabelas deste trabalho tem
+        # 10 a 14 colunas e estouravam a caixa de texto da ABNT, saindo por
+        # cima da margem. O pacote e carregado pelo documento principal.
+        largura = len(self.colunas)
+        if largura >= 8:
+            out.append(r"\begin{adjustbox}{max width=\linewidth}")
+        # `booktabs` no lugar de `\hline`: e o padrao editorial de tese, e
+        # dispensa as linhas verticais, que so poluem.
+        out += [
             r"\begin{tabular}{" + self.alinhamento + "}",
-            r"\hline",
+            r"\toprule",
             " & ".join(_tex_escape(c) for c in self.colunas) + r" \\",
-            r"\hline",
+            r"\midrule",
         ]
         for l in self.linhas:
             cels = [_tex_escape(str(v)) for v in l["valores"]]
@@ -176,7 +188,9 @@ class Tabela:
                 i = l["enfase"]
                 cels[i] = r"\textbf{" + cels[i] + "}"
             out.append(" & ".join(cels) + r" \\")
-        out += [r"\hline", r"\end{tabular}"]
+        out += [r"\bottomrule", r"\end{tabular}"]
+        if largura >= 8:
+            out.append(r"\end{adjustbox}")
         return "\n".join(out) + "\n"
 
     def latex_nota(self) -> str:
@@ -1134,7 +1148,10 @@ def tabela_artigo_vs_regiao(recs=None, experimento: str = "artigo_vs_regiao",
               "publicado (A)` vem da Tabela III do artigo e **não** é "
               "comparável com a coluna reproduzida: o artigo aplica Dynamic "
               "Trees, cujo binário não executa nesta máquina. Avaliação em "
-              "250 imagens de Z₁\\T, as mesmas em todos os braços."))
+              # `∖` (U+2216, set minus) e nao a barra invertida comum: a
+              # barra faria `_tex_escape` emitir `\textbackslash{}`, que
+              # compila mas sai como barra solta em modo texto.
+              "250 imagens de Z₁∖T, as mesmas em todos os braços."))
 
     for d in decs:
         def cel(c, campo="fb"):
@@ -1862,30 +1879,38 @@ def tabela_custo_do_al(recs=None, experimento: str = "ganho_marginal",
     t = Tabela(
         "custo_do_al",
         "O custo do Active Learning: a margem que existe e a que se captura",
-        ["conjunto", "decodificador", "n", "teto amostrado",
-         "o critério", "lacuna", "p da lacuna", "captura"],
-        alinhamento="llrrrrrr",
+        ["conjunto", "decodificador", "n", "máximo amostrado",
+         "o critério", "lacuna", "p", "q (BH)", "sinais", "captura"],
+        alinhamento="llrrrrrrrr",
         nota=("Todas as colunas são diferenças de Fβ contra o **candidato "
               "sorteado**, medidas na validação, com a partição, as imagens, "
               "os marcadores base e o codificador inicial idênticos dentro de "
-              "cada semente. `teto amostrado` é o melhor candidato entre os "
-              "examinados, escolhido **pelo Fβ da validação**: não é "
-              "estratégia, e mede o que existe para capturar, não um teto "
-              "absoluto. `o critério` é o que o Active Learning de fato "
-              "escolhe, sem olhar resultado. A **lacuna** entre os dois é o "
-              "custo de o critério errar o lugar do clique, e é a coluna com "
-              "teste: t pareado por semente, com n = sementes, porque os "
-              "candidatos de uma mesma semente compartilham codificador. "
-              "`captura` é razão entre duas médias, fica instável com "
-              "denominador pequeno e serve de ilustração, não de "
-              "estatística. Linhas restritas à **base funcional**; a "
-              "estratificação por regime é post-hoc e forçada pela "
-              "aritmética, porque Δ a partir de Fβ=0 exato não pode ser "
-              "negativo. As sementes compartilham pool e validação, então o "
-              "IC vale para esta validação sob sorteio das imagens de treino "
-              "e não generaliza para o dataset. O conjunto de teste não foi "
-              "tocado por esta campanha."))
+              "cada semente. `máximo amostrado` é o melhor candidato entre os "
+              "**examinados**, escolhido **pelo Fβ da validação**: ele "
+              "consulta o resultado, **não é uma estratégia aplicável** e "
+              "**não é teto absoluto**; mede a margem de melhoria presente no "
+              "conjunto examinado. `o critério` é o que o Active Learning de "
+              "fato escolhe, sem consultar resultado nenhum. A **lacuna** "
+              "entre os dois é o custo de o critério errar o lugar do clique. "
+              "O negrito marca as células que sobrevivem a "
+              "**Benjamini-Hochberg** sobre as seis, isto é, q < 0,05, e "
+              "**não** as de p bruto baixo: a coluna p traz o valor bruto e a "
+              "coluna q o ajustado, e são os q que autorizam a leitura. "
+              "`sinais` é o teste de sinais bicaudal, sem suposição sobre a "
+              "forma da distribuição, para que o leitor possa julgar as "
+              "células de n pequeno sem depender da normalidade das "
+              "diferenças. n é o número de **sementes**, porque os candidatos "
+              "de uma mesma semente compartilham codificador. `captura` é "
+              "razão entre duas médias, fica instável com denominador pequeno "
+              "e serve de ilustração, não de estatística. Linhas restritas à "
+              "**base funcional**; a estratificação por regime é post-hoc e "
+              "forçada pela aritmética, porque Δ a partir de Fβ=0 exato não "
+              "pode ser negativo. As sementes compartilham pool e validação, "
+              "então o IC vale para esta validação sob sorteio das imagens de "
+              "treino e não generaliza para o dataset. O conjunto de teste "
+              "não foi tocado por esta campanha."))
 
+    celulas = []
     for ds in ("schisto", "brats", "conjunctiva"):
         for dec in ("FLIM_lm", "FLIM_pb"):
             try:
@@ -1917,13 +1942,27 @@ def tabela_custo_do_al(recs=None, experimento: str = "ganho_marginal",
             dl = ag.descrever(lacunas)
             tp = ag.teste_pareado(tetos, crits)
             cap = (dc["media"] / dt["media"] * 100.0) if dt["media"] else None
-            t.adicionar(
-                [NOME_DATASET.get(ds, ds), dec, dt["n"],
-                 _fmt(dt["media"], 4), _fmt(dc["media"], 4),
-                 _fmt(dl["media"], 4), _fmt(tp["p"], 4),
-                 f"{cap:.0f}\\%" if cap is not None else "—"],
-                ids, enfase=5 if tp["p"] is not None and tp["p"] < 0.05
-                else None)
+            celulas.append({
+                "ds": ds, "dec": dec, "n": dt["n"], "teto": dt["media"],
+                "crit": dc["media"], "lacuna": dl["media"], "p": tp["p"],
+                "sinais": ag.teste_sinais(lacunas)["p"], "cap": cap,
+                "ids": ids})
+
+    # Benjamini-Hochberg sobre as seis células, que é a família declarada.
+    # O negrito passa a marcar q < 0,05, e não p < 0,05: antes a tabela
+    # destacava cinco células enquanto o texto afirmava quatro, porque o
+    # destaque olhava o valor bruto e a interpretação olhava o ajustado.
+    bh = ag.benjamini_hochberg([c["p"] for c in celulas])
+    for c, q, sobrevive in zip(celulas, bh["q"], bh["sobrevive"]):
+        t.adicionar(
+            [NOME_DATASET.get(c["ds"], c["ds"]), c["dec"], c["n"],
+             _fmt(c["teto"], 4), _fmt(c["crit"], 4), _fmt(c["lacuna"], 4),
+             _fmt(c["p"], 4), _fmt(q, 4), _fmt(c["sinais"], 4),
+             # O `%` sai PURO: `_tex_escape` é quem o escapa. Emitir `\%`
+             # aqui faz o escape ver a barra primeiro e produzir
+             # `56\textbackslash{}\%`, que renderiza "56\%" no PDF.
+             f"{c['cap']:.0f}%" if c["cap"] is not None else "—"],
+            c["ids"], enfase=5 if sobrevive else None)
     return t
 
 

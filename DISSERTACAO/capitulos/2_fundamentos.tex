@@ -1,4 +1,4 @@
-\chapter{Pricipais Conceitos e Trabalhos Relacionados}\label{cap_2}
+\chapter{Principais Conceitos e Trabalhos Relacionados}\label{cap_2}
 
 \section{Aprendizado de Máquina}
 
@@ -336,7 +336,9 @@ Diversos métodos têm sido propostos na literatura para mitigar esse problema. 
 \item \textbf{Métodos baseados em Destilação de Conhecimento}: introduzidos inicialmente por \cite{hinton2015distilling}, tratam o processo de transferência de conhecimento de um modelo para outro de forma análoga à relação professor-aluno. A estratégia consiste em induzir o modelo aluno a imitar não apenas as decisões finais do modelo professor, mas também sua distribuição de probabilidades, preservando informações relevantes mesmo diante de novos dados.
 \end{enumerate}
 
-No contexto deste trabalho, opta-se prioritariamente pela terceira abordagem, fundamentada em destilação de conhecimento, uma vez que ela se mostra particularmente adequada ao cenário interativo e incremental considerado, permitindo preservar conhecimento previamente adquirido durante a incorporação progressiva de novos exemplos.
+As três abordagens compartilham um pressuposto: existe um otimizador que desloca pesos, e é sobre esse deslocamento que elas atuam. A regularização penaliza a mudança dos pesos importantes, o ensaio reapresenta dados antigos ao otimizador, e a destilação faz o modelo aluno imitar as saídas do professor. \textbf{Nenhuma dessas operações está definida para o \ac{FLIM}}, que não possui função de perda nem otimizador.
+
+Este trabalho não adota, portanto, nenhuma das três. O mecanismo investigado no Capítulo~\ref{cap_3} atua sobre o objeto que de fato se desloca no \ac{FLIM}: o banco de filtros, reestimado por agrupamento a cada nova anotação. A Seção~\ref{sec_lacuna} retoma esse ponto como a lacuna específica que a dissertação endereça.
 
 %A Aprendizagem Contínua (\ac{CL}) é uma subárea da inteligência artificial que visa desenvolver modelos capazes de aprender de forma sequencial e incremental a partir de um fluxo contínuo de dados, sem a necessidade de serem retreinados do zero. Esta capacidade de acumular conhecimento ao longo do tempo é uma característica fundamental da inteligência biológica, mas representa um desafio significativo para as redes neurais artificiais \cite{delange2021continual}.
 
@@ -908,7 +910,24 @@ Além disso, a incorporação de aprendizado contínuo (\ac{CL}) constitui um av
 
 % \textcolor{red}{Por fim, a integração da Aprendizagem Contínua (\ac{CL}) aborda um desafio crucial: a retenção de conhecimento ao longo do tempo. O trabalho de \cite{zheng2021continual} combina explicitamente \ac{CL} com segmentação interativa, permitindo que o modelo incorpore novas interações do especialista sem sofrer o esquecimento catastrófico de classes previamente aprendidas.}
 
-Apesar dos avanços significativos, observa-se uma lacuna na literatura: a inexistência de um arcabouço unificado que integre, de modo sinérgico, (i) a seleção eficiente e adaptativa de dados proporcionada pelo \ac{AL} online, (ii) a colaboração iterativa característica do \ac{IL} e (iii) os mecanismos de consolidação incremental de conhecimento advindos do \ac{CL}, aplicado a \ac{VLM} e avaliado sob critérios rigorosos de custo-benefício computacional.
+\section{A lacuna que esta dissertação endereça}
+\label{sec_lacuna}
+
+Os trabalhos revisados acima compartilham um pressuposto que raramente é enunciado, porque em quase toda a literatura ele é verdadeiro: o modelo é atualizado por gradiente, e uma anotação adicional \emph{refina} parâmetros já existentes, de forma incremental e local.
+
+Esse pressuposto sustenta cada uma das três famílias discutidas. O \ac{AL} escolhe o que rotular supondo que o modelo melhorará de maneira previsível ao receber o rótulo, o que vale quando o passo de otimização é pequeno e monotônico em expectativa. O \ac{IL} propõe correções sucessivas supondo que cada correção se acumula sobre a anterior. E o \ac{CL} combate o esquecimento atuando sobre o deslocamento de pesos causado pelo otimizador, seja penalizando a mudança dos pesos importantes, seja reapresentando dados antigos, seja fazendo o modelo aluno imitar o professor.
+
+No \ac{FLIM} o pressuposto não vale. Os filtros são centróides de um agrupamento sobre os trechos de imagem sob os marcadores, e o banco resultante é compartilhado por todas as imagens, inclusive as que ninguém anotou. Acrescentar um marcador amplia o conjunto de trechos candidatos, o agrupamento que os reduz ao número de canais disponíveis é refeito, e os filtros já em uso se deslocam. A anotação adicional, portanto, não refina o extrator de atributos: ela o \textbf{reestima}, e a perturbação é global em vez de local.
+
+Daí decorrem três perguntas que a literatura revisada não responde, porque não tinha motivo para formulá-las:
+
+\begin{enumerate}
+    \item Critérios de \ac{AL} concebidos para modelos atualizados por gradiente continuam identificando o que vale a pena anotar quando a anotação reestima o extrator?
+    \item Num modelo em que o acréscimo de anotação pode piorar o resultado, a pergunta relevante continua sendo \emph{quais imagens} anotar, ou passa a ser \emph{onde} anotar dentro delas?
+    \item Os métodos de \ac{CL} que atuam sobre deslocamento de pesos têm análogo num modelo sem otimizador, e se têm, esse análogo preserva qualidade?
+\end{enumerate}
+
+É essa lacuna que a dissertação endereça. A resposta não é obtida por analogia nem por adaptação direta dos métodos existentes, e sim por medição do comportamento de cada componente no regime específico do \ac{FLIM}, conforme a metodologia do Capítulo~\ref{cap_3} e os resultados do Capítulo~\ref{cap_4}.
 
 %Apesar dos avanços significativos, permanece uma lacuna na literatura: a concepção de um sistema unificado que integre sinergicamente as três frentes: a seleção eficiente de dados da \ac{AL} online, a colaboração dinâmica da \ac{IL} e a retenção de conhecimento da \ac{CL}, aplicando esta arquitetura a modelos de fundação (\ac{VLM}) e avaliando rigorosamente o custo-benefício computacional.
 

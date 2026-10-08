@@ -146,6 +146,91 @@ def teste_pareado(a: list, b: list) -> dict:
             "ic95": (media - meia, media + meia)}
 
 
+def benjamini_hochberg(ps: list, alfa: float = 0.05) -> dict:
+    """
+    Valores q e quais hipóteses sobrevivem, pelo procedimento de passo acima.
+
+    Existe porque o texto e as tabelas estavam discordando: uma tabela
+    destacava as células com p bruto abaixo de 0,05 enquanto o texto afirmava
+    quantas sobreviviam à correção, e os dois números não batiam. Destacar por
+    p bruto e interpretar por p corrigido é erro de leitura garantido.
+
+    Devolve `q` alinhado à entrada (o q é monotonizado, como manda o
+    procedimento) e `sobrevive`, booleano por hipótese.
+    """
+    validos = [(i, p) for i, p in enumerate(ps)
+               if p is not None and not math.isnan(p)]
+    q = [None] * len(ps)
+    sob = [False] * len(ps)
+    if not validos:
+        return {"q": q, "sobrevive": sob, "m": 0, "n_sobrevive": 0}
+
+    m = len(validos)
+    ordem = sorted(validos, key=lambda x: x[1])
+    # passo acima: o maior k com p(k) <= k*alfa/m rejeita tudo ate k
+    k = 0
+    for posicao, (_, p) in enumerate(ordem, start=1):
+        if p <= posicao * alfa / m:
+            k = posicao
+    # q monotonizado, da maior para a menor posicao
+    menor = 1.0
+    for posicao in range(m, 0, -1):
+        i, p = ordem[posicao - 1]
+        menor = min(menor, p * m / posicao)
+        q[i] = menor
+    for posicao in range(1, k + 1):
+        sob[ordem[posicao - 1][0]] = True
+    return {"q": q, "sobrevive": sob, "m": m, "n_sobrevive": k}
+
+
+def teste_sinais(difs: list) -> dict:
+    """
+    Teste de sinais bicaudal, sem suposição sobre a forma da distribuição.
+
+    Complementa o t pareado onde o n é pequeno demais para que a suposição de
+    normalidade das diferenças seja verificável. Empates saem da conta, como
+    manda o procedimento.
+    """
+    d = [x for x in difs if x is not None and not math.isnan(x) and x != 0]
+    n = len(d)
+    if n == 0:
+        return {"n": 0, "positivos": 0, "p": None}
+    pos = sum(1 for x in d if x > 0)
+    # binomial(n, 1/2) bicaudal, por soma exata
+    def coef(n_, k_):
+        r = 1
+        for j in range(k_):
+            r = r * (n_ - j) // (j + 1)
+        return r
+    extremo = min(pos, n - pos)
+    cauda = sum(coef(n, j) for j in range(extremo + 1)) / (2 ** n)
+    return {"n": n, "positivos": pos, "p": min(1.0, 2.0 * cauda)}
+
+
+def permutacao_pareada(difs: list, maximo_exato: int = 20) -> dict:
+    """
+    Teste de permutação pareado, exato quando o n permite.
+
+    Sob a hipótese nula de que o tratamento não tem efeito, trocar o sinal de
+    qualquer diferença é equiprovável. Com n pequeno dá para enumerar os
+    $2^n$ sinais e obter o p exato, sem suposição nenhuma sobre a
+    distribuição. Acima de `maximo_exato` o custo explode e devolve-se None,
+    em vez de uma aproximação silenciosa.
+    """
+    d = [x for x in difs if x is not None and not math.isnan(x)]
+    n = len(d)
+    if n < 2:
+        return {"n": n, "p": None, "exato": False}
+    if n > maximo_exato:
+        return {"n": n, "p": None, "exato": False}
+    import itertools
+    observado = abs(sum(d))
+    extremos = sum(1 for sinais in itertools.product((1, -1), repeat=n)
+                   if abs(sum(s * x for s, x in zip(sinais, d))) >= observado
+                   - 1e-12)
+    return {"n": n, "p": extremos / (2 ** n), "exato": True}
+
+
 def _p_bicaudal(t: float, gl: int) -> float:
     """
     p bicaudal da t de Student, por integração da densidade.
