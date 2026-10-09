@@ -1,7 +1,12 @@
 # Parecer técnico pré-defesa
 
-Dissertação: *Quanto vale o clique no lugar certo: limites do aprendizado ativo
-e contínuo em redes FLIM e o gargalo na geração de candidatos*
+Dissertação: *Aplicação de aprendizado ativo, contínuo e interativo ao FLIM:
+limites, custo e uma intervenção no gerador de candidatos*
+
+> Título alterado em 2026-10-09, depois da elaboração deste parecer. A versão
+> anterior era *Quanto vale o clique no lugar certo: limites do aprendizado
+> ativo e contínuo em redes FLIM e o gargalo na geração de candidatos*. A
+> análise do parecer não depende do título.
 
 Elaborado em 2026-10-07 por verificação direta do texto contra o código, o
 registro de execuções, as campanhas versionadas, as tabelas geradas e os
