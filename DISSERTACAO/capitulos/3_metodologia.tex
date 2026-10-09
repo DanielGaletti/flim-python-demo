@@ -167,7 +167,7 @@ Os critérios avaliados nesta dissertação se separam em três faixas de custo,
 
     \item[Várias passagens, ou atributos de todo o pool, sem anotação.] O \ac{BALD} exige um comitê, logo $N$ inferências por imagem. O CoreSet e o \ac{BADGE} exigem extrair o vetor de atributos de \emph{cada} imagem do pool e depois resolver um problema de cobertura sobre todos eles. Continuam sem consultar anotação, mas o custo cresce com o tamanho do pool, e não apenas com o orçamento.
 
-    \item[Anotação de todo o pool.] É o caso do passo 7 do Algoritmo 1 do trabalho de referência, que escolhe a próxima imagem entre as de pior $F_\beta$. Para saber o $F_\beta$ de uma imagem é preciso ter o gabarito dela. Escolher 3 imagens entre 848 exige, portanto, as 848 anotadas.
+    \item[Anotação de todo o conjunto de seleção.] É o caso do procedimento do trabalho de referência, que escolhe a próxima imagem entre as de pior $F_\beta$ sobre o conjunto $Z_1 \setminus T$. Para saber o $F_\beta$ de uma imagem é preciso ter o gabarito dela. No conjunto de parasitas, $Z_1 \setminus T$ tem cerca de 606 imagens, de modo que escolher três ou quatro exige que essas 606 estejam anotadas.
 \end{description}
 
 Esta última linha é a razão de ser desta dissertação. O próprio artigo declara que a abordagem de seleção é supervisionada, e um procedimento que precisa do gabarito de todo o pool para escolher o que anotar derrota o propósito de um método criado para operar com três a cinco imagens anotadas. A pergunta que organiza o trabalho é, então, quanto do benefício daquele procedimento se recupera com critérios da primeira e da segunda faixa, que não consultam anotação nenhuma.
@@ -548,6 +548,8 @@ Todas as campanhas são executadas com as bibliotecas limitadas a uma única lin
 Três conjuntos são usados, escolhidos por apresentarem propriedades distintas quanto ao tamanho relativo do objeto, que a investigação mostrou ser determinante.
 
 O conjunto de \textbf{parasitas} contém imagens de microscopia de ovos de \textit{Schistosoma mansoni}, em cores, com resolução de $400 \times 400$ pixels. O objeto ocupa cerca de 3\% da imagem. Estão disponíveis marcadores desenhados por dois especialistas, usados nas comparações que envolvem anotação real.
+
+Uma divergência de contagem precisa ser registrada, ainda que sem consequência para os resultados: o trabalho de referência reporta 1219 imagens nesse conjunto \cite{soares2026flim}, e a cópia utilizada aqui contém 1220. A diferença de uma imagem não foi rastreada até sua origem e não afeta nenhuma comparação, já que todas as campanhas operam sobre partições sorteadas da mesma cópia local.
 
 O conjunto \textbf{BraTS} \cite{menze2014multimodal} contém cortes de ressonância magnética cerebral, em tons de cinza, com resolução de $240 \times 240$ pixels.
 

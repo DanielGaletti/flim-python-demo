@@ -14,8 +14,16 @@ O paper reproduzido (Soares et al., arXiv:2504.20872) **já faz active
 learning** no Algoritmo 1: T começa com uma imagem aleatória, treina, avalia
 em Z₁\T, escolhe a próxima entre as de **pior Fβ**, com backtracking. Mas o
 artigo declara: *"We adopted a **supervised** approach to select a few
-representative images"* — o passo 7 exige ground truth de todo o pool (848
-imagens) para escolher 3.
+representative images for T from the validation set Z₁\T"* — o passo 7 exige
+ground truth de todo o Z₁\T para escolher 3.
+
+> **Correção de 2026-10-09.** Este parágrafo dizia "848 imagens". O número
+> está errado como descrição do artigo: 848 é o tamanho do pool da **nossa**
+> reprodução (70% de 1211 no split `5train-70_30`), não do conjunto sobre o
+> qual o Algoritmo 1 opera. O artigo divide Z em Z₁ e Z₂ com 50% cada, sobre
+> 1219 imagens, de modo que **Z₁\T tem cerca de 606**. Verificado no PDF:
+> seções "Experimental setup" e "E. Representative image selection".
+> Corrigido também em `1_introducao.tex` e `3_metodologia.tex`.
 
 Isso derrota o propósito do FLIM. A pergunta bem-posta passa a ser:
 

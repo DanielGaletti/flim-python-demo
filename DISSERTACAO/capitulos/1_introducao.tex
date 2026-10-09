@@ -7,9 +7,15 @@ A segmentação de imagens é uma tarefa fundamental em Visão Computacional, co
 
 Uma linha de trabalho recente propõe contornar esse custo por outro caminho. Em vez de ajustar milhões de parâmetros por retropropagação a partir de muitos exemplos, o \ac{FLIM} \cite{souza2020flim,benato2020cnnmarkers} constrói os filtros da rede \emph{diretamente} a partir de traços que o especialista desenha sobre poucas imagens. Os trechos de imagem sob esses traços são agrupados, e os centróides resultantes passam a ser os núcleos da convolução. Não há função de perda, não há otimizador e não há gradiente. O treinamento custa segundos e opera com três a cinco imagens anotadas.
 
-O trabalho de referência reproduzido nesta dissertação \cite{soares2026flim} leva essa ideia a um conjunto de decodificadores adaptativos e reporta resultados competitivos com redes treinadas por retropropagação. Mas há nele um ponto que merece atenção. A escolha das poucas imagens que o especialista vai anotar é feita por um procedimento iterativo que, a cada passo, mede o desempenho do modelo em todas as imagens disponíveis e escolhe aquela em que ele vai pior. Medir o desempenho em uma imagem exige a anotação de referência dela. Escolher três imagens entre as 848 do conjunto exige, portanto, que as 848 já estejam anotadas.
+O trabalho de referência reproduzido nesta dissertação \cite{soares2026flim} leva essa ideia a um conjunto de decodificadores adaptativos e reporta resultados competitivos com redes treinadas por retropropagação. Mas há nele um ponto que merece atenção, e que os próprios autores enunciam sem rodeio. Ao descrever como as poucas imagens de treino são escolhidas, eles escrevem:
 
-Os próprios autores declaram que a abordagem de seleção é supervisionada. A consequência, contudo, é mais severa do que a palavra sugere: um procedimento que precisa da anotação de todo o conjunto para decidir o que anotar devolve exatamente o custo que o \ac{FLIM} foi criado para evitar.
+\begin{quote}
+\emph{``We adopted a supervised approach to select a few representative images for $T$ from the validation set $Z_1 \setminus T$ \ldots\ The method selects one image per time, by evaluating the current model on $Z_1 \setminus T$. The selected images come from those not solved by the model trained on the current set $T$, i.e., the ones from $Z_1 \setminus T$ with the worst $F_\beta$ measure.''} \cite{soares2026flim}
+\end{quote}
+
+A declaração aparece duas vezes no artigo, na seção de preparação dos experimentos e novamente na descrição do procedimento. Vale reconhecer que os autores são explícitos: eles não apresentam o procedimento como não supervisionado, e o escopo declarado do trabalho deles é o decodificador, não a seleção.
+
+A consequência, porém, é mais severa do que a palavra \emph{supervisionada} sugere. Medir o $F_\beta$ de uma imagem exige a anotação de referência dela. No conjunto de parasitas, que tem 1219 imagens divididas ao meio entre $Z_1$ e $Z_2$, o conjunto $Z_1 \setminus T$ sobre o qual a seleção opera tem cerca de 606 imagens. Escolher três ou quatro imagens para anotar exige, portanto, que essas 606 já estejam anotadas. Um procedimento que precisa da anotação de um conjunto duas ordens de grandeza maior para decidir o que anotar devolve exatamente o custo que o \ac{FLIM} foi criado para evitar.
 
 Daí a pergunta que organiza este trabalho:
 
