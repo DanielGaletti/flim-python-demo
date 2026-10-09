@@ -919,6 +919,25 @@ Esse pressuposto sustenta cada uma das três famílias discutidas. O \ac{AL} esc
 
 No \ac{FLIM} o pressuposto não vale. Os filtros são centróides de um agrupamento sobre os trechos de imagem sob os marcadores, e o banco resultante é compartilhado por todas as imagens, inclusive as que ninguém anotou. Acrescentar um marcador amplia o conjunto de trechos candidatos, o agrupamento que os reduz ao número de canais disponíveis é refeito, e os filtros já em uso se deslocam. A anotação adicional, portanto, não refina o extrator de atributos: ela o \textbf{reestima}, e a perturbação é global em vez de local.
 
+\subsection{Seleção de imagens para o FLIM: o que já existe}
+\label{sec_selecao_flim}
+
+A pergunta de como escolher as poucas imagens a anotar já foi abordada pelo grupo que propôs o \ac{FLIM}, e convém situar este trabalho em relação a ela antes de enunciar qualquer lacuna.
+
+\cite{cerqueira2024interactive} propõem seleção interativa de imagens acoplada ao treinamento, em segmentação de tumor cerebral. \cite{cerqueira2024gtfree} propõem seleção interativa \emph{sem anotação de referência} para codificadores \ac{FLIM}, operando sobre os mapas de atributos do codificador e com anotação manual dos filtros convolucionais. O trabalho de referência reproduzido nesta dissertação \cite{soares2026flim} classifica o primeiro como supervisionado e o segundo como não supervisionado, e declara adotar uma variante \emph{supervisionada} do segundo, com a diferença de fazer a seleção pelo resultado após o decodificador em vez de pelos mapas de atributos.
+
+Três observações decorrem disso, e elas delimitam a contribuição desta dissertação.
+
+A primeira é que \textbf{a seleção sem gabarito para o \ac{FLIM} não é território inexplorado}, e seria incorreto apresentá-la como tal. Existe método publicado, do mesmo grupo, e o leitor que conhece essa literatura esperaria vê-lo citado.
+
+A segunda é que o método de \cite{cerqueira2024gtfree} é \emph{interativo e específico}: ele depende do especialista no laço e da anotação manual dos filtros. O que esta dissertação avalia é diferente em natureza: critérios de \ac{AL} \emph{automáticos} e de uso geral, tomados da literatura de aprendizado ativo e aplicados sem intervenção humana na pontuação, com um piso de sorteio aleatório e um baseline privilegiado que permitem interpretar o resultado.
+
+A terceira é que nenhum desses trabalhos mede \emph{quanta margem existe} na escolha, nem desce ao nível de região dentro de uma imagem já escolhida. É nesse ponto que a contribuição aqui se situa.
+
+\textbf{Uma ressalva de honestidade intelectual:} os dois trabalhos de \cite{cerqueira2024interactive} e \cite{cerqueira2024gtfree} são descritos aqui a partir do que \cite{soares2026flim} relata sobre eles e dos seus títulos e locais de publicação. Uma comparação experimental direta com o método de \cite{cerqueira2024gtfree} não foi realizada e permanece como trabalho futuro prioritário, conforme o Capítulo~\ref{cap_5}.
+
+\subsection{A lacuna específica}
+
 Daí decorrem três perguntas que a literatura revisada não responde, porque não tinha motivo para formulá-las:
 
 \begin{enumerate}
